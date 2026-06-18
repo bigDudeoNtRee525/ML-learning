@@ -1,0 +1,291 @@
+<section class="module" id="m1" data-title="Just-Enough Math">
+  <div class="module-head">
+    <span class="module-kicker">Module 1</span>
+    <h2>Just-Enough Math Intuition (Visual, On-Demand)</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m1"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+    <ul>
+      <li>Read a <strong>vector</strong> as both a list of numbers and an arrow in space, and a <strong>matrix</strong> as a machine that transforms that space.</li>
+      <li>Compute a <strong>dot product</strong> and a <strong>matrix-times-vector</strong> by hand, and say what each one means.</li>
+      <li>Explain a <strong>derivative</strong> as "slope = how fast the output changes when I nudge the input," and estimate one numerically.</li>
+      <li>Use the <strong>chain rule</strong> the ML way: as nudges flowing through a chain of steps (the seed of backpropagation in Module 10).</li>
+      <li>Compute <strong>mean</strong> and <strong>variance</strong> of a small list, and recognize the <strong>normal (bell) curve</strong> and what its shape tells you.</li>
+      <li>Decide what math you actually need <em>right now</em> versus what stays optional until later.</li>
+    </ul>
+  </div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+    <p>Imagine a music app guessing whether you'll like a song. It stores each song as a short list of numbers — say <code>[loudness, tempo, energy]</code> — and stores your taste as another list of numbers. To guess your rating, it lines the two lists up and multiplies-and-adds them into a single score. That "multiply-and-add" is a <em>dot product</em>. To learn your taste, it nudges its numbers a tiny bit and checks whether its guesses got better or worse — that "which way is better?" question is a <em>derivative</em>. And to talk about uncertainty ("we're 80% sure"), it leans on <em>probability</em>. Three ideas — dot products, derivatives, distributions — quietly power almost everything ahead. This module gives you just enough of each, visually, with no prerequisites beyond high-school arithmetic. It is a <strong>reference you'll revisit</strong>, not a wall you must scale before moving on.</p>
+  </div>
+
+  <h3>How to use this module</h3>
+  <p>You do <em>not</em> need to master everything here before continuing. Skim it once so you know what lives where, then come back when a later module says "remember the dot product" or "this is the chain rule." We teach math <strong>just-in-time</strong>: each idea appears the moment a real ML problem needs it, which is when it finally makes sense. Heavier calculus stays <strong>optional</strong> — we will always give you the intuition and runnable code, and mark the proofs as "nice to know, not need to know."</p>
+
+  <h3>Part 1 — Vectors: numbers that point somewhere</h3>
+  <p>A <strong>vector</strong> is just an ordered list of numbers. That's the whole definition. We write a vector in brackets, like \( \mathbf{v} = [3, 2] \), where the bold \( \mathbf{v} \) names the vector and the numbers inside are its <strong>components</strong> (the individual entries). The number of components is the vector's <strong>dimension</strong>; \( [3, 2] \) is 2-dimensional, \( [3, 2, 5] \) is 3-dimensional.</p>
+  <p>The magic is that a 2D vector is also an <strong>arrow</strong>: start at the origin (the point \( (0,0) \)) and walk 3 to the right and 2 up. The arrow's tip lands at \( (3, 2) \). So a vector is two things at once — a list you can compute with, and a direction-and-length you can picture.</p>
+
+  <div class="callout analogy"><p><strong>Analogy.</strong> A vector is like giving someone walking directions from a fixed corner: "3 blocks east, 2 blocks north." The instructions are a list of numbers; the path they trace is an arrow. Both descriptions are the same thing.</p></div>
+
+  <svg class="diagram" viewBox="0 0 220 160" width="260" role="img" aria-label="A vector drawn as an arrow from the origin to the point 3,2">
+    <line x1="20" y1="140" x2="200" y2="140" stroke="currentColor" stroke-width="1"/>
+    <line x1="20" y1="140" x2="20" y2="20" stroke="currentColor" stroke-width="1"/>
+    <line x1="20" y1="140" x2="170" y2="60" stroke="#6366f1" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="170" y1="140" x2="170" y2="60" stroke="#10b981" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="20" y1="60" x2="170" y2="60" stroke="#10b981" stroke-width="1" stroke-dasharray="4 3"/>
+    <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6366f1"/></marker></defs>
+    <text x="110" y="135" font-size="10" fill="#10b981">3 right</text>
+    <text x="174" y="105" font-size="10" fill="#10b981">2 up</text>
+    <text x="120" y="80" font-size="11" fill="#6366f1">v = [3, 2]</text>
+  </svg>
+  <p class="caption">The list \([3,2]\) is the arrow that goes 3 right and 2 up.</p>
+
+  <h4>Two things you do with vectors</h4>
+  <p><strong>Adding</strong> two vectors adds them component by component: \( [3,2] + [1,4] = [4,6] \). Geometrically, you walk the first arrow, then walk the second from where you landed. <strong>Scaling</strong> multiplies every component by one number: \( 2 \cdot [3,2] = [6,4] \), which stretches the arrow to twice its length in the same direction. (Scaling by a negative number flips it to point the opposite way.)</p>
+
+  <h4>The dot product: lining up and summing</h4>
+  <p>The <strong>dot product</strong> takes two vectors of the same length, multiplies matching components, and adds the results into a single number. For \( \mathbf{a} = [a_1, a_2, a_3] \) and \( \mathbf{b} = [b_1, b_2, b_3] \):</p>
+  \[ \mathbf{a} \cdot \mathbf{b} = a_1 b_1 + a_2 b_2 + a_3 b_3 \]
+  <p>Here \( a_1 \) means "the first component of \( \mathbf{a} \)," and so on. The result is a plain number (a <strong>scalar</strong>), not a vector. Why does ML care? Because "multiply each feature by its importance and add it all up to get a score" <em>is</em> a dot product — it is the core operation inside linear regression (Module 3), logistic regression (Module 5), and every neural network layer (Module 10). When the dot product is large and positive, the two vectors mostly point the same way; near zero, they're roughly perpendicular ("unrelated").</p>
+
+  <h3>Part 2 — Matrices: machines that reshape space</h3>
+  <p>A <strong>matrix</strong> is a grid (rows and columns) of numbers. A small one looks like \( \begin{bmatrix} 2 & 0 \\ 0 & 3 \end{bmatrix} \): two rows, two columns. The deepest way to read a matrix — the 3Blue1Brown view — is as a <strong>transformation of space</strong>: feed it a vector, and it hands you back a new vector, as if it grabbed the whole plane and stretched, squished, or rotated it.</p>
+
+  <div class="callout analogy"><p><strong>Analogy.</strong> Think of the plane as a stretchy rubber sheet with a grid drawn on it. A matrix is a single instruction for tugging that sheet — "stretch sideways, squash vertically, tilt." Every point (every vector) rides along to its new home. Different matrices = different tugs.</p></div>
+
+  <p>To apply a matrix \( M \) to a vector \( \mathbf{v} \) (written \( M\mathbf{v} \)), you dot each <em>row</em> of the matrix with the vector. For a 2&times;2 matrix:</p>
+  \[ \begin{bmatrix} m_{11} & m_{12} \\ m_{21} & m_{22} \end{bmatrix} \begin{bmatrix} v_1 \\ v_2 \end{bmatrix} = \begin{bmatrix} m_{11}v_1 + m_{12}v_2 \\ m_{21}v_1 + m_{22}v_2 \end{bmatrix} \]
+  <p>where \( m_{11} \) is the entry in row 1, column 1, and so on, and \( v_1, v_2 \) are the vector's components. Read it as: "the new first component is row 1 dotted with the vector; the new second component is row 2 dotted with the vector." A matrix-vector product is just <strong>several dot products stacked up</strong>. That's the whole secret — and it's why we taught the dot product first.</p>
+
+  <svg class="diagram" viewBox="0 0 320 150" width="320" role="img" aria-label="Grid before and after a matrix stretches it">
+    <g stroke="currentColor" stroke-width="0.7" opacity="0.6">
+      <line x1="20" y1="20" x2="20" y2="110"/><line x1="50" y1="20" x2="50" y2="110"/><line x1="80" y1="20" x2="80" y2="110"/>
+      <line x1="20" y1="20" x2="80" y2="20"/><line x1="20" y1="50" x2="80" y2="50"/><line x1="20" y1="80" x2="80" y2="80"/><line x1="20" y1="110" x2="80" y2="110"/>
+    </g>
+    <text x="20" y="125" font-size="9" fill="currentColor">before</text>
+    <path d="M150,70 L185,70" stroke="#6366f1" stroke-width="2" marker-end="url(#a2)"/>
+    <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6366f1"/></marker></defs>
+    <text x="148" y="62" font-size="9" fill="#6366f1">M</text>
+    <g stroke="#10b981" stroke-width="0.7" opacity="0.8">
+      <line x1="210" y1="35" x2="210" y2="95"/><line x1="270" y1="35" x2="270" y2="95"/><line x1="330" y1="35" x2="330" y2="95" transform="translate(-30,0)"/>
+      <line x1="210" y1="35" x2="300" y2="35"/><line x1="210" y1="65" x2="300" y2="65"/><line x1="210" y1="95" x2="300" y2="95"/>
+    </g>
+    <text x="210" y="125" font-size="9" fill="#10b981">after (wider, shorter)</text>
+  </svg>
+  <p class="caption">A matrix tugs the whole grid at once: the same instruction moves every point.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p><strong>(a) Dot product of two 3-vectors.</strong> Let \( \mathbf{a} = [1, 2, 3] \) and \( \mathbf{b} = [4, 5, 6] \).</p>
+    <p>Multiply matching components, then add:</p>
+    \[ \mathbf{a}\cdot\mathbf{b} = (1)(4) + (2)(5) + (3)(6) = 4 + 10 + 18 = 32 \]
+    <p>So the answer is the single number <strong>32</strong>. Notice we never produced a new vector — a dot product always collapses to one scalar.</p>
+
+    <p><strong>(b) A 2&times;2 matrix times a vector.</strong> Let \( M = \begin{bmatrix} 2 & 0 \\ 1 & 3 \end{bmatrix} \) and \( \mathbf{v} = [4, 5] \) (read vertically as a column).</p>
+    <p>Row 1 dotted with \( \mathbf{v} \): \( (2)(4) + (0)(5) = 8 + 0 = 8 \).<br>
+       Row 2 dotted with \( \mathbf{v} \): \( (1)(4) + (3)(5) = 4 + 15 = 19 \).</p>
+    \[ M\mathbf{v} = \begin{bmatrix} 8 \\ 19 \end{bmatrix} \]
+    <p>The matrix took the arrow \([4,5]\) and moved its tip to \([8,19]\) — that is the "transformation of space" in action, done with two little dot products.</p>
+  </div>
+
+  <h3>Part 3 — Derivatives: which way is "better"?</h3>
+  <p>A <strong>derivative</strong> answers one question: <em>if I nudge the input a tiny bit, how much does the output change, and in which direction?</em> That ratio — change in output divided by change in input — is the <strong>slope</strong> of the function at a point. A positive slope means "output goes up as input goes up here"; a negative slope means "output goes down." This is the single most important idea for <em>learning</em>: a model improves by repeatedly asking "which way should I nudge my numbers to make my error smaller?" — and that's a derivative. You'll use it constantly in Module 4 — Gradient Descent.</p>
+
+  <div class="callout analogy"><p><strong>Analogy.</strong> Stand on a hill in thick fog. You can't see the valley, but you can feel the ground's <em>steepness</em> right under your feet. The slope tells you which way is downhill and how steep it is. Take a small step downhill, feel again, repeat. That feeling-the-slope is exactly what a derivative gives a learning algorithm.</p></div>
+
+  <svg class="diagram" viewBox="0 0 240 160" width="260" role="img" aria-label="A parabola with a tangent line touching it">
+    <line x1="20" y1="140" x2="220" y2="140" stroke="currentColor" stroke-width="1"/>
+    <line x1="20" y1="140" x2="20" y2="15" stroke="currentColor" stroke-width="1"/>
+    <path d="M30,135 Q120,-40 210,135" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+    <line x1="105" y1="125" x2="185" y2="35" stroke="#10b981" stroke-width="2"/>
+    <circle cx="150" cy="72" r="3.5" fill="#10b981"/>
+    <text x="155" y="68" font-size="10" fill="#10b981">slope here</text>
+    <text x="110" y="155" font-size="10" fill="#6366f1">f(x) = x²</text>
+  </svg>
+  <p class="caption">The tangent line just kisses the curve at one point; its steepness is the derivative there.</p>
+
+  <p>For our example function \( f(x) = x^2 \), the slope at any point \( x \) turns out to be \( 2x \). We write this as \( f'(x) = 2x \), where the little tick mark in \( f'(x) \) means "the derivative of \( f \)." So at \( x = 3 \), the slope is \( f'(3) = 2 \times 3 = 6 \). Don't worry yet about <em>why</em> the rule is \( 2x \) (that's the optional calculus); the point is that there's a clean number describing the steepness, and we can also find it without any calculus at all.</p>
+
+  <h4>Estimating a slope numerically (no calculus needed)</h4>
+  <p>Slope is "rise over run." So pick a tiny step \( h \) (a small number like \( 0.001 \)), move from \( x \) to \( x + h \), and measure how much \( f \) rose, divided by how far you ran:</p>
+  \[ \text{slope} \approx \frac{f(x+h) - f(x)}{h} \]
+  <p>The \( \approx \) means "approximately equal." The smaller \( h \) is, the closer this estimate gets to the true slope. This is the literal definition of a derivative with the "shrink \( h \) to zero" step left implied — and it's how a computer can find slopes for <em>any</em> function, even ones with no tidy formula.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p><strong>Derivative of \( f(x)=x^2 \) at \( x=3 \), two ways.</strong></p>
+    <p><em>Analytically:</em> the rule says \( f'(x) = 2x \), so \( f'(3) = 6 \). Done.</p>
+    <p><em>Numerically</em> with \( h = 0.001 \): we need \( f(3.001) \) and \( f(3) \).</p>
+    <p>\( f(3.001) = 3.001^2 = 9.006001 \), and \( f(3) = 3^2 = 9 \). Then:</p>
+    \[ \frac{9.006001 - 9}{0.001} = \frac{0.006001}{0.001} = 6.001 \]
+    <p>The estimate <strong>6.001</strong> is a hair above the true answer <strong>6</strong> — exactly what we expect, and it would get even closer with a smaller \( h \). Two completely different routes, the same answer. That agreement is the whole point: you can always sanity-check calculus with arithmetic.</p>
+  </div>
+
+  <h4>Partial derivatives: one knob at a time</h4>
+  <p>Real models have <em>many</em> inputs. A <strong>partial derivative</strong> asks "how does the output change if I nudge just <em>one</em> input and hold all the others still?" We write \( \frac{\partial f}{\partial x} \) (the curly \( \partial \) signals "partial") for "the slope in the \( x \) direction only." It's the same slope idea, applied one knob at a time. Collect all the partials into a list and you get the <strong>gradient</strong> — a vector of slopes pointing in the direction of steepest increase. Flip it around and you're heading downhill, which is precisely gradient descent (Module 4). Notice the ideas already snapping together: partials are slopes, a gradient is a vector of slopes.</p>
+
+  <h4>The chain rule, the ML way: nudges flowing through a chain</h4>
+  <p>Often one quantity depends on another, which depends on another — a chain. Suppose a small change in \( x \) changes \( u \), and a change in \( u \) changes \( y \). How much does \( y \) change when you nudge \( x \)? You <strong>multiply the local slopes along the chain</strong>:</p>
+  \[ \frac{dy}{dx} = \frac{dy}{du}\cdot\frac{du}{dx} \]
+  <p>In words: "how \( y \) responds to \( u \)" times "how \( u \) responds to \( x \)." If nudging \( x \) by 1 moves \( u \) by 2, and nudging \( u \) by 1 moves \( y \) by 5, then nudging \( x \) by 1 moves \( y \) by \( 5 \times 2 = 10 \). Each step has a local "amplification factor," and the total effect is the factors multiplied together.</p>
+  <div class="callout analogy"><p><strong>Analogy.</strong> Gears. Turn the small gear once; it spins the next gear twice; that spins the final gear five times per turn. One turn of the first gear &rarr; ten turns of the last. The chain rule is just multiplying the gear ratios.</p></div>
+  <p>This is the engine of <strong>backpropagation</strong> — the algorithm that trains neural networks (Module 10 &amp; 11). A deep network is a long chain of steps; to learn, it sends an error signal <em>backward</em> through the chain, multiplying local slopes as it goes. You don't need the machinery now; just hold onto the picture: <em>nudges multiply along a chain</em>.</p>
+
+  <h3>Part 4 — Probability &amp; statistics: describing spread and chance</h3>
+  <p>Data is noisy and the world is uncertain, so ML constantly speaks the language of probability. You need surprisingly little to start.</p>
+  <p>A <strong>random variable</strong> is a quantity whose value isn't fixed — like the outcome of a dice roll, or tomorrow's number of website visitors. A <strong>distribution</strong> describes which values are likely and which are rare. A <strong>probability</strong> is a number between 0 and 1 measuring how likely something is: 0 means impossible, 1 means certain, 0.5 means a coin-flip. (All the probabilities of the possible outcomes must add up to 1 — something has to happen.)</p>
+
+  <h4>Mean and variance: center and spread</h4>
+  <p>The <strong>mean</strong> (average) is the center of your data. For a list of \( n \) numbers \( x_1, x_2, \ldots, x_n \), where \( n \) is how many numbers you have:</p>
+  \[ \text{mean} = \mu = \frac{x_1 + x_2 + \cdots + x_n}{n} \]
+  <p>The Greek letter \( \mu \) ("mu") is the standard symbol for the mean — add everything up, divide by how many there are.</p>
+  <p>The <strong>variance</strong> measures <em>spread</em>: how far, on average, the numbers sit from the mean. For each number, take its distance from the mean, <em>square</em> it (so negatives don't cancel positives and big misses count extra), then average those squared distances:</p>
+  \[ \text{variance} = \sigma^2 = \frac{(x_1-\mu)^2 + \cdots + (x_n-\mu)^2}{n} \]
+  <p>Here \( \sigma^2 \) ("sigma squared") is the variance. Its square root, \( \sigma \), is the <strong>standard deviation</strong>, which is back in the original units (dollars, centimeters) and is the everyday "typical distance from average." Small variance = tightly clustered data; large variance = widely scattered.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p><strong>Mean and variance of the tiny list \( [2, 4, 6] \).</strong></p>
+    <p><em>Mean:</em> \( \mu = \dfrac{2 + 4 + 6}{3} = \dfrac{12}{3} = 4 \).</p>
+    <p><em>Distances from the mean:</em> \( 2-4 = -2 \), \( 4-4 = 0 \), \( 6-4 = 2 \).</p>
+    <p><em>Square them:</em> \( (-2)^2 = 4 \), \( 0^2 = 0 \), \( 2^2 = 4 \).</p>
+    <p><em>Average the squares:</em> \( \sigma^2 = \dfrac{4 + 0 + 4}{3} = \dfrac{8}{3} \approx 2.667 \).</p>
+    <p><em>Standard deviation:</em> \( \sigma = \sqrt{2.667} \approx 1.63 \) — so the numbers sit, typically, about 1.63 away from the center of 4. That matches intuition: two of them are exactly 2 away, one is right on the mean.</p>
+  </div>
+
+  <h4>The normal distribution (the bell curve)</h4>
+  <p>The <strong>normal distribution</strong> is the famous symmetric "bell" shape. It shows up everywhere — heights, measurement errors, exam scores — because sums of many small random effects tend to pile up into this shape. It's fully described by just two numbers: the mean \( \mu \) (where the peak sits) and the standard deviation \( \sigma \) (how wide the bell is). A handy rule: about 68% of the data falls within one \( \sigma \) of the mean, and about 95% within two \( \sigma \). When ML talks about "noise," it very often means "normally distributed wiggle around the true value."</p>
+
+  <svg class="diagram" viewBox="0 0 260 150" width="280" role="img" aria-label="A symmetric bell curve centered on the mean">
+    <line x1="20" y1="125" x2="250" y2="125" stroke="currentColor" stroke-width="1"/>
+    <path d="M25,124 C90,124 100,30 135,30 C170,30 180,124 245,124" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+    <line x1="135" y1="125" x2="135" y2="30" stroke="#10b981" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="100" y1="125" x2="100" y2="95" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+    <line x1="170" y1="125" x2="170" y2="95" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+    <text x="128" y="140" font-size="10" fill="#10b981">μ</text>
+    <text x="78" y="140" font-size="9" fill="currentColor">μ−σ</text>
+    <text x="156" y="140" font-size="9" fill="currentColor">μ+σ</text>
+    <text x="118" y="80" font-size="9" fill="currentColor">~68%</text>
+  </svg>
+  <p class="caption">The bell is centered at the mean \( \mu \); its width is set by \( \sigma \). About 68% of values land within one \( \sigma \).</p>
+
+  <h3>In code: from scratch</h3>
+  <p>Let's make all of this concrete with plain NumPy and a few lines of Python. First, vectors and matrices, then a numerical derivative — each built up so you can see the mechanics.</p>
+  <codeblock>import numpy as np
+
+# --- Vectors ---
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+
+# Dot product BY HAND (multiply matching parts, then add)
+dot_manual = a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+print("dot (by hand):", dot_manual)        # 32
+
+# --- Matrix times a vector, by hand (two dot products) ---
+M = np.array([[2, 0],
+              [1, 3]])
+v = np.array([4, 5])
+row0 = M[0, 0]*v[0] + M[0, 1]*v[1]          # 2*4 + 0*5 = 8
+row1 = M[1, 0]*v[0] + M[1, 1]*v[1]          # 1*4 + 3*5 = 19
+print("M @ v (by hand):", [row0, row1])     # [8, 19]
+
+# --- Numerical derivative of f(x) = x**2 at x = 3 ---
+def f(x):
+    return x**2
+
+x = 3.0
+h = 0.001
+slope = (f(x + h) - f(x)) / h               # rise over run
+print("numerical slope at x=3:", round(slope, 4))   # 6.001
+print("true slope (2x):", 2*x)              # 6.0
+</codeblock>
+  <p>Running this prints <code>dot (by hand): 32</code>, <code>M @ v (by hand): [8, 19]</code>, the numerical slope <code>6.001</code>, and the true slope <code>6.0</code> — matching every worked example above. Seeing the by-hand arithmetic and the code agree is how you build trust that you understand the operation, not just the syntax.</p>
+
+  <h3>In code: the library way</h3>
+  <p>Once you understand the mechanics, the libraries do it in one call. NumPy has built-ins for dot products and matrix multiplication, and a function that estimates derivatives across an array.</p>
+  <codeblock>import numpy as np
+
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+print("dot:", a @ b)                 # 32  (the @ operator = dot/matmul)
+print("dot:", np.dot(a, b))          # 32  (same thing, named)
+
+M = np.array([[2, 0],
+              [1, 3]])
+v = np.array([4, 5])
+print("M @ v:", M @ v)               # [ 8 19]
+
+# Mean and variance with one call each
+data = np.array([2, 4, 6])
+print("mean:", data.mean())          # 4.0
+print("variance:", data.var())       # 2.6666...  (the 8/3 from our worked example)
+print("std dev:", data.std())        # 1.632...
+
+# Numerical derivative across many points at once.
+# np.gradient estimates the slope of y with respect to x at each point.
+x = np.linspace(0, 5, 1001)          # 1001 evenly spaced x-values from 0 to 5
+y = x**2
+dydx = np.gradient(y, x)             # array of slopes; should look like 2*x
+i = np.argmin(np.abs(x - 3))         # find the index where x is closest to 3
+print("slope near x=3:", round(dydx[i], 3))   # ~6.0
+</codeblock>
+  <p>The <code>@</code> operator gives the dot product (<code>32</code>) and the matrix-vector product (<code>[8, 19]</code>) instantly; <code>.mean()</code> and <code>.var()</code> reproduce our hand-computed 4.0 and 8/3; and <code>np.gradient</code> returns a whole array of slopes that closely tracks \( 2x \), reading about <code>6.0</code> near \( x=3 \). Same answers as the from-scratch version — that's the payoff of understanding the idea first, then letting the library handle the bookkeeping.</p>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
+    <p>Paste these to your Claude Code companion as you study:</p>
+    <ul>
+      <li>"Explain the dot product to me with a different everyday analogy, then quiz me with 3 quick dot products and check my answers."</li>
+      <li>"Show me, by drawing the grid with matplotlib, how the matrix <code>[[2,0],[1,3]]</code> transforms several vectors. Run it and describe what you see."</li>
+      <li>"Run the numerical-derivative code, then change <code>h</code> to 1e-7 and to 1.0 and explain why the estimate gets better, then worse."</li>
+      <li>"Generate 5 mean-and-variance practice problems with tiny number lists, let me answer, then mark them and show the worked steps for any I miss."</li>
+    </ul>
+  </div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+    <ul>
+      <li><strong>"A dot product gives a vector."</strong> It gives a single number (a scalar). It's a <em>matrix</em>-vector product that returns a vector.</li>
+      <li><strong>Mixing up dimensions.</strong> A dot product needs both vectors to have the <em>same</em> length; \( M\mathbf{v} \) needs the matrix's number of columns to equal the vector's length. Mismatched sizes are the #1 cause of errors later.</li>
+      <li><strong>"Bigger \( h \) makes the numerical derivative more accurate."</strong> It's the opposite — smaller \( h \) is more accurate (until \( h \) gets so tiny that computer rounding error creeps in around \( 10^{-8} \)).</li>
+      <li><strong>Forgetting to square in variance.</strong> If you just average the raw distances from the mean, they cancel to zero. Squaring is what makes spread show up.</li>
+      <li><strong>Thinking the chain rule adds slopes.</strong> Local slopes <em>multiply</em> along the chain (gears, not addition).</li>
+      <li><strong>"I must master all this calculus before continuing."</strong> No. Intuition plus numerical tools carry you a long way; revisit the formal rules only when a module asks for them.</li>
+    </ul>
+  </div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>Compute the dot product of \( [2, -1, 3] \) and \( [4, 0, 2] \) by hand.
+      <details class="solution"><summary>Show solution</summary>\( (2)(4) + (-1)(0) + (3)(2) = 8 + 0 + 6 = 14 \). The answer is the scalar <strong>14</strong>.</details>
+    </li>
+    <li>Apply the matrix \( \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix} \) to the vector \( [3, 4] \). What do you get, and (bonus) describe in words what this matrix did to the arrow.
+      <details class="solution"><summary>Show solution</summary>Row 1: \( (1)(3) + (2)(4) = 3 + 8 = 11 \). Row 2: \( (0)(3) + (1)(4) = 0 + 4 = 4 \). Result: \( [11, 4] \). The bottom-up height (4) stayed the same while the horizontal position grew — this matrix is a <em>shear</em>, sliding points sideways in proportion to their height.</details>
+    </li>
+    <li>Estimate the slope of \( f(x) = x^2 \) at \( x = 5 \) using the numerical formula with \( h = 0.01 \). Then check against the analytic answer \( 2x \).
+      <details class="solution"><summary>Show solution</summary>\( f(5.01) = 5.01^2 = 25.1001 \) and \( f(5) = 25 \). Slope \( \approx \dfrac{25.1001 - 25}{0.01} = \dfrac{0.1001}{0.01} = 10.01 \). Analytic: \( 2 \times 5 = 10 \). The estimate 10.01 is just above 10, as expected.</details>
+    </li>
+    <li>Find the mean and variance of \( [10, 12, 14, 16] \) by hand.
+      <details class="solution"><summary>Show solution</summary>Mean: \( \dfrac{10+12+14+16}{4} = \dfrac{52}{4} = 13 \). Distances: \( -3, -1, 1, 3 \). Squares: \( 9, 1, 1, 9 \). Variance: \( \dfrac{9+1+1+9}{4} = \dfrac{20}{4} = 5 \). (Standard deviation \( = \sqrt{5} \approx 2.24 \).)</details>
+    </li>
+    <li>Chain rule: nudging \( x \) by a tiny amount changes \( u \) at a rate of 3 (so \( \frac{du}{dx} = 3 \)), and changing \( u \) changes \( y \) at a rate of 4 (so \( \frac{dy}{du} = 4 \)). What is \( \frac{dy}{dx} \)? If you instead had a chain of three steps with rates 2, 5, and 0.5, what's the overall rate?
+      <details class="solution"><summary>Show solution</summary>For two steps, multiply the local rates: \( \frac{dy}{dx} = 4 \times 3 = 12 \). For three steps, multiply all three: \( 2 \times 5 \times 0.5 = 5 \). The chain rule is just multiplying the amplification factors along the chain — exactly what backprop does in reverse in Module 10.</details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+    <ul>
+      <li>Explain, to a friend with no math background, what a vector and a matrix are using the arrow/rubber-sheet pictures.</li>
+      <li>Compute a dot product and a 2&times;2 matrix-vector product by hand without looking anything up.</li>
+      <li>Estimate a slope numerically and say why smaller \( h \) is better (up to a point).</li>
+      <li>State the chain rule in one sentence ("local slopes multiply along the chain") and apply it to numbers.</li>
+      <li>Compute mean and variance of a short list and sketch roughly what a bell curve with a given \( \mu \) and \( \sigma \) looks like.</li>
+    </ul>
+  </div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+    <ul>
+      <li><a href="https://www.3blue1brown.com/topics/linear-algebra">3Blue1Brown — Essence of Linear Algebra</a> — the gold-standard visual intuition for vectors and "matrices as transformations."</li>
+      <li><a href="https://www.youtube.com/@statquest">StatQuest (Josh Starmer)</a> — gentle, friendly explainers for mean, variance, and the normal distribution.</li>
+      <li><a href="https://seeing-theory.brown.edu/">Seeing Theory</a> — interactive, visual probability and statistics you can play with in the browser.</li>
+      <li><a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy: Absolute Beginners</a> — the practical companion for every vector and matrix operation in this course.</li>
+    </ul>
+  </div>
+</section>

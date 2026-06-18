@@ -1,0 +1,265 @@
+  </main>
+
+  <footer class="site-foot">
+    <p>Machine Learning from Zero · a self-contained, beginner-first curriculum.<br>
+    Math by KaTeX · code highlighting by highlight.js · your progress lives in this browser.</p>
+  </footer>
+</div><!-- /main-wrap -->
+
+<button id="totop" aria-label="Back to top" title="Back to top">↑</button>
+
+<!-- Libraries (need internet) -->
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<script>
+(function(){
+  "use strict";
+  var root = document.documentElement;
+  var content = document.getElementById('content');
+
+  /* ---------- THEME ---------- */
+  var themeBtn = document.getElementById('theme-btn');
+  function setTheme(t){
+    root.setAttribute('data-theme', t);
+    try{ localStorage.setItem('mlc-theme', t); }catch(e){}
+    var dark = (t === 'dark');
+    var l = document.getElementById('hljs-light'), d = document.getElementById('hljs-dark');
+    if(l) l.disabled = dark;
+    if(d) d.disabled = !dark;
+    if(themeBtn) themeBtn.textContent = dark ? '☀️' : '🌙';
+  }
+  var savedTheme;
+  try{ savedTheme = localStorage.getItem('mlc-theme'); }catch(e){}
+  if(!savedTheme){
+    savedTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  setTheme(savedTheme);
+  if(themeBtn) themeBtn.addEventListener('click', function(){
+    setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  /* ---------- HELPERS ---------- */
+  function sectionLabel(sec){
+    var id = sec.id;
+    if(id === 'welcome') return '•';
+    if(id === 'projects') return '★';
+    var m = id.match(/(\d+)/);
+    return m ? m[1] : '•';
+  }
+  function sectionTitle(sec){
+    if(sec.dataset.title) return sec.dataset.title;
+    var h = sec.querySelector('h1, h2');
+    return h ? h.textContent.trim() : sec.id;
+  }
+
+  /* ---------- BUILD SIDEBAR ---------- */
+  var sections = Array.prototype.slice.call(content.querySelectorAll('section.module'));
+  var nav = document.getElementById('sb-nav');
+  var linkById = {};
+  sections.forEach(function(sec, i){
+    var li = document.createElement('li');
+    li.className = 'sb-item';
+    li.dataset.for = sec.id;
+
+    var subheads = Array.prototype.slice.call(sec.querySelectorAll(':scope > h3'));
+    var hasSubs = subheads.length > 0;
+
+    var a = document.createElement('a');
+    a.className = 'sb-link';
+    a.href = '#' + sec.id;
+    a.innerHTML =
+      '<span class="sb-num"><span>' + sectionLabel(sec) + '</span></span>' +
+      '<span class="sb-text">' + sectionTitle(sec) + '</span>' +
+      (hasSubs ? '<span class="sb-caret">▸</span>' : '');
+    li.appendChild(a);
+    linkById[sec.id] = { li: li, a: a, subs: {} };
+
+    if(hasSubs){
+      var ul = document.createElement('ul');
+      ul.className = 'sb-sublist';
+      subheads.forEach(function(h, j){
+        if(!h.id) h.id = sec.id + '-s' + j;
+        var sli = document.createElement('li');
+        var sa = document.createElement('a');
+        sa.className = 'sb-sublink';
+        sa.href = '#' + h.id;
+        sa.textContent = h.textContent.trim();
+        sli.appendChild(sa);
+        ul.appendChild(sli);
+        linkById[sec.id].subs[h.id] = sa;
+      });
+      li.appendChild(ul);
+      // caret toggles manually without navigating
+      a.querySelector('.sb-caret').addEventListener('click', function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        li.classList.toggle('open');
+      });
+    }
+    nav.appendChild(li);
+  });
+
+  /* ---------- PROGRESS ---------- */
+  var PKEY = 'mlc-progress-v1';
+  function loadProg(){ try{ return JSON.parse(localStorage.getItem(PKEY)) || {}; }catch(e){ return {}; } }
+  function saveProg(p){ try{ localStorage.setItem(PKEY, JSON.stringify(p)); }catch(e){} }
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.done-box'));
+  var total = boxes.length;
+  document.getElementById('sb-total').textContent = total;
+
+  function refreshProgress(){
+    var prog = loadProg();
+    var done = 0;
+    boxes.forEach(function(b){
+      var on = !!prog[b.dataset.id];
+      b.checked = on;
+      var toggle = b.closest('.done-toggle');
+      if(toggle) toggle.classList.toggle('is-done', on);
+      var item = linkById[b.dataset.id];
+      if(item) item.li.classList.toggle('done', on);
+      if(on) done++;
+    });
+    var pct = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('sb-count').textContent = done;
+    document.getElementById('sb-pct').textContent = pct + '%';
+    document.getElementById('sb-bar-fill').style.width = pct + '%';
+    document.getElementById('top-progress-fill').style.width = pct + '%';
+    document.getElementById('pct-label').textContent = pct + '% complete';
+  }
+  boxes.forEach(function(b){
+    b.addEventListener('change', function(){
+      var prog = loadProg();
+      if(b.checked) prog[b.dataset.id] = true; else delete prog[b.dataset.id];
+      saveProg(prog);
+      refreshProgress();
+    });
+  });
+  refreshProgress();
+
+  var resetBtn = document.getElementById('reset-btn');
+  if(resetBtn) resetBtn.addEventListener('click', function(){
+    if(confirm('Reset all your course progress? This cannot be undone.')){
+      try{ localStorage.removeItem(PKEY); }catch(e){}
+      refreshProgress();
+    }
+  });
+
+  /* ---------- ACTIVE SECTION TRACKING ---------- */
+  var crumb = document.getElementById('crumb');
+  var activeId = null;
+  function setActive(sec){
+    if(!sec) return;
+    if(sec.id !== activeId){
+      activeId = sec.id;
+      Object.keys(linkById).forEach(function(id){
+        var it = linkById[id];
+        var on = (id === sec.id);
+        it.a.classList.toggle('active', on);
+        it.li.classList.toggle('open', on);
+      });
+      var lbl = sectionLabel(sec);
+      crumb.innerHTML = '<span class="crumb-kicker">' +
+        (sec.id === 'welcome' ? 'Welcome' : sec.id === 'projects' ? 'Projects' : 'Module ' + lbl) +
+        '</span> · ' + sectionTitle(sec);
+      // ensure active sidebar link is visible
+      var rect = linkById[sec.id].a.getBoundingClientRect();
+      if(rect.top < 90 || rect.bottom > window.innerHeight){
+        linkById[sec.id].a.scrollIntoView({block:'center'});
+      }
+    }
+    // active subhead
+    var item = linkById[sec.id];
+    if(item && Object.keys(item.subs).length){
+      var subs = Array.prototype.slice.call(sec.querySelectorAll(':scope > h3'));
+      var curSub = null;
+      subs.forEach(function(h){ if(h.getBoundingClientRect().top <= 140) curSub = h; });
+      Object.keys(item.subs).forEach(function(hid){
+        item.subs[hid].classList.toggle('active', curSub && hid === curSub.id);
+      });
+    }
+  }
+  var totop = document.getElementById('totop');
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      var cur = sections[0];
+      for(var i=0;i<sections.length;i++){
+        if(sections[i].getBoundingClientRect().top <= 130) cur = sections[i];
+      }
+      setActive(cur);
+      totop.classList.toggle('show', window.scrollY > 600);
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+
+  /* ---------- MOBILE NAV ---------- */
+  var menuBtn = document.getElementById('menu-btn');
+  var overlay = document.getElementById('overlay');
+  function closeNav(){ document.body.classList.remove('nav-open'); }
+  if(menuBtn) menuBtn.addEventListener('click', function(){ document.body.classList.toggle('nav-open'); });
+  if(overlay) overlay.addEventListener('click', closeNav);
+  nav.addEventListener('click', function(e){
+    var a = e.target.closest('a.sb-link, a.sb-sublink');
+    if(a && window.innerWidth <= 980) closeNav();
+  });
+
+  totop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+
+  /* ---------- CODE: copy buttons ---------- */
+  Array.prototype.slice.call(content.querySelectorAll('pre')).forEach(function(pre){
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function(){
+      var code = pre.innerText;
+      function ok(){ btn.textContent='Copied!'; btn.classList.add('copied'); setTimeout(function(){ btn.textContent='Copy'; btn.classList.remove('copied'); },1600); }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(code).then(ok, function(){ fallback(code); ok(); });
+      } else { fallback(code); ok(); }
+    });
+    wrap.appendChild(btn);
+  });
+  function fallback(text){
+    var ta = document.createElement('textarea'); ta.value = text;
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(ta);
+  }
+
+  /* ---------- SYNTAX HIGHLIGHTING ---------- */
+  if(window.hljs){
+    document.querySelectorAll('pre code').forEach(function(el){ try{ window.hljs.highlightElement(el); }catch(e){} });
+  }
+
+  /* ---------- MATH (after KaTeX loads) ---------- */
+  function renderMath(){
+    if(window.renderMathInElement){
+      window.renderMathInElement(document.body, {
+        delimiters: [
+          {left:'$$', right:'$$', display:true},
+          {left:'\\[', right:'\\]', display:true},
+          {left:'\\(', right:'\\)', display:false}
+        ],
+        throwOnError:false,
+        ignoredTags:['script','noscript','style','textarea','pre','code','option']
+      });
+    } else {
+      setTimeout(renderMath, 120);
+    }
+  }
+  renderMath();
+
+  // initial active state
+  onScroll();
+})();
+</script>
+</body>
+</html>

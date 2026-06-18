@@ -1,0 +1,288 @@
+<section class="module" id="m11" data-title="Training Deep Networks">
+  <div class="module-head">
+    <span class="module-kicker">Module 11</span>
+    <h2>Training Deep Networks That Actually Work</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m11"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+    <ul>
+      <li>Use the core PyTorch pieces — <em>tensors</em>, <em>autograd</em>, and <code>nn.Module</code> — and explain what each one buys you over plain NumPy.</li>
+      <li>Write the <strong>canonical training loop</strong> from memory (forward → loss → backward → step → zero-grad) and say exactly what each line does.</li>
+      <li>Choose between optimizers (plain SGD, SGD with <em>momentum</em>, and <em>Adam</em>) and explain in words how each one decides its next step.</li>
+      <li>Apply the three pillars of "training that actually works" — <em>regularization</em> (dropout, weight decay), <em>normalization</em> (batch/layer norm), and good <em>initialization</em> — and say what problem each one solves.</li>
+      <li>Diagnose vanishing/exploding gradients, learning-rate trouble, and the train-vs-eval-mode bug, and use learning-rate schedules to train faster and better.</li>
+      <li>Handle the practical engineering: move a model and its data to the same device (CPU/GPU), save and load weights, and debug dimension-mismatch errors calmly.</li>
+    </ul>
+  </div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+    <p>In <strong>Module 10 — Neural Network Fundamentals</strong> you built a network by hand and hand-derived backpropagation to see that there's no magic inside. That was the right way to learn the idea — and it is also nobody's idea of a good time when the network has a million parameters. Real practitioners do not hand-derive gradients. They describe the network, hand it some data, and a framework computes every gradient automatically and updates every weight. That framework, for most of the field, is <strong>PyTorch</strong>. Here's the part that surprises beginners: getting a network to <em>learn at all</em> is usually not about a clever architecture. It's about a dozen unglamorous details — the right optimizer, a sane learning rate, normalization so the signal doesn't fade, dropout so you don't memorize the training set, remembering to call <code>optimizer.zero_grad()</code>, and not accidentally leaving your model in training mode during evaluation. A team can have a brilliant model design that produces garbage purely because one of these knobs is wrong. This module is the field manual for those knobs. Master it and "my loss is <code>nan</code> and I don't know why" turns from a mystery into a five-minute fix.</p>
+  </div>
+
+  <h3>Intuition first</h3>
+  <p>Think back to <strong>Module 4 — Gradient Descent</strong>. To take one step downhill you need two things: the <em>slope</em> of the cost with respect to every parameter (the gradient), and a rule for turning that slope into a step. For a line with two knobs you wrote the gradient formula by hand. For a deep network with millions of knobs, writing those formulas by hand is hopeless. The single biggest thing PyTorch gives you is a robot that computes the entire gradient for you, exactly, no matter how complicated the network — a feature called <strong>autograd</strong> (short for "automatic differentiation").</p>
+
+  <div class="callout analogy">
+    <p><strong>The receipt that remembers itself.</strong> Imagine every arithmetic operation you do is written on a long receipt, in order: "multiplied <em>a</em> by <em>b</em>, then added <em>c</em>, then squared the result." When you finally ask "how does the last number depend on the very first input?", you don't re-derive anything — you just read the receipt <em>backwards</em>, applying the chain rule one line at a time, and the gradient falls out. PyTorch keeps exactly this receipt automatically as your code runs (it calls it the <em>computation graph</em>), and <code>.backward()</code> is the act of reading it backwards. You write the forward calculation once, in ordinary-looking Python, and you get the gradient for free. That is the whole trick that makes deep learning practical.</p>
+  </div>
+
+  <p>The second big idea is organization. A real network is a stack of layers, each with its own weights. PyTorch gives you <code>nn.Module</code>, a container that holds layers, knows about all their parameters, and runs them in order when you call it. You describe <em>what</em> the network computes in a <code>forward</code> method; PyTorch handles the bookkeeping of <em>which</em> numbers are learnable and how to update them.</p>
+
+  <p>With those two pieces, training collapses into a short, fixed ritual you will repeat for the rest of your ML life. Five steps, always in this order:</p>
+
+  <svg class="diagram" viewBox="0 0 460 130" role="img" aria-label="The five-step training loop as a cycle">
+    <defs><marker id="m11ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6366f1"/></marker></defs>
+    <rect x="8"   y="48" width="78" height="34" rx="6" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <rect x="104" y="48" width="78" height="34" rx="6" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <rect x="200" y="48" width="78" height="34" rx="6" fill="none" stroke="#10b981" stroke-width="2"/>
+    <rect x="296" y="48" width="78" height="34" rx="6" fill="none" stroke="#10b981" stroke-width="2"/>
+    <rect x="392" y="48" width="62" height="34" rx="6" fill="none" stroke="#ef4444" stroke-width="2"/>
+    <text x="47"  y="69" text-anchor="middle" font-size="11" fill="currentColor">forward</text>
+    <text x="143" y="69" text-anchor="middle" font-size="11" fill="currentColor">loss</text>
+    <text x="239" y="69" text-anchor="middle" font-size="11" fill="currentColor">backward</text>
+    <text x="335" y="65" text-anchor="middle" font-size="11" fill="currentColor">optimizer</text>
+    <text x="335" y="77" text-anchor="middle" font-size="11" fill="currentColor">.step()</text>
+    <text x="423" y="65" text-anchor="middle" font-size="11" fill="currentColor">zero</text>
+    <text x="423" y="77" text-anchor="middle" font-size="11" fill="currentColor">grad</text>
+    <line x1="86"  y1="65" x2="102" y2="65" stroke="#6366f1" stroke-width="1.5" marker-end="url(#m11ar)"/>
+    <line x1="182" y1="65" x2="198" y2="65" stroke="#6366f1" stroke-width="1.5" marker-end="url(#m11ar)"/>
+    <line x1="278" y1="65" x2="294" y2="65" stroke="#6366f1" stroke-width="1.5" marker-end="url(#m11ar)"/>
+    <line x1="374" y1="65" x2="390" y2="65" stroke="#6366f1" stroke-width="1.5" marker-end="url(#m11ar)"/>
+    <path d="M 423 48 C 423 18, 47 18, 47 46" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#m11ar)"/>
+    <text x="235" y="14" text-anchor="middle" font-size="10" fill="currentColor">repeat for every mini-batch</text>
+  </svg>
+  <p class="caption">The fixed ritual: predict, score the prediction, read the receipt backwards to get gradients, take a downhill step, then wipe the gradients clean before the next batch. Skip the last box and your gradients pile up — the single most common beginner bug.</p>
+
+  <h3>PyTorch essentials</h3>
+  <p>A <strong>tensor</strong> is PyTorch's version of a NumPy array: a grid of numbers (a scalar, vector, matrix, or higher). It behaves almost exactly like a NumPy array — same indexing, same broadcasting, similar functions (<code>torch.zeros</code>, <code>x.mean()</code>) — with two superpowers added. First, a tensor can live on a <strong>GPU</strong>, where thousands of multiplications happen in parallel. Second, a tensor can <strong>track its own gradient</strong>: set <code>requires_grad=True</code> and PyTorch starts writing the receipt for every operation it takes part in.</p>
+
+  <p>A <strong>module</strong> (<code>nn.Module</code>) is a reusable bundle of computation plus its learnable parameters. <code>nn.Linear(3, 1)</code> is a module that holds a \(3\)-input, \(1\)-output linear layer — internally a weight matrix and a bias, both already marked <code>requires_grad=True</code> for you. You stack modules to build a network, and the parent module automatically discovers all the child parameters (so you never hand-collect them).</p>
+
+  <p>An <strong>optimizer</strong> is the object that owns the update rule. You hand it the list of parameters once (<code>model.parameters()</code>); thereafter <code>optimizer.step()</code> applies one update to every parameter using the gradients autograd just computed, and <code>optimizer.zero_grad()</code> resets those gradients to zero for the next round.</p>
+
+  <h3>Making it precise</h3>
+  <p>Autograd is just the chain rule from <strong>Module 1 — Just-Enough Math Intuition</strong>, applied mechanically. Suppose your network computes a loss \( L \) as a chain of operations from a parameter \( w \). The chain rule says: to get \( \frac{\partial L}{\partial w} \) (read "the partial derivative of the loss with respect to \( w \)" — how much the loss changes when you nudge \( w \)), you multiply together the local derivative at each step of the chain. If \( L \) depends on an intermediate value \( u \), which depends on \( w \), then</p>
+  \[ \frac{\partial L}{\partial w} = \frac{\partial L}{\partial u} \cdot \frac{\partial u}{\partial w} \]
+  <p>where each factor is a "local" derivative that's easy to compute on its own. For a deep chain you just keep multiplying local derivatives, one per operation, from the loss back to the parameter. That is <em>exactly</em> what <code>.backward()</code> does: it starts at the loss with a seed of \( 1 \), walks the receipt backwards, multiplies the local derivative at each node, and deposits the accumulated product into each tensor's <code>.grad</code> attribute. You never write the chain by hand; you just call one method.</p>
+
+  <p>Once gradients are in <code>.grad</code>, the optimizer applies an update. Plain stochastic gradient descent uses the same rule you learned in Module 4, written per-parameter \( \theta \) (theta, a stand-in for any weight or bias):</p>
+  \[ \theta := \theta - \alpha \, \frac{\partial L}{\partial \theta} \]
+  <p>where \( \alpha \) (alpha) is the <em>learning rate</em>, a small positive number you choose, and \( := \) means "becomes." That is all <code>optimizer.step()</code> does for plain SGD. The fancier optimizers below change only the right-hand side — how the raw gradient gets turned into a step.</p>
+
+  <h4>Optimizers: SGD, momentum, and Adam</h4>
+  <p><strong>Plain SGD</strong> steps directly along the current gradient. The trouble: if the loss surface is a long narrow valley (steep across, gently sloped along), the raw gradient mostly points across the valley, so SGD zig-zags off the walls and crawls along the floor.</p>
+  <p><strong>SGD with momentum</strong> fixes this by keeping a running average of recent gradients — a <em>velocity</em> — and stepping with that instead. Let \( v \) be the velocity and \( \beta \) (beta, typically \( 0.9 \)) the fraction of the old velocity we keep:</p>
+  \[ v := \beta\, v + \frac{\partial L}{\partial \theta}, \qquad \theta := \theta - \alpha\, v \]
+  <p>In words: each step is mostly "keep going the way I was going," nudged by the new gradient. The across-valley wobbles cancel out (they flip sign every step) while the along-valley push accumulates — like a heavy ball that ignores small bumps and builds speed downhill.</p>
+  <p><strong>Adam</strong> ("adaptive moment estimation") goes one step further: it gives <em>each parameter its own learning rate</em>, automatically scaled by how big that parameter's gradients have recently been. A parameter with consistently tiny gradients gets a relatively larger step; one with huge swings gets a smaller, steadier step. The practical upshot for you: <strong>Adam usually just works with a default learning rate of \( 0.001 \)</strong>, which is why it's the default choice for almost everything. The trade-off is that plain SGD with momentum, carefully tuned, sometimes generalizes a touch better — but as a beginner, reach for Adam first.</p>
+
+  <h4>Regularization for deep nets: dropout and weight decay</h4>
+  <p>Deep networks have so many parameters they can <em>memorize</em> the training set — fitting the noise, not the pattern — which is the overfitting you met in <strong>Module 6 — Model Evaluation</strong>. Two cheap, standard cures:</p>
+  <p><strong>Dropout</strong>: during training, randomly "switch off" a fraction \( p \) of neurons (set their outputs to zero) on every forward pass. The network can't lean on any single neuron because it might vanish next batch, so it's forced to spread the work around and learn redundant, robust features. Crucially, dropout is <em>only</em> active during training; at evaluation time every neuron is used. This is exactly why train mode and eval mode differ — more on that in the pitfalls.</p>
+  <p><strong>Weight decay</strong>: gently shrink every weight toward zero on each step by adding a penalty proportional to the size of the weights. This is the deep-learning name for the L2 regularization from Module 6: it discourages any one weight from growing huge, which keeps the function smooth. In PyTorch you turn it on with one argument: <code>weight_decay=1e-4</code> in the optimizer.</p>
+
+  <h4>Normalization: keeping the signal alive</h4>
+  <p>As data flows through many layers, the scale of the numbers can drift — growing huge or shrinking to nothing — which makes training slow and brittle. <strong>Normalization layers</strong> re-center and re-scale the activations partway through the network so each layer receives inputs in a sane, predictable range (roughly mean \( 0 \), spread \( 1 \)), then let the network rescale them back if it wants via two learnable knobs. <strong>Batch normalization</strong> computes those statistics across the examples in the current mini-batch (great for vision, Module 12). <strong>Layer normalization</strong> computes them across the features of each single example (the standard in Transformers, Module 14, because it doesn't depend on batch size). You don't need the formulas to use them — just know that dropping a normalization layer between linear layers usually makes a deep net train faster and tolerate a higher learning rate.</p>
+
+  <h4>Initialization and vanishing/exploding gradients</h4>
+  <p>Before training starts, every weight needs a value. Set them all to zero and every neuron in a layer computes the same thing and receives the same gradient forever — they never differentiate (the "symmetry" problem). So we start with small <em>random</em> weights. But the <em>scale</em> of that randomness matters enormously. If weights are a bit too large, the signal (and its gradient) multiplies up layer after layer until it explodes to <code>nan</code>; a bit too small and it shrinks toward zero until the early layers get essentially no gradient and stop learning. These are the famous <strong>exploding</strong> and <strong>vanishing gradient</strong> problems. The fix is principled initialization (e.g. <em>Kaiming</em>/<em>He</em> init for ReLU networks, <em>Xavier</em>/<em>Glorot</em> for tanh), which sizes the random weights so the signal's spread stays roughly constant across layers. PyTorch's built-in layers already use sensible defaults, so this mostly matters when you build custom layers — but knowing the failure mode lets you recognize it instantly.</p>
+
+  <h4>Learning-rate schedules</h4>
+  <p>A single fixed learning rate is a compromise: large enough to make fast progress early, but then too large to settle gently into the minimum. A <strong>schedule</strong> lets the rate <em>change over time</em> — typically starting moderate and decaying toward zero. Common choices: <em>step decay</em> (multiply by \( 0.1 \) every few epochs), <em>cosine annealing</em> (smoothly ease the rate down following a cosine curve), and a brief <em>warmup</em> (start tiny and ramp up over the first few hundred steps, which stabilizes the volatile early phase — standard for Transformers). The intuition: take bold strides while you're far from the valley floor, then tiptoe as you arrive.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p>Let's prove to ourselves that autograd computes a real, correct gradient by checking it against calculus we can do on paper. Take the simplest possible function with one input:</p>
+    \[ y = (x - 2)^2 \]
+    <p>We want the slope \( \frac{dy}{dx} \) at the point \( x = 5 \). By the chain rule (bring the power down, then multiply by the derivative of the inside, which is \( 1 \)):</p>
+    \[ \frac{dy}{dx} = 2\,(x - 2) \cdot 1 = 2(x - 2) \]
+    <p>Plug in \( x = 5 \):</p>
+    \[ \left.\frac{dy}{dx}\right|_{x=5} = 2\,(5 - 2) = 2 \times 3 = 6 \]
+    <p>So the by-hand answer is exactly \( 6 \). Let's read what this number <em>means</em>: at \( x = 5 \), nudging \( x \) up by a tiny amount makes \( y \) rise about \( 6 \) times as fast — the function is climbing steeply there (which makes sense, since the bottom of this parabola is at \( x = 2 \) and we're well to the right of it). Now we ask PyTorch the same question. We create \( x = 5 \) as a tensor that tracks gradients, compute \( y \), call <code>y.backward()</code>, and read <code>x.grad</code>:</p>
+    <codeblock>import torch
+
+x = torch.tensor(5.0, requires_grad=True)   # x = 5, and "watch its gradient"
+y = (x - 2) ** 2                            # build the receipt: subtract 2, then square
+y.backward()                                # read the receipt backwards (chain rule)
+print(x.grad)                               # the slope dy/dx at x = 5</codeblock>
+    <p>This prints <code>tensor(6.)</code> — identical to our hand calculation. Behind the scenes PyTorch recorded two operations (a subtraction and a squaring), and <code>backward()</code> multiplied their local derivatives: the squaring contributes \( 2(x-2) = 6 \) and the subtraction contributes \( 1 \), giving \( 6 \times 1 = 6 \). One tensor, one method call, and the chain rule you'd grind through by hand for a deep network is done for you. That equivalence — autograd <em>is</em> the chain rule, just automated — is the entire foundation of everything below.</p>
+  </div>
+
+  <h3>In code: from scratch</h3>
+  <p>Before we lean on the framework, let's <em>see</em> autograd doing the chain rule on a slightly longer computation, and confirm by hand. We'll compute \( z = (3w + 1)^2 \) at \( w = 2 \). By hand: \( \frac{dz}{dw} = 2(3w+1)\cdot 3 = 6(3w+1) \); at \( w = 2 \) that's \( 6 \times 7 = 42 \).</p>
+  <codeblock>import torch
+
+w = torch.tensor(2.0, requires_grad=True)
+u = 3 * w + 1          # intermediate value u = 7
+z = u ** 2             # z = 49
+z.backward()
+print("z =", z.item())      # 49.0
+print("dz/dw =", w.grad.item())   # 42.0  -> matches 6*(3*2+1) = 42
+
+# A subtle, important point: gradients ACCUMULATE.
+# If we backprop again WITHOUT zeroing, grads add up.
+w2 = torch.tensor(2.0, requires_grad=True)
+for step in range(3):
+    out = (3 * w2 + 1) ** 2
+    out.backward()
+    print(f"after backward #{step+1}, w2.grad = {w2.grad.item()}")
+# prints 42, then 84, then 126 -- each call ADDS 42, it does not replace.</codeblock>
+  <p>The first block prints <code>z = 49.0</code> and <code>dz/dw = 42.0</code>, matching the hand calculation exactly. The second block reveals the reason the training loop must call <code>zero_grad()</code>: each <code>backward()</code> <em>adds</em> to <code>.grad</code> rather than overwriting it, so the printed gradients are \( 42, 84, 126 \). PyTorch accumulates on purpose (it's occasionally useful), but it means that in a normal loop you must wipe the gradients each iteration — otherwise step two uses the sum of step one's and step two's gradients, and your training quietly corrupts itself.</p>
+
+  <p>Now let's build a complete <em>from-scratch</em> training loop that uses autograd for the gradients but does the optimizer step by hand, so nothing is hidden. We'll fit \( y \approx 2x + 1 \), updating the weight and bias manually inside a <code>torch.no_grad()</code> block (which tells PyTorch "don't track these update operations — they're not part of the model's computation").</p>
+  <codeblock>import torch
+
+torch.manual_seed(0)
+x = torch.linspace(0, 5, 50).reshape(-1, 1)          # 50 inputs, shape (50, 1)
+y = 2.0 * x + 1.0 + 0.3 * torch.randn(x.shape)       # true line + noise
+
+w = torch.zeros(1, 1, requires_grad=True)            # weight, tracked
+b = torch.zeros(1, requires_grad=True)               # bias, tracked
+lr = 0.05
+
+for epoch in range(1000):
+    yhat = x @ w + b                  # forward: matrix-multiply, shape (50, 1)
+    loss = ((yhat - y) ** 2).mean()   # mean squared error
+    loss.backward()                   # autograd fills w.grad and b.grad
+    with torch.no_grad():             # update WITHOUT recording on the receipt
+        w -= lr * w.grad
+        b -= lr * b.grad
+    w.grad.zero_()                    # wipe gradients for the next epoch
+    b.grad.zero_()
+    if epoch % 200 == 0:
+        print(f"epoch {epoch:4d}  loss {loss.item():.4f}  "
+              f"w {w.item():.3f}  b {b.item():.3f}")
+
+print(f"\nlearned w = {w.item():.3f}, b = {b.item():.3f}  (true 2 and 1)")</codeblock>
+  <p>The loss falls steadily and the parameters climb toward the truth, ending near \( w \approx 2 \), \( b \approx 1 \) (the floor the loss settles at is just the noise we added, which no model can fit). This is the canonical loop in its most transparent form: <strong>forward</strong> (compute predictions and loss), <strong>backward</strong> (autograd computes every gradient), <strong>step</strong> (move each parameter downhill), <strong>zero-grad</strong> (clear for next time). The only thing the library version below changes is that an <code>optimizer</code> object does the step-and-zero for us — the four phases are identical.</p>
+
+  <h3>In code: the library way</h3>
+  <p>Now the real thing: a complete, runnable PyTorch training loop on a small classification dataset, with everything a real project has — a <code>Dataset</code> and <code>DataLoader</code> for mini-batching, an <code>nn.Module</code> model with dropout, the Adam optimizer with weight decay, the canonical loop, train/eval mode switching, device handling, and a saved checkpoint. We use a small synthetic dataset so it runs in seconds anywhere (no download), but the structure is <em>identical</em> to what you'd write for MNIST — swap the dataset and you're training on real images.</p>
+  <codeblock>import torch
+from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
+
+torch.manual_seed(0)
+device = "cuda" if torch.cuda.is_available() else "cpu"   # use GPU if present
+
+# --- 1. Data: two interleaving blobs -> a 2-feature, 2-class problem ---
+n = 1000
+X = torch.randn(n, 2)
+# label 1 if inside a tilted region, else 0  (a nonlinear boundary)
+y = ((X[:, 0] * 1.5 - X[:, 1] + 0.4 * X[:, 0] ** 2) > 0).long()
+
+split = 800
+train_ds = TensorDataset(X[:split], y[:split])
+test_ds  = TensorDataset(X[split:], y[split:])
+train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)   # mini-batches
+test_dl  = DataLoader(test_ds,  batch_size=32)
+
+# --- 2. Model: a small MLP with a hidden layer, ReLU, and dropout ---
+class Net(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(2, 32),     # 2 inputs -> 32 hidden units
+            nn.ReLU(),
+            nn.Dropout(0.2),      # active only in train mode
+            nn.Linear(32, 2),     # 32 -> 2 class scores (logits)
+        )
+    def forward(self, x):
+        return self.net(x)
+
+model = Net().to(device)                       # model on the chosen device
+loss_fn = nn.CrossEntropyLoss()                # correct loss for classification
+optimizer = torch.optim.Adam(model.parameters(),
+                             lr=1e-3, weight_decay=1e-4)   # Adam + weight decay
+
+# --- 3. The canonical training loop ---
+for epoch in range(20):
+    model.train()                              # turn dropout ON
+    for xb, yb in train_dl:
+        xb, yb = xb.to(device), yb.to(device)  # data on the SAME device as model
+        logits = model(xb)                     # forward
+        loss = loss_fn(logits, yb)             # loss
+        loss.backward()                        # backward (autograd)
+        optimizer.step()                       # update every parameter
+        optimizer.zero_grad()                  # wipe grads for next batch
+
+    # --- evaluate each epoch ---
+    model.eval()                               # turn dropout OFF
+    correct = total = 0
+    with torch.no_grad():                      # no receipt -> faster, less memory
+        for xb, yb in test_dl:
+            xb, yb = xb.to(device), yb.to(device)
+            preds = model(xb).argmax(dim=1)    # pick the higher-scoring class
+            correct += (preds == yb).sum().item()
+            total += yb.size(0)
+    if epoch % 5 == 0 or epoch == 19:
+        print(f"epoch {epoch:2d}  test accuracy {correct/total:.3f}")
+
+# --- 4. Save and reload the trained weights ---
+torch.save(model.state_dict(), "net.pt")       # save just the weights (best practice)
+fresh = Net().to(device)
+fresh.load_state_dict(torch.load("net.pt", map_location=device))
+fresh.eval()
+print("reloaded model ready")</codeblock>
+  <p>This trains in a second or two and prints a test accuracy climbing into the low-to-mid \( 0.9 \)s as the network learns the curved boundary. Walk through the four phases inside the loop and you'll see they are <em>exactly</em> the from-scratch loop, just delegated: <code>model(xb)</code> is forward, <code>loss_fn(...)</code> is the loss, <code>loss.backward()</code> is autograd, <code>optimizer.step()</code> is the update, <code>optimizer.zero_grad()</code> is the wipe. Five extra things separate this from a toy: (1) <code>DataLoader</code> serves shuffled mini-batches; (2) <code>model.train()</code>/<code>model.eval()</code> flip dropout on and off; (3) <code>torch.no_grad()</code> during evaluation saves time and memory because we don't need gradients there; (4) every tensor is moved to the same <code>device</code> as the model; (5) <code>state_dict()</code> saves the weights so you can ship the model. That is a production-shaped training loop. You'll reuse this skeleton in <strong>Module 12 — CNNs</strong> and <strong>Module 13 — Sequences and NLP</strong> with only the model and dataset swapped.</p>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
+    <p>Paste these to your Claude Code companion as you study:</p>
+    <ul>
+      <li>"Run my library training loop, then <em>delete</em> the <code>optimizer.zero_grad()</code> line and run it again. Show me both accuracy curves and explain in plain words why removing it wrecks training."</li>
+      <li>"Take my training loop and swap <code>Adam</code> for <code>SGD</code> with and without momentum, keeping everything else fixed. Plot the three loss curves and tell me which converges fastest and why."</li>
+      <li>"Generate a tiny broken PyTorch script with a deliberate dimension mismatch and a device mismatch, then coach me through reading the error messages and fixing each one."</li>
+      <li>"Pair with me to add a <code>nn.BatchNorm1d</code> layer and a cosine learning-rate schedule to my model, then check whether my code is correct and whether it actually helped."</li>
+    </ul>
+  </div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+    <ul>
+      <li><strong>Forgetting <code>optimizer.zero_grad()</code>.</strong> Gradients <em>accumulate</em> in PyTorch, so if you never zero them, each step uses the sum of all previous gradients. Training behaves bizarrely — usually the loss refuses to settle or diverges. The fix is one line per batch; the from-scratch section above shows the accumulation happening (42 → 84 → 126) so you can recognize the symptom.</li>
+      <li><strong>The wrong loss for the task.</strong> Use <code>nn.CrossEntropyLoss</code> for classification and <code>nn.MSELoss</code> for regression — not the other way around. And a sharp edge: <code>nn.CrossEntropyLoss</code> expects raw <em>logits</em> (it applies softmax internally), so do <em>not</em> add a softmax in your model's final layer, and the targets must be integer class indices, not one-hot vectors. Getting this wrong produces a model that trains but learns nothing sensible.</li>
+      <li><strong>Learning rate too high or too low.</strong> Same lesson as <strong>Module 4</strong>, now with deep nets: a loss that jumps to <code>nan</code> means the rate is too high — divide it by 10. A loss that barely moves means it's too low (or you forgot to scale your inputs). Start with Adam at <code>lr=1e-3</code> and adjust from there.</li>
+      <li><strong>Leaving the model in the wrong mode.</strong> <code>model.train()</code> keeps dropout active and batch-norm updating its statistics; <code>model.eval()</code> turns dropout off and freezes those statistics. Evaluating while still in train mode gives noisy, randomly-worse numbers; training while in eval mode disables your regularization. Always set the mode explicitly before each phase — it is the most common "my test accuracy is mysteriously unstable" bug.</li>
+      <li><strong>Model and data on different devices.</strong> If the model is on the GPU (<code>.to("cuda")</code>) but a batch is still on the CPU, PyTorch raises <code>Expected all tensors to be on the same device</code>. Move <em>both</em> the model (once, at creation) and every batch (inside the loop) to the same <code>device</code> variable.</li>
+      <li><strong>Vanishing or exploding gradients in deep nets.</strong> A very deep network whose loss is stuck (gradients near zero, early layers frozen) or blowing up to <code>nan</code> often has an initialization/normalization problem, not a bug in your loop. Reach for normalization layers (batch/layer norm), a sane activation (ReLU rather than sigmoid in hidden layers), and, if needed, gradient clipping (<code>torch.nn.utils.clip_grad_norm_</code>) to cap the step size.</li>
+      <li><strong>Reading a metric off a tensor with its gradient attached.</strong> Use <code>loss.item()</code> (a plain Python number) when logging, and accumulate metrics inside <code>torch.no_grad()</code>. Summing raw loss tensors across a whole epoch keeps the entire computation graph alive and silently exhausts your memory.</li>
+    </ul>
+  </div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>By hand, find \( \frac{dy}{dx} \) for \( y = (2x - 1)^2 \) at \( x = 3 \). Then write the three lines of PyTorch that confirm it, and state what <code>x.grad</code> will print.
+      <details class="solution"><summary>Show solution</summary><p>Chain rule: \( \frac{dy}{dx} = 2(2x-1)\cdot 2 = 4(2x-1) \). At \( x = 3 \): \( 4(2\cdot3 - 1) = 4 \times 5 = 20 \). The code: <code>x = torch.tensor(3.0, requires_grad=True)</code>, then <code>y = (2*x - 1)**2</code>, then <code>y.backward()</code>. After that, <code>x.grad</code> prints <code>tensor(20.)</code>, matching the hand answer.</p></details>
+    </li>
+    <li>Put the five steps of the canonical training loop in the correct order from this scrambled list: <em>optimizer.step(), loss = loss_fn(pred, y), optimizer.zero_grad(), pred = model(x), loss.backward()</em>. Then explain what breaks if <code>zero_grad()</code> is left out.
+      <details class="solution"><summary>Show solution</summary><p>Correct order: (1) <code>pred = model(x)</code> — forward; (2) <code>loss = loss_fn(pred, y)</code> — loss; (3) <code>loss.backward()</code> — compute gradients; (4) <code>optimizer.step()</code> — update parameters; (5) <code>optimizer.zero_grad()</code> — clear gradients. (Placing <code>zero_grad()</code> at the very start of the next iteration is equally valid; the rule is just that it must come between successive <code>backward()</code> calls.) If it's left out, gradients from every batch accumulate, so each step moves by the sum of all gradients seen so far — the effective step size grows without bound and training destabilizes or diverges.</p></details>
+    </li>
+    <li>You're building a 3-class classifier. A friend's model ends with <code>nn.Linear(64, 3)</code> followed by <code>nn.Softmax(dim=1)</code>, and uses <code>nn.CrossEntropyLoss</code>. What's wrong, and how do you fix it?
+      <details class="solution"><summary>Show solution</summary><p><code>nn.CrossEntropyLoss</code> already applies softmax (well, log-softmax) internally and expects raw <em>logits</em>. Adding an explicit <code>nn.Softmax</code> applies softmax twice, squashing the scores into a flat, near-uniform range that gives weak, poorly-scaled gradients — the model trains slowly and badly. Fix: delete the <code>nn.Softmax</code> layer; let the final <code>nn.Linear(64, 3)</code> output raw logits straight into the loss. If you need probabilities at inference time, apply <code>softmax</code> only then, outside the loss.</p></details>
+    </li>
+    <li>A teammate reports: "I get <code>RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu</code>." Their model was created with <code>model = Net().to("cuda")</code>. Diagnose the bug and give the one-line fix inside the loop.
+      <details class="solution"><summary>Show solution</summary><p>The model lives on the GPU but the input batch is still on the CPU, so the first layer's weights (cuda) and the data (cpu) can't be multiplied. The fix is to move each batch to the same device inside the loop, e.g. <code>xb, yb = xb.to(device), yb.to(device)</code> right after you unpack the batch from the <code>DataLoader</code>. Both the model (once, at creation) and every batch (every iteration) must be on the same device.</p></details>
+    </li>
+    <li>You train a deep network and the loss goes <code>0.7 → 0.69 → 0.69 → 0.69 …</code> and never improves, and you confirm the learning rate isn't the issue. List three structural changes you'd try and explain the reasoning behind each.
+      <details class="solution"><summary>Show solution</summary><p>A loss flat from the start often means almost no useful gradient is reaching the early layers — a vanishing-gradient / initialization symptom. Three fixes: (1) <strong>Add normalization</strong> (e.g. <code>nn.BatchNorm1d</code> between linear layers) to keep activations and gradients at a healthy scale across depth. (2) <strong>Use ReLU instead of sigmoid/tanh</strong> in hidden layers — sigmoids saturate (their slope goes to zero for large inputs), choking the gradient; ReLU passes gradient through unattenuated for positive inputs. (3) <strong>Check/fix initialization</strong> — if you wrote custom layers, apply Kaiming (He) init so the signal's spread stays constant across layers rather than vanishing. A fourth option for the opposite failure (loss → <code>nan</code>) is gradient clipping. Each targets the same root cause: keeping a usable gradient flowing from the loss all the way back to the first layer.</p></details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+    <ul>
+      <li>Write the five-line canonical training loop from memory and say what each line does.</li>
+      <li>Explain in one breath what autograd is (the chain rule, automated) and predict <code>x.grad</code> for a simple expression.</li>
+      <li>Say when you'd pick Adam vs SGD-with-momentum, and what dropout and weight decay each protect against.</li>
+      <li>Name the symptom and fix for: a forgotten <code>zero_grad()</code>, a too-high learning rate, an eval/train-mode slip, and a device mismatch.</li>
+      <li>Explain what normalization and good initialization do for the gradient as it flows through a deep network.</li>
+    </ul>
+  </div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+    <ul>
+      <li><a href="https://pytorch.org/tutorials/beginner/basics/intro.html">PyTorch — Learn the Basics</a> — the official guided tour through tensors, datasets, autograd, building models, and the training loop; the canonical first stop.</li>
+      <li><a href="https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html">PyTorch — Deep Learning 60-Minute Blitz</a> — a fast, hands-on run from tensors to training a real classifier; do it once start-to-finish.</li>
+      <li><a href="https://www.3blue1brown.com/topics/neural-networks">3Blue1Brown — Neural Networks (backpropagation chapters)</a> — the clearest visual picture of what <code>.backward()</code> is really computing.</li>
+      <li><a href="https://d2l.ai/">Dive into Deep Learning (d2l.ai)</a> — runnable chapters on optimization, weight decay, dropout, batch norm, and initialization, each with code and math at exactly this level.</li>
+    </ul>
+  </div>
+</section>

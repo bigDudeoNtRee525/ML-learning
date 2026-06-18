@@ -1,0 +1,339 @@
+<section class="module" id="m10" data-title="Neural Network Fundamentals">
+  <div class="module-head">
+    <span class="module-kicker">Module 10</span>
+    <h2>Neural Network Fundamentals</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m10"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3>
+    <p>By the end of this module you'll be able to:</p>
+    <ul>
+      <li>Describe a single <em>neuron</em> as a weighted sum, plus a bias, passed through an activation function — and see that it is just the logistic regression unit from <strong>Module 5</strong> in disguise.</li>
+      <li>Explain why an <em>activation function</em> must be nonlinear, and show by hand that stacking linear layers collapses into one.</li>
+      <li>Run a <em>forward pass</em> (inference) through a small network by hand, computing every intermediate number.</li>
+      <li>Explain <em>backpropagation</em> in plain words as "nudging each weight to reduce error", then (optionally) as the chain rule — and crucially, say why backprop and gradient descent are two different jobs.</li>
+      <li>Implement a complete 2-2-1 network in NumPy that learns XOR from scratch — forward pass, backprop, and a training loop whose loss you watch fall.</li>
+      <li>Build the same network in PyTorch with <code>nn.Linear</code> and an activation, in a handful of lines.</li>
+    </ul>
+  </div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+    <p>Here is a problem that breaks every model you've built so far. Imagine a light switch puzzle with two switches, A and B, and a rule: the light turns on when <em>exactly one</em> switch is up, and stays off when <em>both</em> are up or <em>both</em> are down. This is the <strong>XOR</strong> ("exclusive or") rule. Try to draw a single straight line on a 2-switch grid that puts the two "light on" cases on one side and the two "light off" cases on the other — you can't. No line works. Logistic regression (Module 5) draws exactly one straight boundary, so it is doomed on XOR; it tops out around 50% accuracy, no better than guessing. The fix is to stack simple units into <em>layers</em>, so the network can bend the boundary into whatever shape the data needs. That single idea — compose many tiny, simple pieces into something that can represent almost any pattern — is the entire reason neural networks power image recognition, speech, translation, and the large language models you'll meet in Modules 13 and 14. In this module you'll build the smallest possible network that conquers XOR, by hand and in code, and in doing so you'll hold the whole engine of deep learning in your palm.</p>
+  </div>
+
+  <h3>Intuition first</h3>
+  <p>You already know a neuron. In <strong>Module 5 — Logistic Regression</strong> you computed a score \( z = w_1 x_1 + w_2 x_2 + b \), then squashed it with the sigmoid into a probability. That little machine — multiply each input by a weight, add a bias, squash the result — <em>is</em> a neuron. A neural network is nothing more exotic than many of these neurons wired together, where the outputs of one batch of neurons become the inputs of the next.</p>
+
+  <p>Why would stacking help? Because a single neuron can only carve the input space with one straight cut. But if you have <em>two</em> neurons in a middle ("hidden") layer, each carving its own cut, and then a third neuron that combines their answers, you can build a boundary made of several cuts joined together — a bent, kinked, flexible shape. That is exactly what XOR needs: not one line, but a combination of lines.</p>
+
+  <div class="callout analogy">
+    <p><strong>The committee of advisors.</strong> Picture a CEO who must make a yes/no call but only listens to two advisors. Advisor A is a specialist who fires up whenever "switch A is on and switch B is off"; advisor B fires up whenever "switch B is on and switch A is off". Neither advisor alone solves the puzzle, and the CEO can't solve it by listening to the raw switches. But if the CEO simply says "turn the light on if <em>either</em> advisor is excited", the puzzle is solved. The advisors are the <em>hidden layer</em>: each learns a simple sub-pattern. The CEO is the <em>output neuron</em>: it combines those sub-patterns into the final answer. Depth lets you build complex decisions out of simple ones — and nobody had to hand-design what each advisor specializes in; training discovers it.</p>
+  </div>
+
+  <p>Two layers of small numbers, drawn out, look like this:</p>
+
+  <svg class="diagram" viewBox="0 0 420 240" role="img" aria-label="A 2-2-1 neural network: two inputs, two hidden neurons, one output">
+    <!-- input nodes -->
+    <circle cx="50" cy="80" r="18" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <circle cx="50" cy="160" r="18" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <text x="50" y="84" text-anchor="middle" font-size="12" fill="currentColor">x₁</text>
+    <text x="50" y="164" text-anchor="middle" font-size="12" fill="currentColor">x₂</text>
+    <!-- hidden nodes -->
+    <circle cx="210" cy="70" r="20" fill="none" stroke="#10b981" stroke-width="2"/>
+    <circle cx="210" cy="170" r="20" fill="none" stroke="#10b981" stroke-width="2"/>
+    <text x="210" y="74" text-anchor="middle" font-size="11" fill="currentColor">h₁</text>
+    <text x="210" y="174" text-anchor="middle" font-size="11" fill="currentColor">h₂</text>
+    <!-- output node -->
+    <circle cx="370" cy="120" r="20" fill="none" stroke="#f59e0b" stroke-width="2"/>
+    <text x="370" y="124" text-anchor="middle" font-size="11" fill="currentColor">ŷ</text>
+    <!-- edges input->hidden -->
+    <line x1="68" y1="80" x2="190" y2="70" stroke="currentColor" stroke-width="1"/>
+    <line x1="68" y1="80" x2="190" y2="170" stroke="currentColor" stroke-width="1"/>
+    <line x1="68" y1="160" x2="190" y2="70" stroke="currentColor" stroke-width="1"/>
+    <line x1="68" y1="160" x2="190" y2="170" stroke="currentColor" stroke-width="1"/>
+    <!-- edges hidden->output -->
+    <line x1="230" y1="70" x2="350" y2="120" stroke="currentColor" stroke-width="1"/>
+    <line x1="230" y1="170" x2="350" y2="120" stroke="currentColor" stroke-width="1"/>
+    <!-- layer labels -->
+    <text x="50" y="215" text-anchor="middle" font-size="11" fill="currentColor">input layer</text>
+    <text x="210" y="215" text-anchor="middle" font-size="11" fill="currentColor">hidden layer</text>
+    <text x="370" y="215" text-anchor="middle" font-size="11" fill="currentColor">output layer</text>
+  </svg>
+  <p class="caption">A 2-2-1 network. Every arrow is a weight (a number to learn); each green and orange circle also has a bias and an activation. Information flows left to right — that's the forward pass.</p>
+
+  <p>Read the picture as a flow. The two inputs feed <em>both</em> hidden neurons (every arrow is a separate weight). Each hidden neuron computes its own weighted sum, adds its bias, and squashes the result — producing a single number. Those two hidden numbers then feed the output neuron, which does the same dance one more time to produce the final prediction \( \hat{y} \). "2-2-1" just names the sizes: 2 inputs, 2 hidden neurons, 1 output.</p>
+
+  <h3>Making it precise</h3>
+  <p>Let's name everything carefully, because precise names make the math (and the code) painless. We process one <em>layer</em> at a time.</p>
+
+  <p><strong>A single neuron.</strong> A neuron with inputs \( x_1, x_2, \dots, x_m \) (the numbers feeding it) computes two things. First the <em>pre-activation</em> (the linear score), written \( z \):</p>
+  \[ z = w_1 x_1 + w_2 x_2 + \dots + w_m x_m + b = \Big(\textstyle\sum_{j=1}^{m} w_j x_j\Big) + b \]
+  <p>where each \( w_j \) is the <em>weight</em> on input \( j \) (a number we adjust during training that says how strongly that input matters), and \( b \) is the <em>bias</em> (a number we adjust that shifts the score up or down regardless of the inputs). The symbol \( \sum_{j=1}^{m} \) just means "add up over all \( m \) inputs". Then the neuron applies an <em>activation function</em> \( g \) to get its output, called the <em>activation</em> \( a \):</p>
+  \[ a = g(z) \]
+  <p>The activation \( g \) is a simple fixed function (no learnable parts) whose only job is to bend the straight line into a curve. That bending is the secret ingredient, so let's understand why it matters before we name specific choices.</p>
+
+  <h4>Why the activation must be nonlinear</h4>
+  <p>Suppose you got lazy and used no activation at all (equivalently, the "identity" activation \( g(z) = z \)). Then each layer is purely linear, and here is the catastrophe: <em>a stack of linear layers is just one linear layer in disguise.</em> Concretely, take inputs \( \mathbf{x} \), pass them through a linear hidden layer to get \( \mathbf{h} = \mathbf{x} W_1 + \mathbf{b}_1 \), then a linear output layer \( \hat{y} = \mathbf{h} W_2 + \mathbf{b}_2 \). Substitute the first into the second:</p>
+  \[ \hat{y} = (\mathbf{x} W_1 + \mathbf{b}_1) W_2 + \mathbf{b}_2 = \mathbf{x}\,\underbrace{(W_1 W_2)}_{\text{one weight matrix}} + \underbrace{(\mathbf{b}_1 W_2 + \mathbf{b}_2)}_{\text{one bias}} \]
+  <p>The whole two-layer network reduces algebraically to a single weight matrix \( W_1 W_2 \) and a single bias. No matter how many linear layers you stack, you get something that could be replaced by one linear layer — and one linear layer can only draw a straight boundary, so it can never solve XOR. (We'll verify this with actual numbers in the worked example.) The cure is to insert a nonlinear \( g \) between layers. Once \( g \) bends each layer's output, the layers can no longer be merged, and the network gains the power to represent curved, kinked boundaries.</p>
+
+  <h4>Two activation functions you must know</h4>
+  <p><strong>Sigmoid</strong>, your friend from Module 5:</p>
+  \[ \sigma(z) = \frac{1}{1 + e^{-z}} \]
+  <p>where \( e \approx 2.718 \) is Euler's number. It squashes any score into the range \( (0, 1) \), making it perfect for the final output of a binary classifier (it reads as a probability). Its useful derivative is remarkably tidy: \( \sigma'(z) = \sigma(z)\,(1 - \sigma(z)) \). In words, if you already computed the activation \( a = \sigma(z) \), the slope is just \( a(1-a) \) — no need to touch \( e \) again. We'll lean on that in backprop.</p>
+
+  <p><strong>ReLU</strong> (Rectified Linear Unit), the workhorse of modern deep learning:</p>
+  \[ \text{ReLU}(z) = \max(0, z) \]
+  <p>which reads "output \( z \) if it's positive, otherwise output 0". It is brutally simple, computationally cheap, and — for reasons you'll see in <strong>Module 11 — Training Deep Networks That Actually Work</strong> — it avoids a problem that plagues sigmoid in deep networks: the <em>vanishing gradient</em>. Notice ReLU's slope is just 1 for positive inputs and 0 for negative inputs. Sigmoid, by contrast, has a slope of at most \( 0.25 \) (at \( z = 0 \)) and a slope that shrinks toward 0 at the extremes — so when you multiply many small sigmoid slopes together through many layers, the gradient can vanish to almost nothing. That is a preview; for our shallow 2-2-1 network either activation works fine.</p>
+
+  <svg class="diagram" viewBox="0 0 420 180" role="img" aria-label="Sigmoid curve on the left, ReLU curve on the right">
+    <!-- sigmoid panel -->
+    <text x="105" y="16" text-anchor="middle" font-size="11" fill="currentColor">sigmoid σ(z)</text>
+    <line x1="20" y1="120" x2="190" y2="120" stroke="currentColor" stroke-width="1"/>
+    <line x1="105" y1="30" x2="105" y2="140" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+    <path d="M20,118 C60,116 85,108 105,75 C125,42 150,34 190,33" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+    <text x="20" y="135" font-size="9" fill="currentColor">0→</text>
+    <text x="178" y="30" font-size="9" fill="currentColor">→1</text>
+    <!-- relu panel -->
+    <text x="320" y="16" text-anchor="middle" font-size="11" fill="currentColor">ReLU max(0,z)</text>
+    <line x1="240" y1="120" x2="410" y2="120" stroke="currentColor" stroke-width="1"/>
+    <line x1="325" y1="30" x2="325" y2="140" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
+    <path d="M245,120 L325,120 L405,40" fill="none" stroke="#10b981" stroke-width="2.5"/>
+    <text x="270" y="135" font-size="9" fill="currentColor">flat 0</text>
+    <text x="370" y="60" font-size="9" fill="currentColor">slope 1</text>
+  </svg>
+  <p class="caption">Sigmoid bends gently and saturates at both ends (slopes flatten). ReLU is flat-then-straight: zero for negatives, identity for positives.</p>
+
+  <h4>Layers, in matrix form</h4>
+  <p>Writing out every neuron's sum by hand is tedious, so we bundle a whole layer's weights into a <em>matrix</em> and its biases into a <em>vector</em> (you met these shapes in <strong>Module 1 — Just-Enough Math Intuition</strong>). For a layer that takes a vector of inputs \( \mathbf{x} \) and has its weights in matrix \( W \) and biases in vector \( \mathbf{b} \):</p>
+  \[ \mathbf{z} = \mathbf{x} W + \mathbf{b}, \qquad \mathbf{a} = g(\mathbf{z}) \]
+  <p>Here \( \mathbf{x} W \) is matrix multiplication — it computes every neuron's weighted sum at once — and \( g \) is applied to each entry separately ("element-wise"). For our 2-2-1 network this is exactly two of these steps: input to hidden, then hidden to output. That two-line pattern, repeated, <em>is</em> the forward pass for a network of any depth.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p><strong>Part 1 — one neuron, end to end.</strong> Take a single neuron with two inputs \( \mathbf{x} = [1, 2] \), weights \( \mathbf{w} = [0.5, -1] \), and bias \( b = 1 \). The pre-activation is</p>
+    \[ z = (1)(0.5) + (2)(-1) + 1 = 0.5 - 2 + 1 = -0.5 \]
+    <p>Now squash with the sigmoid, using \( e \approx 2.718 \):</p>
+    \[ a = \sigma(-0.5) = \frac{1}{1 + e^{0.5}} = \frac{1}{1 + 1.6487} = \frac{1}{2.6487} \approx 0.3775 \]
+    <p>So this neuron, on this input, outputs about \( 0.3775 \) — a touch below 0.5, leaning toward "no". That's the entire computation a neuron performs. Every neuron in every network you'll ever build does precisely this.</p>
+
+    <p><strong>Part 2 — a full 2-2-1 forward pass.</strong> Same input \( \mathbf{x} = [1, 2] \). Hidden neuron \( h_1 \) uses the weights and bias from Part 1, so its activation is \( a_{1} \approx 0.3775 \) (we just computed it). Hidden neuron \( h_2 \) uses \( \mathbf{w} = [-0.5, 0.5] \), \( b = 0 \):</p>
+    \[ z_{2} = (1)(-0.5) + (2)(0.5) + 0 = -0.5 + 1 = 0.5, \qquad a_{2} = \sigma(0.5) = \frac{1}{1+e^{-0.5}} \approx 0.6225 \]
+    <p>Now the output neuron takes the two hidden activations \( [a_1, a_2] = [0.3775,\, 0.6225] \) as <em>its</em> inputs, with weights \( \mathbf{w} = [1, -1] \) and bias \( b = 0 \):</p>
+    \[ z_{\text{out}} = (0.3775)(1) + (0.6225)(-1) + 0 = -0.2449, \qquad \hat{y} = \sigma(-0.2449) \approx 0.4391 \]
+    <p>The network's final prediction is about \( 0.4391 \). Trace what happened: the inputs flowed forward, each layer transforming the numbers, until a single probability popped out the right side. No magic — just two rounds of "weighted sum, add bias, squash".</p>
+
+    <p><strong>Part 3 — the linear collapse, with numbers.</strong> To feel why nonlinearity matters, drop the sigmoid (use identity) and pick clean weights. Let the hidden layer be \( W_1 = \begin{bmatrix} 2 &amp; 0 \\ 0 &amp; 3 \end{bmatrix} \), \( \mathbf{b}_1 = [1, -1] \), and the output layer \( W_2 = \begin{bmatrix} 1 \\ 1 \end{bmatrix} \), \( \mathbf{b}_2 = [0.5] \). For input \( \mathbf{x} = [1, 1] \): hidden \( \mathbf{h} = \mathbf{x}W_1 + \mathbf{b}_1 = [1\cdot2 + 1\cdot0,\; 1\cdot0 + 1\cdot3] + [1, -1] = [2, 3] + [1, -1] = [3, 2] \). Output \( \hat{y} = \mathbf{h}W_2 + \mathbf{b}_2 = (3)(1) + (2)(1) + 0.5 = 5.5 \). Now collapse the two layers into one: \( W = W_1 W_2 = \begin{bmatrix} 2 \\ 3 \end{bmatrix} \) and bias \( = \mathbf{b}_1 W_2 + \mathbf{b}_2 = (1)(1) + (-1)(1) + 0.5 = 0.5 \). The single collapsed layer gives \( \hat{y} = (1)(2) + (1)(3) + 0.5 = 5.5 \) — <em>identical</em>. Two linear layers were secretly one all along. Re-insert a nonlinear \( g \) and this collapse becomes impossible, which is the whole reason it's there.</p>
+
+    <p><strong>Part 4 — one backprop nudge, qualitatively.</strong> Back to Part 2, where the network predicted \( \hat{y} \approx 0.4391 \). Suppose the true label was \( y = 1 \) (the light should be on). The error \( (\hat{y} - y) = 0.4391 - 1 = -0.5609 \) is negative, meaning we predicted too low. Backprop asks: "which way should each weight move to raise \( \hat{y} \)?" Hidden neuron \( h_2 \) was active (\( a_2 \approx 0.62 \)) but its output weight is \( -1 \), dragging the prediction down — so backprop will nudge that weight <em>upward</em> (less negative) to stop it pulling \( \hat{y} \) down. Hidden neuron \( h_1 \) has a positive output weight, so backprop will nudge it <em>up</em> too, to push \( \hat{y} \) higher. The exact sizes come from the chain rule below, but the <em>direction</em> is always "move each weight the way that reduces the error, in proportion to how much it contributed." That sentence is backpropagation.</p>
+  </div>
+
+  <h3>Backpropagation as pure intuition (read this first)</h3>
+  <p>Training a network means finding weights that make the prediction match the truth. We do that with gradient descent (Module 4): repeatedly nudge every weight a little bit downhill on the cost. Gradient descent needs to know, for each weight, "if I increase you slightly, does the cost go up or down, and how fast?" — that's the gradient. <strong>Backpropagation is the algorithm that computes that gradient for every weight efficiently.</strong> Nothing more, nothing less.</p>
+
+  <p>Here's the plain-words story. After a forward pass you have a prediction and therefore an error. Backprop hands out "blame" for that error, layer by layer, walking <em>backwards</em> from the output to the input:</p>
+  <ul>
+    <li>Start at the output: how wrong was the final prediction? That's the error at the last neuron.</li>
+    <li>Each weight feeding the output gets blamed in proportion to two things: how big the output's error was, and how strong the signal it sent was. A weight that fed a big input into a big mistake deserves a big nudge.</li>
+    <li>Push the blame one layer back: each hidden neuron is blamed for the share of the output's error that flowed through <em>its</em> connection. A hidden neuron connected by a large weight to a big mistake is more to blame.</li>
+    <li>Repeat until every weight in the network has a number saying "nudge me this much, in this direction".</li>
+  </ul>
+  <p>And here is the most important point you'll meet in this whole module, the one beginners conflate constantly:</p>
+
+  <div class="callout analogy">
+    <p><strong>Backprop and gradient descent are two different jobs.</strong> Think of a busy restaurant kitchen. <em>Backpropagation</em> is the line cook who tastes the finished dish, figures out exactly how much each ingredient is responsible for it being too salty, and writes that down on a ticket — "less salt, a touch more lemon, hold the pepper". Backprop only <em>measures and assigns blame</em>; it does not change the recipe. <em>Gradient descent</em> is the chef who reads that ticket and actually edits the recipe by the suggested amounts. Backprop <strong>computes</strong> the gradient; gradient descent <strong>uses</strong> it to update the weights. You can swap in a fancier chef (a better optimizer like Adam, Module 11) without changing the line cook at all — and that's exactly what happens in practice.</p>
+  </div>
+
+  <p>One more intuition that makes the "averaging" click. With several training examples, each example writes its own ticket: example 1 wants this weight a bit higher, example 2 wants it a bit lower, and so on. Backprop computes the desired nudge for each example, and we <em>average</em> them into one consensus nudge per weight. That averaged nudge is the gradient over the batch — the direction that reduces the average error across all examples at once.</p>
+
+  <h3>Backpropagation as the chain rule (optional deeper pass)</h3>
+  <p>If you're comfortable with derivatives, here's the precise version; if not, you can skip to the code and return later — the intuition above is enough to use it. Backprop is just the <em>chain rule</em> applied mechanically. The chain rule says: if cost depends on \( \hat{y} \), which depends on \( z_{\text{out}} \), which depends on a weight \( w \), then the slope of cost with respect to \( w \) is the product of the slopes along that chain:</p>
+  \[ \frac{\partial \text{cost}}{\partial w} = \frac{\partial \text{cost}}{\partial \hat{y}} \cdot \frac{\partial \hat{y}}{\partial z_{\text{out}}} \cdot \frac{\partial z_{\text{out}}}{\partial w} \]
+  <p>In words: "to know how \( w \) affects the cost, multiply how \( w \) affects its neuron's score, by how that score affects the activation, by how the activation affects the cost." Backprop is the bookkeeping that reuses these partial products as it walks backward, so each is computed only once. For a 2-2-1 network trained with sigmoid output and log loss (the same loss as Module 5), the gradients work out to the same delightfully clean shapes you've seen before. Writing \( a^{(2)} = \hat{y} \) for the output activation and \( \mathbf{a}^{(1)} \) for the hidden activations:</p>
+  \[ \delta^{(2)} = \hat{y} - y \qquad\text{(output error)} \]
+  \[ \frac{\partial \text{cost}}{\partial W_2} = (\mathbf{a}^{(1)})^{\!\top} \delta^{(2)}, \qquad \frac{\partial \text{cost}}{\partial \mathbf{b}_2} = \delta^{(2)} \]
+  \[ \delta^{(1)} = \big(\delta^{(2)} W_2^{\top}\big) \odot g'(\mathbf{z}^{(1)}) \qquad\text{(hidden error, blame pushed back)} \]
+  \[ \frac{\partial \text{cost}}{\partial W_1} = \mathbf{x}^{\!\top} \delta^{(1)}, \qquad \frac{\partial \text{cost}}{\partial \mathbf{b}_1} = \delta^{(1)} \]
+  <p>Each symbol: \( \delta^{(2)} \) (read "delta-two") is the error at the output, simply prediction minus truth. The term \( \delta^{(2)} W_2^{\top} \) sends that error backward through the output weights to the hidden layer — that's "pushing blame back". The \( \odot \) means element-wise multiply, and \( g'(\mathbf{z}^{(1)}) \) is the activation's slope at each hidden neuron (for sigmoid, recall, that's \( a(1-a) \)); multiplying by it accounts for how much each hidden neuron's squashing dampened the signal. Finally, each weight-matrix gradient is "the inputs that fed this layer, multiplied by the error coming out of it" — exactly the "big signal into a big mistake" rule from the intuition section, written in matrix form. You do <em>not</em> need to memorize these to continue; you'll now see them appear, line for line, in code.</p>
+
+  <h3>In code: from scratch</h3>
+  <p>Time to build the 2-2-1 network that solves XOR in pure NumPy — forward pass, backprop, and a training loop. The data is the four XOR cases. We use sigmoid in both layers because its derivative is so clean it makes the backprop lines easy to read. Watch the printed loss collapse from around 0.75 to near zero as the network discovers a bent boundary that no single line could ever draw.</p>
+  <codeblock>import numpy as np
+
+# --- XOR: light is ON when exactly one switch is up ---
+X = np.array([[0.0, 0.0],
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [1.0, 1.0]])
+y = np.array([[0.0], [1.0], [1.0], [0.0]])   # column of targets
+
+def sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+def sigmoid_deriv(a):          # input is the ACTIVATION a = sigmoid(z)
+    return a * (1.0 - a)       # the tidy slope a*(1-a)
+
+# --- weights: 2->2 (hidden) then 2->1 (output). Small random start. ---
+rng = np.random.default_rng(1)
+W1 = rng.normal(0, 1, size=(2, 2))   # input -> hidden
+b1 = np.zeros((1, 2))
+W2 = rng.normal(0, 1, size=(2, 1))   # hidden -> output
+b2 = np.zeros((1, 1))
+
+alpha = 0.5          # learning rate (used by gradient descent, not backprop)
+n = X.shape[0]       # number of examples (4)
+
+for epoch in range(10001):
+    # ---------- FORWARD PASS (inference) ----------
+    z1 = X @ W1 + b1          # hidden pre-activations, shape (4, 2)
+    a1 = sigmoid(z1)          # hidden activations
+    z2 = a1 @ W2 + b2         # output pre-activation, shape (4, 1)
+    a2 = sigmoid(z2)          # final prediction (probability)
+
+    # ---------- LOSS (log loss / cross-entropy) ----------
+    eps = 1e-12
+    a2c = np.clip(a2, eps, 1 - eps)        # avoid log(0)
+    loss = -np.mean(y * np.log(a2c) + (1 - y) * np.log(1 - a2c))
+
+    # ---------- BACKPROP (compute the gradients) ----------
+    dz2 = (a2 - y) / n               # output error, averaged over examples
+    dW2 = a1.T @ dz2                 # gradient for output weights
+    db2 = dz2.sum(axis=0, keepdims=True)
+    da1 = dz2 @ W2.T                 # push blame back to the hidden layer
+    dz1 = da1 * sigmoid_deriv(a1)    # times the hidden activation's slope
+    dW1 = X.T @ dz1                  # gradient for hidden weights
+    db1 = dz1.sum(axis=0, keepdims=True)
+
+    # ---------- GRADIENT DESCENT (use the gradients) ----------
+    W2 -= alpha * dW2
+    b2 -= alpha * db2
+    W1 -= alpha * dW1
+    b1 -= alpha * db1
+
+    if epoch % 2000 == 0:
+        print(f"epoch {epoch:5d}  loss {loss:.4f}")
+
+# ---------- final predictions ----------
+probs = a2.ravel()
+print("probabilities:", np.round(probs, 3))
+print("predicted:    ", (probs >= 0.5).astype(int))
+print("target:       ", y.ravel().astype(int))
+</codeblock>
+  <p>Running this prints a loss that falls steadily and predictions that lock onto the XOR pattern:</p>
+  <codeblock>epoch     0  loss 0.7566
+epoch  2000  loss 0.0165
+epoch  4000  loss 0.0060
+epoch  6000  loss 0.0037
+epoch  8000  loss 0.0026
+epoch 10000  loss 0.0020
+probabilities: [0.002 0.998 0.998 0.002]
+predicted:     [0 1 1 0]
+target:        [0 1 1 0]</codeblock>
+  <p>Read the story. The four probabilities snap to almost exactly \( [0, 1, 1, 0] \) — the network outputs near-0 when both switches match and near-1 when they differ, which is XOR solved. Notice the code's structure mirrors the math exactly: a forward block, a loss block, a backprop block that computes the <code>d...</code> gradients, and a separate gradient-descent block that applies them. Those last two blocks are deliberately apart on the page to drive home the disentangling: backprop <em>fills in</em> <code>dW1, dW2, ...</code>; the <code>-= alpha *</code> lines are gradient descent <em>spending</em> them. Swap those four update lines for an Adam optimizer and the backprop block would not change one character.</p>
+
+  <h3>In code: the library way</h3>
+  <p>Once you've seen the gears, PyTorch lets you assemble the same network from prebuilt parts and handles backprop for you with a single <code>loss.backward()</code> call. We use <code>nn.Sequential</code> to stack layers: <code>nn.Linear</code> is exactly the "weighted sum + bias" step (it holds a \( W \) and \( \mathbf{b} \)), and we slot a ReLU activation between the layers to provide the nonlinearity. Here we use a slightly wider hidden layer (4 neurons) and the Adam optimizer, which trains XOR quickly and reliably.</p>
+  <codeblock>import torch
+import torch.nn as nn
+
+torch.manual_seed(0)
+
+X = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
+y = torch.tensor([[0.], [1.], [1.], [0.]])
+
+# Build the network: 2 -> 4 -> 1 with a nonlinearity in the middle.
+model = nn.Sequential(
+    nn.Linear(2, 4),   # weighted sum + bias: 2 inputs -> 4 hidden neurons
+    nn.ReLU(),         # the crucial nonlinear activation
+    nn.Linear(4, 1),   # 4 hidden -> 1 output
+    nn.Sigmoid(),      # squash output into a probability
+)
+
+loss_fn = nn.BCELoss()                                  # binary cross-entropy
+opt = torch.optim.Adam(model.parameters(), lr=0.1)      # gradient descent (Adam flavour)
+
+for epoch in range(2001):
+    y_hat = model(X)            # FORWARD pass (one call runs every layer)
+    loss = loss_fn(y_hat, y)    # how wrong are we?
+    opt.zero_grad()             # clear last step's gradients
+    loss.backward()            # BACKPROP: fills every weight's .grad
+    opt.step()                  # GRADIENT DESCENT: uses those .grad values
+    if epoch % 400 == 0:
+        print(f"epoch {epoch:5d}  loss {loss.item():.4f}")
+
+with torch.no_grad():                       # inference: no gradients needed
+    probs = model(X).squeeze()
+    print("probabilities:", [round(p, 3) for p in probs.tolist()])
+    print("predicted:    ", model(X).round().squeeze().tolist())
+    print("target:       ", y.squeeze().tolist())
+</codeblock>
+  <p>This prints a loss diving toward zero and clean XOR predictions:</p>
+  <codeblock>epoch     0  loss 0.6877
+epoch   400  loss 0.0006
+epoch   800  loss 0.0002
+epoch  1200  loss 0.0001
+epoch  1600  loss 0.0001
+epoch  2000  loss 0.0000
+probabilities: [0.0, 1.0, 1.0, 0.0]
+predicted:    [0.0, 1.0, 1.0, 0.0]
+target:       [0.0, 1.0, 1.0, 0.0]</codeblock>
+  <p>Look how the three jobs you separated by hand are now three one-line calls, in the same order: <code>model(X)</code> is the forward pass, <code>loss.backward()</code> is backprop (it walks the chain rule for you and stores a gradient on every parameter), and <code>opt.step()</code> is gradient descent (it reads those gradients and nudges the weights). The <code>opt.zero_grad()</code> line matters because PyTorch <em>accumulates</em> gradients by default — forget it and gradients from old steps pile up, corrupting training. That is the entire training loop for networks of any size; deeper models in Modules 12–14 reuse this exact rhythm.</p>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
+    <p>Paste these to your Claude Code companion as you study:</p>
+    <ul>
+      <li>"Explain the difference between backpropagation and gradient descent with a fresh analogy that isn't a kitchen, then quiz me with three statements and ask me to label each as 'backprop' or 'gradient descent'."</li>
+      <li>"Run my from-scratch NumPy XOR network, then delete the sigmoid in the hidden layer (make it linear) and rerun. Show me the loss and predictions, and explain why it can no longer solve XOR."</li>
+      <li>"Generate 4 by-hand forward-pass problems for a 2-2-1 network with small weights, wait for my answers, then check every intermediate number."</li>
+      <li>"Pair with me to add a second hidden layer to my NumPy network (2-3-3-1) and review my backprop gradients layer by layer for shape and sign correctness."</li>
+    </ul>
+  </div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+    <ul>
+      <li><strong>Confusing backprop with gradient descent.</strong> The single most common beginner mix-up. Backprop <em>computes</em> the gradient (assigns blame); gradient descent (or Adam, etc.) <em>uses</em> the gradient to update weights. They are separate steps, run in sequence, every iteration. If someone says "the network learns by backprop", gently note that backprop only measures — the learning happens when the optimizer applies the update.</li>
+      <li><strong>Forgetting the nonlinear activation.</strong> Stack two <code>nn.Linear</code> layers with nothing between them and you have, mathematically, one linear layer — it cannot solve XOR or any non-linearly-separable problem. The activation between layers is not optional decoration; it is what gives depth its power. (You proved this with numbers in Part 3.)</li>
+      <li><strong>Expecting sigmoid everywhere to work in deep nets.</strong> Sigmoid's slope never exceeds 0.25 and shrinks toward 0 at the extremes, so in a deep stack the gradients multiply down to nearly nothing — the <em>vanishing gradient</em> problem — and early layers stop learning. That's why ReLU dominates hidden layers in modern networks. We diagnose and fix this properly in <strong>Module 11</strong>.</li>
+      <li><strong>Shape and dimension mismatches.</strong> The number one source of crashes when writing nets from scratch. If a layer maps 2 inputs to 3 neurons, its weight matrix is \( 2 \times 3 \), its bias has 3 entries, and the next layer must expect 3 inputs. When NumPy or PyTorch throws a shape error, read it literally: it tells you the two shapes it tried to multiply and which dimension didn't line up.</li>
+      <li><strong>Forgetting <code>opt.zero_grad()</code> in PyTorch.</strong> PyTorch <em>adds</em> new gradients onto whatever is already stored, so without clearing them each step you accumulate stale gradients from previous iterations and training silently goes haywire. Zero them before every <code>backward()</code>.</li>
+      <li><strong>Thinking more neurons always means better.</strong> A bigger hidden layer can fit more complex patterns but also memorizes noise more easily (overfitting, from <strong>Module 6 — Model Evaluation</strong>). Start small, grow only if the model underfits, and always judge on held-out data, not training loss.</li>
+    </ul>
+  </div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>A single neuron has inputs \( \mathbf{x} = [2, 1] \), weights \( \mathbf{w} = [1, -2] \), bias \( b = 0.5 \), and a sigmoid activation. Compute \( z \) and the activation \( a \) by hand (use \( e \approx 2.718 \)).
+      <details class="solution"><summary>Show solution</summary><p>\( z = (2)(1) + (1)(-2) + 0.5 = 2 - 2 + 0.5 = 0.5 \). Then \( a = \sigma(0.5) = \frac{1}{1 + e^{-0.5}} = \frac{1}{1 + 0.6065} = \frac{1}{1.6065} \approx 0.6225 \). The neuron leans slightly toward "yes" (above 0.5).</p></details>
+    </li>
+    <li>Explain, in your own words and without formulas, the difference between backpropagation and gradient descent. Then say which one a learning rate \( \alpha \) belongs to.
+      <details class="solution"><summary>Show solution</summary><p>Backpropagation computes the gradient: it figures out, for every weight, the direction and size of the nudge that would most reduce the error, by walking the error backward through the network and assigning blame. Gradient descent then takes those numbers and actually updates the weights, moving each one a small step in the blame-reducing direction. The learning rate \( \alpha \) belongs to gradient descent — it controls how big each update step is. Backprop doesn't have a learning rate; it just reports slopes.</p></details>
+    </li>
+    <li>You build a network as two <code>nn.Linear</code> layers (2→4 then 4→1) with <em>no</em> activation between them. Will it solve XOR? Explain using the linear-collapse argument.
+      <details class="solution"><summary>Show solution</summary><p>No. Two linear layers with nothing between them compose into a single linear transformation: \( \hat{y} = (\mathbf{x}W_1)W_2 = \mathbf{x}(W_1 W_2) \), which is equivalent to one linear layer with weight matrix \( W_1 W_2 \). A single linear layer can only draw a straight decision boundary, and XOR is not linearly separable (no single straight line separates the two "on" cases from the two "off" cases). So the network maxes out around 50% accuracy. Inserting a nonlinear activation (ReLU or sigmoid) between the layers prevents the collapse and lets the network bend the boundary.</p></details>
+    </li>
+    <li>For a 2-2-1 network with sigmoid output, the output error in backprop is \( \delta^{(2)} = \hat{y} - y \). If the network predicts \( \hat{y} = 0.3 \) and the true label is \( y = 1 \), compute \( \delta^{(2)} \) and state which way the output weights will be nudged and why.
+      <details class="solution"><summary>Show solution</summary><p>\( \delta^{(2)} = 0.3 - 1 = -0.7 \). The error is negative, meaning the prediction is too low (we wanted 1, got 0.3). The weight gradient is \( (\mathbf{a}^{(1)})^{\top}\delta^{(2)} \); since \( \delta^{(2)} \) is negative and hidden activations \( \mathbf{a}^{(1)} \) are positive (sigmoid outputs), the gradient is negative for those weights. Gradient descent updates \( W \leftarrow W - \alpha \cdot (\text{negative}) \), which <em>increases</em> the weights — pushing the output up toward 1, exactly the right direction to shrink the error.</p></details>
+    </li>
+    <li><strong>Challenge.</strong> In the from-scratch NumPy code, the backprop line for the hidden layer is <code>dz1 = da1 * sigmoid_deriv(a1)</code>. Explain why we multiply by the sigmoid's derivative here, and predict what would go wrong if you forgot it (left it as just <code>dz1 = da1</code>).
+      <details class="solution"><summary>Show solution</summary><p>The chain rule says the error at the hidden pre-activation \( \mathbf{z}^{(1)} \) is the error flowing back from the output (\( \mathtt{da1} = \delta^{(2)} W_2^{\top} \)) times how much each hidden neuron's activation changes per unit of its pre-activation — that local slope is \( g'(\mathbf{z}^{(1)}) = a(1-a) \) for sigmoid. Multiplying by it accounts for the squashing: a hidden neuron sitting in sigmoid's flat region (activation near 0 or 1) barely responds to changes, so its slope \( a(1-a) \) is tiny and it should receive a smaller nudge. If you forgot the factor, you'd compute a gradient that ignores the activation's local sensitivity. The hidden-layer gradients would be wrong in magnitude (and the math no longer matches the actual cost surface), so training would be slower, less stable, and may fail to converge to a correct XOR solution. It is not a cosmetic term — it's the part of the chain rule that connects the layers.</p></details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+    <ul>
+      <li>Compute a single neuron's output (\( z \) then \( a = g(z) \)) by hand for given inputs, weights, and bias.</li>
+      <li>State in one breath why an activation must be nonlinear, and what happens if it isn't.</li>
+      <li>Run a full forward pass through a 2-2-1 network on paper, layer by layer.</li>
+      <li>Explain backpropagation as blame-assignment, and clearly distinguish it from gradient descent (compute vs. use the gradient).</li>
+      <li>Point to the forward, backprop, and gradient-descent blocks in both the NumPy and PyTorch code and say what each one does.</li>
+    </ul>
+  </div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+    <ul>
+      <li><a href="https://www.3blue1brown.com/topics/neural-networks">3Blue1Brown — Neural Networks series</a> — the canonical visual intuition for neurons, layers, and what backpropagation is actually doing; watch chapters 1–4 alongside this module.</li>
+      <li><a href="https://karpathy.ai/zero-to-hero.html">Karpathy — Neural Networks: Zero to Hero</a> — Andrej Karpathy builds backprop and a tiny autograd engine from scratch in code; the perfect deepening once you've finished here.</li>
+      <li><a href="https://pytorch.org/tutorials/beginner/basics/intro.html">PyTorch — Learn the Basics</a> — the official gentle introduction to <code>nn.Module</code>, <code>nn.Linear</code>, autograd, and the training loop you just wrote.</li>
+      <li><a href="https://www.youtube.com/@statquest">StatQuest — Neural Networks &amp; Backpropagation</a> — Josh Starmer's slow, friendly walkthrough of the same ideas with hand-drawn numbers.</li>
+    </ul>
+  </div>
+</section>

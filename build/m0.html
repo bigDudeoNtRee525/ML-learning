@@ -1,0 +1,281 @@
+<section class="module" id="m0" data-title="Orientation & Toolkit">
+  <div class="module-head">
+    <span class="module-kicker">Module 0</span>
+    <h2>Orientation, Mindset &amp; Zero-Setup Toolkit</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m0"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives">
+    <h3>Learning objectives</h3>
+    <p>By the end of this module you'll be able to:</p>
+    <ul>
+      <li>Explain in plain words what machine learning is, and how it differs from ordinary programming.</li>
+      <li>Tell apart AI, machine learning, deep learning, and LLMs — and say which one contains which.</li>
+      <li>Recognise the three big families of ML — supervised, unsupervised, and reinforcement learning — and give an everyday example of each.</li>
+      <li>Open a free notebook in the cloud and run real code without installing anything on your computer.</li>
+      <li>Train and test a real working classifier in about six lines of code, on your very first day.</li>
+      <li>Set up Claude Code as a study partner that explains, quizzes, and pair-programs with you.</li>
+    </ul>
+  </div>
+
+  <div class="callout hook">
+    <h3>Why should I care?</h3>
+    <p>Imagine your email inbox. Twenty years ago, engineers tried to stop spam by writing rules by hand: "if the subject says FREE MONEY, mark it spam." Spammers simply wrote "F-R-E-E M0NEY" and walked straight past every rule. The rules never ended, and they never won. The breakthrough was to stop writing rules and instead <em>show the computer examples</em>: here are 100,000 emails people marked as spam, and 100,000 they kept. The computer found the patterns itself — and kept adapting as spam changed. That switch, from "tell the machine exactly what to do" to "show the machine examples and let it figure out the rule," is the whole idea of machine learning. The same trick now powers the photo search on your phone, the captions on videos, the recommendations you scroll past, and the chatbot you may already be talking to. This module gives you the map of the whole field and gets you running a real model today — before any heavy math.</p>
+  </div>
+
+  <h3>Intuition first: what is machine learning?</h3>
+  <p>In ordinary programming, <strong>you</strong> write the rules. You decide every step: "add tax, then round up, then print the receipt." The computer follows your instructions exactly. This works beautifully when you can <em>state</em> the rule.</p>
+  <p>But some tasks resist rules. Try to write down, in if-then steps, exactly what makes a photo contain a cat. Pointy ears? Many dogs have those. Whiskers? Hard to see. Fur colour? Cats come in every colour. You will never finish the list. Machine learning flips the arrangement: instead of writing the rule, you collect <strong>examples with answers</strong> (thousands of photos already labelled "cat" or "not cat") and hand them to a <em>learning algorithm</em>. The algorithm searches for a rule that fits the examples. The output of that search — the tuned rule — is called a <strong>model</strong>. You then use the model on new photos it has never seen.</p>
+
+  <div class="callout analogy">
+    <p><strong>Analogy — learning to recognise your friend's voice.</strong> Nobody handed you a rulebook ("if pitch is between 180 and 220 Hz and the vowels are slightly drawn out, it's Sam"). Instead, you heard Sam talk hundreds of times, and your brain quietly built a pattern. Now you recognise Sam on the phone in one word. Machine learning does the same: it listens to many labelled examples and builds a pattern. The examples are the <em>training data</em>; the pattern your brain (or the model) ends up with is the <em>trained model</em>.</p>
+  </div>
+
+  <p>Here is the same idea as a picture. Ordinary code takes data plus a hand-written rule and produces answers. Machine learning takes data plus the answers and produces the rule.</p>
+
+  <svg class="diagram" viewBox="0 0 520 200" role="img" aria-label="Diagram contrasting classic programming with machine learning">
+    <text x="130" y="20" text-anchor="middle" fill="currentColor" font-size="13" font-weight="bold">Classic programming</text>
+    <rect x="20" y="40" width="90" height="34" rx="6" fill="none" stroke="#6366f1"/>
+    <text x="65" y="62" text-anchor="middle" fill="currentColor" font-size="12">Data</text>
+    <rect x="20" y="86" width="90" height="34" rx="6" fill="none" stroke="#6366f1"/>
+    <text x="65" y="108" text-anchor="middle" fill="currentColor" font-size="12">Rules</text>
+    <rect x="150" y="63" width="90" height="34" rx="6" fill="none" stroke="#10b981"/>
+    <text x="195" y="85" text-anchor="middle" fill="currentColor" font-size="12">Answers</text>
+    <path d="M110 57 H150 V77" stroke="currentColor" fill="none" marker-end="url(#a0)"/>
+    <path d="M110 103 H150 V83" stroke="currentColor" fill="none" marker-end="url(#a0)"/>
+
+    <text x="400" y="20" text-anchor="middle" fill="currentColor" font-size="13" font-weight="bold">Machine learning</text>
+    <rect x="290" y="40" width="90" height="34" rx="6" fill="none" stroke="#6366f1"/>
+    <text x="335" y="62" text-anchor="middle" fill="currentColor" font-size="12">Data</text>
+    <rect x="290" y="86" width="90" height="34" rx="6" fill="none" stroke="#6366f1"/>
+    <text x="335" y="108" text-anchor="middle" fill="currentColor" font-size="12">Answers</text>
+    <rect x="420" y="63" width="90" height="34" rx="6" fill="none" stroke="#10b981"/>
+    <text x="465" y="85" text-anchor="middle" fill="currentColor" font-size="12">Rules</text>
+    <path d="M380 57 H420 V77" stroke="currentColor" fill="none" marker-end="url(#a0)"/>
+    <path d="M380 103 H420 V83" stroke="currentColor" fill="none" marker-end="url(#a0)"/>
+    <defs>
+      <marker id="a0" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0 0 L6 3 L0 6 Z" fill="currentColor"/>
+      </marker>
+    </defs>
+  </svg>
+  <p class="caption">Machine learning swaps two boxes: you give it the answers, and it gives you back the rule.</p>
+
+  <p><strong>Why now?</strong> The idea is old (1950s–60s), but three things recently aligned: we now have <em>enormous amounts of data</em> (the internet), <em>cheap fast hardware</em> (especially GPUs, chips originally built for video games that happen to be great at the math ML needs), and <em>better algorithms</em>. None alone was enough; together they set off the boom you're living through.</p>
+
+  <h3>AI vs ML vs deep learning vs LLMs</h3>
+  <p>These four words get used interchangeably in the news, but they nest inside each other like Russian dolls. Picture four circles, each inside the next.</p>
+
+  <svg class="diagram" viewBox="0 0 360 300" role="img" aria-label="Nested circles showing AI contains ML contains deep learning contains LLMs">
+    <ellipse cx="180" cy="150" rx="170" ry="140" fill="none" stroke="#6366f1"/>
+    <ellipse cx="180" cy="165" rx="135" ry="115" fill="none" stroke="#6366f1"/>
+    <ellipse cx="180" cy="185" rx="95" ry="85" fill="none" stroke="#10b981"/>
+    <ellipse cx="180" cy="210" rx="55" ry="50" fill="none" stroke="#10b981"/>
+    <text x="180" y="35" text-anchor="middle" fill="currentColor" font-size="13" font-weight="bold">Artificial Intelligence</text>
+    <text x="180" y="78" text-anchor="middle" fill="currentColor" font-size="13" font-weight="bold">Machine Learning</text>
+    <text x="180" y="125" text-anchor="middle" fill="currentColor" font-size="12" font-weight="bold">Deep Learning</text>
+    <text x="180" y="212" text-anchor="middle" fill="currentColor" font-size="11" font-weight="bold">LLMs</text>
+  </svg>
+  <p class="caption">Every LLM is deep learning; all deep learning is ML; all ML is a kind of AI. Not the reverse.</p>
+
+  <ul>
+    <li><strong>Artificial Intelligence (AI)</strong> — the broadest term: any technique that makes a machine do something we'd call "smart." This includes machine learning, but also old-fashioned hand-written rule systems (like a chess program from the 1980s that followed expert rules). AI is the goal; the others are methods.</li>
+    <li><strong>Machine Learning (ML)</strong> — the subset of AI where the machine learns the rule <em>from data</em> rather than being told the rule. This whole course is about ML.</li>
+    <li><strong>Deep Learning</strong> — a subset of ML that uses <em>neural networks</em> with many layers (we build these from scratch in Module 10 — Neural Network Fundamentals). "Deep" just means "many layers stacked." It shines on images, audio, and language.</li>
+    <li><strong>Large Language Models (LLMs)</strong> — a specific kind of deep learning trained on huge amounts of text to predict the next word, which turns out to be enough to chat, summarise, and write code. ChatGPT and Claude are LLMs. We reach these conceptually in Module 14 — Transformers and LLMs.</li>
+  </ul>
+  <p>So when a headline says "AI did X," it almost always means a specific ML model did X. You'll soon speak more precisely than most journalists.</p>
+
+  <h3>The three big families of learning</h3>
+  <p>Within ML, problems split into three families based on <em>what kind of feedback the machine gets</em>.</p>
+  <ul>
+    <li><strong>Supervised learning</strong> — you give the model examples <em>with the right answers attached</em> (called <em>labels</em>), and it learns to predict the answer for new examples. Example: 10,000 houses with their sale prices, learn to predict the price of a new house. The "supervision" is the answer key. Most of this course (Modules 3–8) is supervised learning.</li>
+    <li><strong>Unsupervised learning</strong> — you give the model examples <em>with no answers</em>, and it finds structure on its own. Example: hand it 10,000 customers and ask it to group similar customers together (it might discover "bargain hunters" and "premium buyers" without anyone naming them). We cover this in Module 9 — Unsupervised Learning.</li>
+    <li><strong>Reinforcement learning</strong> — the model acts in an environment and learns from <em>rewards and penalties</em>, like training a dog with treats. Example: a program plays a game thousands of times; winning gives reward, losing gives penalty, and it gradually plays better. This is how programs learned to beat humans at Go. It's beyond this course's core but you'll understand where it fits.</li>
+  </ul>
+
+  <div class="callout analogy">
+    <p><strong>A classroom analogy.</strong> Supervised learning is studying with an answer key — you check every problem against the right answer. Unsupervised learning is being handed a messy pile of papers and asked to sort them into sensible stacks with no instructions. Reinforcement learning is learning a video game with no manual: you just get a score, and you figure out which moves raised it.</p>
+  </div>
+
+  <h3>Making it precise (gently)</h3>
+  <p>We will keep math near zero in this module, but let's name one piece of notation you'll see everywhere, so it never surprises you. In supervised learning we write a single example as a pair \( (x, y) \), where \( x \) is the <strong>input</strong> (the features we measure, like a flower's petal length) and \( y \) is the <strong>label</strong> (the correct answer we want to predict, like the flower's species). A model is a function \( f \) that takes an input and produces a prediction:</p>
+  \[ \hat{y} = f(x) \]
+  <p>Here \( \hat{y} \) (read "y-hat") is the model's <em>guess</em> for the answer, while \( y \) without the hat is the <em>true</em> answer. The hat always means "estimated/predicted." Learning means adjusting \( f \) so that \( \hat{y} \) is close to \( y \) across many examples. That's it — that single line is the skeleton under every supervised model in this course. We make \( f \) concrete in Module 3 — Linear Regression, and we learn <em>how</em> the adjusting happens in Module 4 — Gradient Descent. No more math here; on to running real code.</p>
+
+  <div class="callout worked">
+    <h3>Worked example — tracing the "whole game" by hand</h3>
+    <p>Below, in "In code: the library way," you'll run a six-line program that trains a real flower classifier. Before you run it, let's trace what each line <em>does</em>, with the actual shapes and numbers, so nothing is magic. The dataset is <strong>Iris</strong>: 150 flowers, each described by 4 measurements, each labelled with one of 3 species (setosa = 0, versicolor = 1, virginica = 2).</p>
+    <ol>
+      <li><strong><code>X, y = load_iris(return_X_y=True)</code></strong> — loads the data. <code>X</code> becomes a table of shape <strong>150 rows × 4 columns</strong> (150 flowers, 4 measurements each). <code>y</code> becomes a list of <strong>150 numbers</strong>, each 0, 1, or 2. One row of <code>X</code> looks like <code>[5.1, 3.5, 1.4, 0.2]</code> with matching label <code>0</code>.</li>
+      <li><strong><code>train_test_split(X, y, test_size=0.2, random_state=42)</code></strong> — shuffles the 150 flowers and splits off 20% as a hidden test set. You get <strong>120 training flowers</strong> and <strong>30 test flowers</strong>. We hide the test set so we can later check the model on flowers it never studied — the only honest way to judge it.</li>
+      <li><strong><code>KNeighborsClassifier()</code></strong> — creates an (untrained) model. This particular model's idea is dead simple: to classify a new flower, find the 5 training flowers most similar to it and take a majority vote of their species.</li>
+      <li><strong><code>.fit(X_train, y_train)</code></strong> — "trains" it. For this model, training just means memorising the 120 training flowers so it can compare against them later.</li>
+      <li><strong><code>.predict(X_test[:1])</code></strong> — predicts for one held-out flower. The first test flower's measurements are exactly <code>[6.1, 2.8, 4.7, 1.2]</code>. The model finds the 5 closest training flowers; here all 5 of them turn out to be versicolor (label 1), so the majority vote is unanimous and it predicts <strong>1</strong>. The true label is also <strong>1</strong> — correct. (Had the 5 neighbours been, say, 4 versicolor and 1 setosa, the majority vote would still pick versicolor.)</li>
+      <li><strong><code>.score(X_test, y_test)</code></strong> — checks all 30 test flowers and reports the fraction it got right. On this exact split it gets <strong>30 out of 30 = 1.0</strong> (100%). That is a real, honest accuracy on flowers the model never saw during training.</li>
+    </ol>
+    <p>That is the entire shape of supervised ML: load labelled data, split it, fit a model, predict, and score on held-out data. Every later module deepens one of these steps; the loop stays the same.</p>
+  </div>
+
+  <h3>In code: from scratch</h3>
+  <p>Before any library, let's see that a "model" is just a function with adjustable numbers. Here is a tiny model that predicts a house's price from its size in square metres, using a rule we picked by hand: price = base + rate × size. No learning yet — we're only showing that a model is a plain function. (In Module 3 we'll let the computer <em>find</em> the best base and rate instead of guessing.)</p>
+  <codeblock>def predict_price(size_m2, base=50000, rate=2000):
+    # A model is just a function with tunable numbers ("parameters").
+    return base + rate * size_m2
+
+for size in [40, 75, 120]:
+    print(size, "m2  ->  $", predict_price(size))
+</codeblock>
+  <p>Running this prints:</p>
+  <codeblock>40 m2  ->  $ 130000
+75 m2  ->  $ 200000
+120 m2  ->  $ 290000
+</codeblock>
+  <p>The numbers <code>base</code> and <code>rate</code> are the model's <strong>parameters</strong> — the dials a learning algorithm will later turn automatically so predictions match real sale prices. Right now we set them by hand; the rest of the course is really about turning these dials well, on far more interesting functions.</p>
+
+  <h3>In code: the library way — the whole game</h3>
+  <p>Now the payoff. This is a complete, real machine-learning program: it loads data, trains a classifier, and measures how well it does on unseen flowers — in about six lines. Run it in a free cloud notebook (see the next section); it needs no setup beyond opening Colab.</p>
+  <codeblock>from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+
+X, y = load_iris(return_X_y=True)                       # 150 flowers x 4 measurements
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)              # 120 to learn from, 30 to test on
+model = KNeighborsClassifier().fit(X_train, y_train)    # train the model
+print("Test accuracy:", model.score(X_test, y_test))    # how often it's right on unseen data
+</codeblock>
+  <p>The output is:</p>
+  <codeblock>Test accuracy: 1.0
+</codeblock>
+  <p>That <code>1.0</code> means 100% correct on the 30 flowers the model never saw during training. You just trained and honestly evaluated a real classifier. Notice you did <em>not</em> tell it any rule about petals or species — it learned the pattern from the 120 examples. The <code>random_state=42</code> simply fixes the shuffle so you get the exact same split (and the same answer) every time you run it; change that number and the accuracy may wobble slightly, which is itself a useful lesson we revisit in Module 6 — Model Evaluation. Do not worry that you don't yet understand <em>how</em> <code>KNeighborsClassifier</code> works inside — you'll build classifiers from scratch starting in Module 5. The goal today is to feel the whole game end to end.</p>
+
+  <h3>Your zero-setup toolkit: Colab and notebooks</h3>
+  <p>You do <strong>not</strong> need to install Python on your computer to take this course. The friendliest path is <a href="https://colab.research.google.com/">Google Colab</a> — a free service that runs Python in your browser on Google's machines. Here's the whole workflow:</p>
+  <ul>
+    <li>Open <a href="https://colab.research.google.com/">colab.research.google.com</a> and sign in with a Google account. Click <em>New notebook</em>.</li>
+    <li>A <strong>notebook</strong> (the <code>.ipynb</code> format, also called Jupyter) is a page made of <em>cells</em>. A code cell holds Python; press <strong>Shift+Enter</strong> to run it and the output appears right below. A text cell holds notes. You build understanding by running, editing, and re-running cells.</li>
+    <li>The big libraries — NumPy, pandas, scikit-learn — come pre-installed on Colab. Paste the six-line Iris program above into a cell, press Shift+Enter, and watch it print <code>1.0</code>.</li>
+    <li>Colab even gives you a free GPU (under <em>Runtime &rarr; Change runtime type</em>) which you'll want much later, in Modules 10–14, for neural networks. You won't need it for a while.</li>
+  </ul>
+  <p>If you ever prefer to work on your own computer, the standard local setup is the Anaconda distribution plus Jupyter, but that is entirely optional and we'll point to it later. For now, Colab removes every excuse to not start.</p>
+
+  <h3>A Python refresher and first look at NumPy and pandas</h3>
+  <p>You need only basic Python for this course, and we teach the rest as we go. Here's the minimum vocabulary, with the three libraries you'll lean on. First, plain Python you'll recognise:</p>
+  <codeblock>x = 7                      # a variable holding a number
+name = "iris"             # a string (text)
+nums = [3, 1, 4, 1, 5]    # a list of numbers
+print(sum(nums) / len(nums))   # average -> 2.8
+
+def double(v):            # a function
+    return v * 2
+
+print(double(21))         # -> 42
+
+for n in nums:            # a loop
+    if n > 3:
+        print(n, "is big")   # prints 4, then 5
+</codeblock>
+  <p><strong>NumPy</strong> gives you fast <em>arrays</em> of numbers and lets you do math on whole arrays at once (no slow loops). This "do it to the whole array at once" style is everywhere in ML.</p>
+  <codeblock>import numpy as np
+
+a = np.array([1, 2, 3, 4])
+print(a * 10)        # [10 20 30 40]  -- multiplies every element
+print(a.mean())      # 2.5            -- average of all elements
+print(a[a > 2])      # [3 4]          -- keep only elements bigger than 2
+</codeblock>
+  <p><strong>pandas</strong> gives you a <em>DataFrame</em> — a spreadsheet-like table with named columns — which is how real datasets arrive. You'll filter, summarise, and clean data with it constantly (Module 2 — Working With Data, and Module 7 — Feature Engineering).</p>
+  <codeblock>import pandas as pd
+
+df = pd.DataFrame({
+    "size_m2": [40, 75, 120],
+    "price":   [130000, 210000, 295000],
+})
+print(df["price"].mean())     # 211666.67  -- average price
+print(df[df["size_m2"] > 50]) # rows where size is over 50 m2
+</codeblock>
+  <p>That's genuinely enough to begin. When a new Python or library feature is needed, we'll introduce it in context — and your Claude Code companion (next) can explain any line on demand.</p>
+
+  <h3>Your Claude Code study companion</h3>
+  <p>This course is designed to be taken <em>with a partner</em>: <strong>Claude Code</strong>, an AI coding assistant that lives in your computer's terminal (the text command window). Unlike a chatbot in a browser tab, Claude Code can read and write files in a folder, run your code, see the errors, and fix them with you — like a patient tutor sitting beside you who never gets tired of your questions. You don't need it to follow the course, but it makes everything faster and less lonely.</p>
+  <p><strong>How to set it up as a study partner:</strong></p>
+  <ul>
+    <li><strong>Install it once.</strong> Follow Anthropic's official instructions to install Claude Code on your machine (search "Claude Code install" or visit the Anthropic docs). It runs in your terminal; you'll start it by typing <code>claude</code> inside a folder.</li>
+    <li><strong>Make a course folder.</strong> Create one folder for the whole course, e.g. <code>ml-course</code>. Inside it keep a <code>notes.md</code> file for your own notes and a <code>scratch.py</code> or notebook for experiments. Start Claude Code from inside that folder so it can see and edit your files.</li>
+    <li><strong>Tell it its job.</strong> In your first message, set expectations (a starter prompt is below). Ask it to keep explanations beginner-level and to quiz you rather than just hand you answers.</li>
+    <li><strong>Use it four ways:</strong> (1) <em>Explain</em> a concept again in a new way when the text didn't click; (2) <em>Generate and grade</em> practice problems so you get unlimited exercises; (3) <em>Run and debug</em> code — paste an error and let it diagnose; (4) <em>Pair-program</em> the five Project Track projects, writing code together and reviewing yours.</li>
+    <li><strong>Quiz before each module.</strong> Before starting a new module, ask it to quiz you on the previous one. Spaced self-testing is one of the best-proven ways to make learning stick.</li>
+  </ul>
+  <p><strong>Copy-paste starter prompts for your companion:</strong></p>
+  <ul>
+    <li>"You're my tutor for a beginner machine-learning course. I have no ML background and only high-school math. Keep explanations simple, define jargon, and prefer small numeric examples. Acknowledge and we'll begin."</li>
+    <li>"I just read Module 0. Explain the difference between AI, ML, deep learning, and LLMs using an analogy I haven't seen before, then check my understanding with two quick questions."</li>
+    <li>"Generate 5 beginner practice questions on supervised vs unsupervised vs reinforcement learning. Ask me one at a time, wait for my answer, then grade it and explain."</li>
+    <li>"Here is the six-line Iris classifier from Module 0. Run it, then change <code>random_state</code> to 0 and to 7, run again, and explain why the accuracy changes."</li>
+    <li>"Create a file <code>notes.md</code> in this folder and write a 5-bullet summary of Module 0 that I can review before Module 1."</li>
+    <li>"Quiz me on Module 0 with 4 questions before I start Module 1, then tell me if I'm ready or what to review."</li>
+  </ul>
+
+  <div class="callout companion">
+    <h3>Work this with your Claude Code companion</h3>
+    <p>Paste these to your Claude Code companion as you study:</p>
+    <ul>
+      <li>"Walk me line-by-line through this six-line Iris program and tell me the shape of every variable as it's created."</li>
+      <li>"Give me 5 everyday situations and ask me to classify each as supervised, unsupervised, or reinforcement learning; grade my answers."</li>
+      <li>"Help me open Google Colab, paste the Iris code, and run it. If I get an error, debug it with me."</li>
+      <li>"Pair with me: rewrite the from-scratch <code>predict_price</code> function so it also prints the predicted price for 200 m2, and review my version."</li>
+    </ul>
+  </div>
+
+  <div class="callout pitfalls">
+    <h3>Common pitfalls &amp; misconceptions</h3>
+    <ul>
+      <li><strong>"ML means the computer thinks like a human."</strong> No — it finds statistical patterns in data. The Iris model has no idea what a flower is; it compares numbers. Treating it as a mind leads to bad expectations.</li>
+      <li><strong>"AI, ML, and deep learning are the same thing."</strong> They nest: LLMs ⊂ deep learning ⊂ ML ⊂ AI. Using them as synonyms will confuse you when reading anything technical.</li>
+      <li><strong>"Testing on the data you trained on tells you it works."</strong> A model can memorise training examples and still fail on new ones. That's why we held out 30 test flowers. Always judge a model on data it didn't learn from — a theme we hammer in Module 6.</li>
+      <li><strong>"I need a powerful computer / to install lots of software first."</strong> You need a browser. Colab runs everything for free on Google's machines, with the libraries pre-installed.</li>
+      <li><strong>"I must master all the math before touching code."</strong> This course does the opposite on purpose: intuition and working code first, math exactly when you need it. Waiting for "enough math" is the most common way beginners stall forever.</li>
+      <li><strong>"100% accuracy means the model is perfect."</strong> Iris is an unusually easy dataset and this split is small. Real problems rarely hit 100%, and a suspiciously perfect score is often a warning sign, not a trophy.</li>
+    </ul>
+  </div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>For each task, say whether it is supervised, unsupervised, or reinforcement learning: (a) predicting tomorrow's temperature from the past week's weather; (b) grouping 5,000 news articles into topics nobody pre-labelled; (c) a robot learning to walk by getting rewarded for distance travelled.
+      <details class="solution"><summary>Show solution</summary><p>(a) <strong>Supervised</strong> — each past day has a known temperature (the label) to learn from. (b) <strong>Unsupervised</strong> — no topic labels are given; the model must find groups itself (this is called clustering). (c) <strong>Reinforcement</strong> — the robot learns from a reward signal (distance), not from labelled correct actions.</p></details>
+    </li>
+    <li>Sort these from broadest to narrowest: deep learning, AI, LLM, machine learning. Then write one sentence explaining the order.
+      <details class="solution"><summary>Show solution</summary><p>Broadest to narrowest: <strong>AI &rarr; machine learning &rarr; deep learning &rarr; LLM</strong>. Each is a special case of the one before it: ML is AI that learns from data; deep learning is ML using many-layered neural networks; an LLM is a deep-learning model specialised for language.</p></details>
+    </li>
+    <li>In the six-line Iris program, what is the purpose of <code>test_size=0.2</code>, and what would go wrong if we trained <em>and</em> measured accuracy on all 150 flowers?
+      <details class="solution"><summary>Show solution</summary><p><code>test_size=0.2</code> holds out 20% of the data (30 flowers) as a test set the model never trains on, so the accuracy reflects performance on <em>unseen</em> data. If we trained and measured on all 150, the model could simply recall flowers it already saw, giving an inflated, dishonest score that tells us nothing about new flowers. Honest evaluation requires held-out data.</p></details>
+    </li>
+    <li>Modify the from-scratch <code>predict_price</code> function so the rate is 2,500 instead of 2,000, then compute by hand the predicted price for a 60 m² house. Show your arithmetic.
+      <details class="solution"><summary>Show solution</summary><p>With <code>base=50000</code> and <code>rate=2500</code>: price = 50000 + 2500 × 60 = 50000 + 150000 = <strong>$200,000</strong>. In code you'd call <code>predict_price(60, rate=2500)</code>, which returns <code>200000</code>.</p></details>
+    </li>
+    <li>Explain, in two or three sentences to a friend who has never coded, what a Jupyter/Colab notebook is and why it's good for learning ML.
+      <details class="solution"><summary>Show solution</summary><p>A sample answer: "A notebook is a web page split into little boxes called cells. You type a bit of code in a cell, press a key, and the result pops up right underneath — including charts. It's great for learning because you can run one small piece at a time, change it, and instantly see what happens, all in your browser with nothing to install."</p></details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck">
+    <h3>You've got this if you can…</h3>
+    <ul>
+      <li>Explain, without notes, how machine learning differs from classic programming (it learns the rule from examples).</li>
+      <li>Draw the nested circles and place AI, ML, deep learning, and LLMs correctly.</li>
+      <li>Give one real example each of supervised, unsupervised, and reinforcement learning.</li>
+      <li>Open Colab, paste the six-line Iris program, run it, and explain what each line does.</li>
+      <li>Describe how you'll use Claude Code as a study partner this course.</li>
+    </ul>
+  </div>
+
+  <div class="callout resources">
+    <h3>Curated resources</h3>
+    <ul>
+      <li><a href="https://developers.google.com/machine-learning/crash-course">Google ML Crash Course</a> — a free, beginner-friendly tour of the same big ideas with interactive widgets.</li>
+      <li><a href="https://colab.research.google.com/">Google Colab</a> — your zero-setup home for running every code example in this course.</li>
+      <li><a href="https://www.youtube.com/@statquest">StatQuest (Josh Starmer)</a> — wonderfully clear, gentle video explanations of ML concepts; great for a second take.</li>
+      <li><a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy Absolute Beginners</a> — a short, friendly intro to the array library you'll use throughout.</li>
+    </ul>
+  </div>
+</section>

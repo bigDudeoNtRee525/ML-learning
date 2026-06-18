@@ -1,0 +1,386 @@
+<section class="module" id="m6" data-title="Model Evaluation">
+  <div class="module-head">
+    <span class="module-kicker">Module 6</span>
+    <h2>Model Evaluation: Overfitting, Bias-Variance, Cross-Validation, Regularization</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m6"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+  <ul>
+    <li>Diagnose <strong>overfitting</strong> and <strong>underfitting</strong> by comparing training and test performance, and explain the train-test gap in plain words.</li>
+    <li>Explain the <strong>bias-variance tradeoff</strong> using the dartboard picture and say which way to push a model that is too simple or too wiggly.</li>
+    <li>Run <strong>k-fold cross-validation</strong> by hand and with scikit-learn, and say why a single train-test split can fool you.</li>
+    <li>Read a <strong>confusion matrix</strong> and compute accuracy, precision, recall, and F1 from it — and choose the right one for the job.</li>
+    <li>Pick sensible <strong>regression metrics</strong> (RMSE, MAE) and understand when each is preferable.</li>
+    <li>Apply <strong>regularization</strong> (Ridge / L2 and Lasso / L1) as the main lever for fighting overfitting, and explain what \( \lambda \) controls.</li>
+  </ul></div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+  <p>Imagine you build a model to flag fraudulent credit-card transactions. You proudly report <strong>99.5% accuracy</strong>. Sounds amazing — until you realize that only 0.5% of transactions are actually fraud, so a lazy model that screams "not fraud!" every single time also scores 99.5% and catches <em>zero</em> criminals. Accuracy lied to you. In this module you'll learn the tools that stop a number from fooling you: how to tell whether a model truly learned or just memorized, how to measure the things you actually care about (catching fraud, not just being "right"), and how to tune a model so it generalizes to data it has never seen. This is the difference between a demo that wows in a slide deck and a system that survives contact with the real world.</p></div>
+
+  <h3>Intuition first</h3>
+  <p>Every model has one real job: do well on data it has <em>never seen before</em>. That is what "learning" means. A model that scores perfectly on the examples it was trained on but flops on new examples hasn't learned anything useful — it just <strong>memorized</strong>.</p>
+
+  <p>To catch this, we split our data into two piles before training:</p>
+  <ul>
+    <li>The <strong>training set</strong> — the examples the model is allowed to study.</li>
+    <li>The <strong>test set</strong> — examples we hide away and only use at the very end to grade the model, like a final exam it never got to peek at.</li>
+  </ul>
+
+  <p>Now compare the two scores. The gap between them is your diagnostic:</p>
+  <ul>
+    <li><strong>Underfitting:</strong> the model is bad on the training set <em>and</em> the test set. It's too simple to capture the pattern — like trying to trace a curvy river with a single straight ruler.</li>
+    <li><strong>Overfitting:</strong> the model is great on the training set but bad on the test set. It memorized the noise in the training data — like a student who memorized last year's exam answers word-for-word and is helpless when the questions change.</li>
+    <li><strong>Just right:</strong> good on training, and nearly as good on test. The gap is small.</li>
+  </ul>
+
+  <div class="callout analogy"><p><strong>The studying analogy.</strong> Underfitting is barely studying — you fail the practice tests and the real exam. Overfitting is memorizing the exact practice questions and answers without understanding — you ace the practice, then bomb the real exam because the questions are worded differently. What you actually want is to understand the <em>concepts</em>, so you do well on practice and on the real thing. The "concepts" are the genuine, repeatable pattern in the data; the "exact wording" is the noise.</p></div>
+
+  <p>Here is the same idea as a picture. The dots are data points. The straight line on the left is too simple (underfit); the wild wiggly curve on the right passes through every single point but is clearly chasing noise (overfit); the gentle curve in the middle captures the trend without obsessing over each point.</p>
+
+  <svg class="diagram" viewBox="0 0 660 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three fits: underfit straight line, good smooth curve, overfit wiggly curve">
+    <!-- panel 1: underfit -->
+    <g>
+      <rect x="10" y="10" width="200" height="180" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <line x1="30" y1="150" x2="190" y2="60" stroke="#6366f1" stroke-width="2.5"/>
+      <circle cx="45" cy="140" r="3.5" fill="#10b981"/>
+      <circle cx="70" cy="100" r="3.5" fill="#10b981"/>
+      <circle cx="95" cy="125" r="3.5" fill="#10b981"/>
+      <circle cx="120" cy="80" r="3.5" fill="#10b981"/>
+      <circle cx="150" cy="110" r="3.5" fill="#10b981"/>
+      <circle cx="175" cy="55" r="3.5" fill="#10b981"/>
+      <text x="110" y="180" text-anchor="middle" font-size="13" fill="currentColor">Underfit (too simple)</text>
+    </g>
+    <!-- panel 2: good -->
+    <g>
+      <rect x="230" y="10" width="200" height="180" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <path d="M250 150 Q290 95 320 120 T390 60" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+      <circle cx="265" cy="140" r="3.5" fill="#10b981"/>
+      <circle cx="290" cy="100" r="3.5" fill="#10b981"/>
+      <circle cx="315" cy="125" r="3.5" fill="#10b981"/>
+      <circle cx="340" cy="80" r="3.5" fill="#10b981"/>
+      <circle cx="370" cy="110" r="3.5" fill="#10b981"/>
+      <circle cx="395" cy="55" r="3.5" fill="#10b981"/>
+      <text x="330" y="180" text-anchor="middle" font-size="13" fill="currentColor">Good (smooth)</text>
+    </g>
+    <!-- panel 3: overfit -->
+    <g>
+      <rect x="450" y="10" width="200" height="180" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <path d="M485 140 C495 90 505 175 510 100 C520 60 530 150 540 80 C552 70 560 150 570 110 C580 90 595 70 615 55" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+      <circle cx="485" cy="140" r="3.5" fill="#10b981"/>
+      <circle cx="510" cy="100" r="3.5" fill="#10b981"/>
+      <circle cx="535" cy="125" r="3.5" fill="#10b981"/>
+      <circle cx="540" cy="80" r="3.5" fill="#10b981"/>
+      <circle cx="570" cy="110" r="3.5" fill="#10b981"/>
+      <circle cx="615" cy="55" r="3.5" fill="#10b981"/>
+      <text x="550" y="180" text-anchor="middle" font-size="13" fill="currentColor">Overfit (wiggly)</text>
+    </g>
+  </svg>
+  <p class="caption">Same six points, three model complexities. The overfit curve nails every point but would predict nonsense between them.</p>
+
+  <h3>The bias-variance tradeoff</h3>
+  <p>Why can't we just always use a more flexible model? Because flexibility cuts both ways. The classic way to understand this is the <strong>dartboard</strong>. Imagine you train your model many times on slightly different samples of data. Each trained model is a dart thrown at the bullseye (the true answer).</p>
+
+  <ul>
+    <li><strong>Bias</strong> is how far, on average, your darts land from the bullseye. High bias = consistently off in the same direction. This is what an <em>underfit</em>, too-simple model looks like: it keeps making the same kind of mistake no matter what data you give it.</li>
+    <li><strong>Variance</strong> is how spread out your darts are from each other. High variance = the darts scatter wildly depending on which training sample you happened to get. This is what an <em>overfit</em> model looks like: tiny changes in the training data swing it dramatically.</li>
+  </ul>
+
+  <svg class="diagram" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bias-variance dartboard: four quadrants">
+    <g>
+      <text x="140" y="20" text-anchor="middle" font-size="13" fill="currentColor">Low variance</text>
+      <text x="420" y="20" text-anchor="middle" font-size="13" fill="currentColor">High variance</text>
+      <text x="18" y="95" text-anchor="middle" font-size="13" fill="currentColor" transform="rotate(-90 18 95)">Low bias</text>
+      <text x="18" y="235" text-anchor="middle" font-size="13" fill="currentColor" transform="rotate(-90 18 235)">High bias</text>
+    </g>
+    <!-- low bias low variance -->
+    <g>
+      <circle cx="140" cy="100" r="45" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="140" cy="100" r="25" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="140" cy="100" r="6" fill="#10b981" opacity="0.5"/>
+      <circle cx="138" cy="98" r="3" fill="#6366f1"/>
+      <circle cx="143" cy="102" r="3" fill="#6366f1"/>
+      <circle cx="140" cy="104" r="3" fill="#6366f1"/>
+      <circle cx="137" cy="103" r="3" fill="#6366f1"/>
+      <text x="140" y="165" text-anchor="middle" font-size="11" fill="currentColor">Ideal</text>
+    </g>
+    <!-- low bias high variance -->
+    <g>
+      <circle cx="420" cy="100" r="45" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="420" cy="100" r="25" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="420" cy="100" r="6" fill="#10b981" opacity="0.5"/>
+      <circle cx="400" cy="85" r="3" fill="#6366f1"/>
+      <circle cx="445" cy="110" r="3" fill="#6366f1"/>
+      <circle cx="418" cy="130" r="3" fill="#6366f1"/>
+      <circle cx="435" cy="78" r="3" fill="#6366f1"/>
+      <text x="420" y="165" text-anchor="middle" font-size="11" fill="currentColor">Overfit</text>
+    </g>
+    <!-- high bias low variance -->
+    <g>
+      <circle cx="140" cy="240" r="45" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="140" cy="240" r="25" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="140" cy="240" r="6" fill="#10b981" opacity="0.5"/>
+      <circle cx="172" cy="215" r="3" fill="#6366f1"/>
+      <circle cx="176" cy="220" r="3" fill="#6366f1"/>
+      <circle cx="170" cy="224" r="3" fill="#6366f1"/>
+      <circle cx="174" cy="211" r="3" fill="#6366f1"/>
+      <text x="140" y="295" text-anchor="middle" font-size="11" fill="currentColor">Underfit</text>
+    </g>
+    <!-- high bias high variance -->
+    <g>
+      <circle cx="420" cy="240" r="45" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="420" cy="240" r="25" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <circle cx="420" cy="240" r="6" fill="#10b981" opacity="0.5"/>
+      <circle cx="455" cy="210" r="3" fill="#6366f1"/>
+      <circle cx="390" cy="225" r="3" fill="#6366f1"/>
+      <circle cx="448" cy="265" r="3" fill="#6366f1"/>
+      <circle cx="400" cy="270" r="3" fill="#6366f1"/>
+      <text x="420" y="295" text-anchor="middle" font-size="11" fill="currentColor">Worst case</text>
+    </g>
+  </svg>
+  <p class="caption">Green = the true target. Blue dots = models trained on different samples. Bias is distance from center; variance is spread.</p>
+
+  <p>The <em>tradeoff</em> is this: as you make a model more flexible, bias goes down (it can fit more shapes) but variance goes up (it overreacts to noise). Make it simpler and the reverse happens. The total error you actually experience is, roughly:</p>
+  \[ \text{Expected test error} = \text{Bias}^2 + \text{Variance} + \text{irreducible noise} \]
+  <p>where <strong>bias</strong> measures systematic wrongness, <strong>variance</strong> measures sensitivity to the particular training sample, and the <strong>irreducible noise</strong> is randomness in the world that no model can ever predict (e.g., a fair coin flip). The sweet spot is the model complexity that minimizes the sum of the first two terms — not too simple, not too wiggly.</p>
+
+  <h3>Making it precise: cross-validation</h3>
+  <p>One train-test split has a problem: the score you get depends on <em>which</em> rows happened to land in the test set. Get an unlucky split and you'll judge a good model harshly; get a lucky split and you'll over-praise a bad one. With small datasets this luck-of-the-draw can swing your numbers by a lot.</p>
+
+  <p><strong>k-fold cross-validation</strong> fixes this by not relying on a single split. You chop the data into \( k \) equal-sized chunks called <strong>folds</strong> (a common choice is \( k = 5 \)). Then you train and test \( k \) times. Each round, one fold plays the role of the test set and the other \( k-1 \) folds are the training set. Every row gets to be in the test set exactly once.</p>
+
+  <svg class="diagram" viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="5-fold cross-validation diagram">
+    <g font-size="12" fill="currentColor">
+      <text x="10" y="25">Round 1</text>
+      <text x="10" y="60">Round 2</text>
+      <text x="10" y="95">Round 3</text>
+      <text x="10" y="130">Round 4</text>
+      <text x="10" y="165">Round 5</text>
+    </g>
+    <!-- each row: 5 blocks, one is test (green) -->
+    <g>
+      <!-- row1 -->
+      <rect x="80" y="12" width="90" height="20" fill="#10b981"/><rect x="172" y="12" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="264" y="12" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="356" y="12" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="448" y="12" width="90" height="20" fill="#6366f1" opacity="0.5"/>
+      <!-- row2 -->
+      <rect x="80" y="47" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="172" y="47" width="90" height="20" fill="#10b981"/><rect x="264" y="47" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="356" y="47" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="448" y="47" width="90" height="20" fill="#6366f1" opacity="0.5"/>
+      <!-- row3 -->
+      <rect x="80" y="82" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="172" y="82" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="264" y="82" width="90" height="20" fill="#10b981"/><rect x="356" y="82" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="448" y="82" width="90" height="20" fill="#6366f1" opacity="0.5"/>
+      <!-- row4 -->
+      <rect x="80" y="117" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="172" y="117" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="264" y="117" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="356" y="117" width="90" height="20" fill="#10b981"/><rect x="448" y="117" width="90" height="20" fill="#6366f1" opacity="0.5"/>
+      <!-- row5 -->
+      <rect x="80" y="152" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="172" y="152" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="264" y="152" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="356" y="152" width="90" height="20" fill="#6366f1" opacity="0.5"/><rect x="448" y="152" width="90" height="20" fill="#10b981"/>
+    </g>
+    <text x="310" y="195" text-anchor="middle" font-size="12" fill="currentColor">Green = test fold, Blue = training folds</text>
+  </svg>
+  <p class="caption">5-fold CV: every fold is the test set once. Average the 5 scores for a stable estimate.</p>
+
+  <p>Your final cross-validated score is the <strong>average</strong> of the \( k \) test scores. As a formula, if \( s_i \) is the score (say, accuracy) on fold \( i \):</p>
+  \[ \text{CV score} = \frac{1}{k} \sum_{i=1}^{k} s_i \]
+  <p>where \( k \) is the number of folds and \( s_i \) is the score when fold \( i \) was held out for testing. The <em>spread</em> of those \( k \) scores (their standard deviation) also tells you how stable the model is — a huge spread is itself a warning of high variance.</p>
+
+  <h3>Classification metrics: beyond accuracy</h3>
+  <p>For a yes/no classifier, every prediction falls into one of four buckets, summarized in a <strong>confusion matrix</strong>:</p>
+  <ul>
+    <li><strong>True Positive (TP):</strong> predicted positive, and it really was positive. (Correctly flagged fraud.)</li>
+    <li><strong>False Positive (FP):</strong> predicted positive, but it was actually negative. (Flagged a legit purchase — a false alarm.)</li>
+    <li><strong>False Negative (FN):</strong> predicted negative, but it was actually positive. (Missed real fraud.)</li>
+    <li><strong>True Negative (TN):</strong> predicted negative, and it really was negative. (Correctly let a legit purchase through.)</li>
+  </ul>
+
+  <p>From these four counts we build the metrics. Each answers a different question:</p>
+  <p><strong>Accuracy</strong> — "Of all predictions, what fraction were correct?"</p>
+  \[ \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \]
+  <p>Simple, but misleading on imbalanced data (recall the fraud example).</p>
+
+  <p><strong>Precision</strong> — "When the model says positive, how often is it right?"</p>
+  \[ \text{Precision} = \frac{TP}{TP + FP} \]
+  <p>High precision means few false alarms. You care about precision when a false positive is expensive — e.g., flagging a customer's legit card and getting it declined at a restaurant.</p>
+
+  <p><strong>Recall</strong> (also called sensitivity) — "Of all the actual positives, how many did we catch?"</p>
+  \[ \text{Recall} = \frac{TP}{TP + FN} \]
+  <p>High recall means few misses. You care about recall when a false negative is dangerous — e.g., a cancer screen that misses a real tumor.</p>
+
+  <p><strong>F1 score</strong> — a single number that balances precision and recall. It is their <em>harmonic mean</em>, which punishes the case where one is high and the other is low:</p>
+  \[ F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \]
+  <p>Here the only symbols are precision and recall as defined above; the leading 2 makes the formula equal 1 when both are perfect.</p>
+
+  <p><strong>The threshold, ROC, and AUC.</strong> Most classifiers don't output a hard yes/no — they output a <em>probability</em>, like 0.83. You then pick a <strong>threshold</strong> (commonly 0.5): predict positive if the probability is above it. Lower the threshold and you catch more positives (recall up) but raise false alarms (precision down). The <strong>ROC curve</strong> plots the true-positive rate against the false-positive rate as you sweep the threshold from 0 to 1. The <strong>AUC</strong> (Area Under the Curve) collapses that whole curve into one number from 0.5 (random guessing) to 1.0 (perfect), measuring how well the model <em>ranks</em> positives above negatives regardless of any single threshold.</p>
+
+  <h3>Regression metrics</h3>
+  <p>When you're predicting a number (a price, a temperature) rather than a class, two metrics dominate. Let \( y_i \) be the true value, \( \hat{y}_i \) ("y-hat") the predicted value, and \( n \) the number of examples.</p>
+  <p><strong>MAE (Mean Absolute Error)</strong> — the average size of the mistakes, treating an over-prediction and an under-prediction of the same size equally:</p>
+  \[ \text{MAE} = \frac{1}{n}\sum_{i=1}^{n} |y_i - \hat{y}_i| \]
+  <p><strong>RMSE (Root Mean Squared Error)</strong> — square the errors before averaging, then take the square root to get back to original units:</p>
+  \[ \text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n} (y_i - \hat{y}_i)^2} \]
+  <p>The squaring in RMSE means big mistakes hurt disproportionately, so RMSE is the metric to watch when a single large error is much worse than several small ones. MAE is more forgiving of outliers and easier to interpret ("on average we're off by $4,200"). You met the squared-error idea in <em>Module 3 — Linear Regression</em>; here it becomes a reporting metric.</p>
+
+  <h3>Regularization: the lever against overfitting</h3>
+  <p>Overfitting often shows up as <em>huge weights</em>. To pass through every noisy point, a model cranks its coefficients to extreme values, producing the wild wiggles you saw earlier. <strong>Regularization</strong> fights this by adding a penalty to the loss for being too "loud." The model now has to trade off fitting the data against keeping its weights small.</p>
+
+  <p><strong>L2 regularization (Ridge).</strong> Add the sum of squared weights to the loss:</p>
+  \[ \text{Loss}_{\text{ridge}} = \underbrace{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}_{\text{fit the data}} + \underbrace{\lambda \sum_{j=1}^{p} w_j^2}_{\text{stay small}} \]
+  <p>Here \( w_j \) is the \( j \)-th weight (coefficient), \( p \) is the number of weights, and \( \lambda \) ("lambda") is the <strong>regularization strength</strong> — a knob you choose. When \( \lambda = 0 \) you get plain regression. As \( \lambda \) grows, the penalty dominates and weights are squeezed toward zero, making the model simpler (lower variance, higher bias). Ridge shrinks weights smoothly but rarely sets them exactly to zero.</p>
+
+  <p><strong>L1 regularization (Lasso).</strong> Same idea but penalize the <em>absolute</em> values of weights:</p>
+  \[ \text{Loss}_{\text{lasso}} = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^{p} |w_j| \]
+  <p>The absolute-value penalty has a special effect: it can drive some weights <em>exactly to zero</em>, effectively deleting those features. That makes Lasso a built-in <strong>feature selector</strong> — handy when you suspect many of your features are useless. You'll choose \( \lambda \) the proper way (with cross-validation!) rather than by eyeballing it.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+  <p>A spam classifier is evaluated on 100 emails. Its confusion matrix is:</p>
+  <ul>
+    <li>TP = 40 (spam correctly caught)</li>
+    <li>FP = 10 (good email wrongly marked spam)</li>
+    <li>FN = 20 (spam that slipped through)</li>
+    <li>TN = 30 (good email correctly delivered)</li>
+  </ul>
+  <p>Let's compute every metric, showing each fraction.</p>
+  <p><strong>Accuracy</strong> — correct predictions over all predictions:</p>
+  \[ \text{Accuracy} = \frac{TP + TN}{TP+TN+FP+FN} = \frac{40 + 30}{40+30+10+20} = \frac{70}{100} = 0.70 \]
+  <p>So 70% of emails were classified correctly.</p>
+  <p><strong>Precision</strong> — of everything we called spam, how much really was spam:</p>
+  \[ \text{Precision} = \frac{TP}{TP+FP} = \frac{40}{40+10} = \frac{40}{50} = 0.80 \]
+  <p>When this filter says "spam," it's right 80% of the time.</p>
+  <p><strong>Recall</strong> — of all the real spam, how much we caught:</p>
+  \[ \text{Recall} = \frac{TP}{TP+FN} = \frac{40}{40+20} = \frac{40}{60} = 0.6\overline{6} \approx 0.667 \]
+  <p>We caught about 67% of the spam; the other 33% slipped into inboxes.</p>
+  <p><strong>F1</strong> — harmonic mean of the two. First the numerator and denominator:</p>
+  \[ F_1 = 2 \cdot \frac{0.80 \times 0.667}{0.80 + 0.667} = 2 \cdot \frac{0.5336}{1.467} = 2 \cdot 0.3637 \approx 0.727 \]
+  <p>So accuracy 0.70, precision 0.80, recall 0.667, F1 0.727. Notice how F1 sits between precision and recall, pulled toward the smaller one — exactly the "balance" behavior we wanted.</p>
+  </div>
+
+  <h3>In code: from scratch</h3>
+  <p>Let's reproduce the worked example with plain Python — just the four counts and arithmetic — then build k-fold split indices by hand so the mechanism is fully transparent.</p>
+  <codeblock>def classification_metrics(tp, fp, fn, tn):
+    accuracy = (tp + tn) / (tp + fp + fn + tn)
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    if precision + recall > 0:
+        f1 = 2 * precision * recall / (precision + recall)
+    else:
+        f1 = 0.0
+    return accuracy, precision, recall, f1
+
+acc, prec, rec, f1 = classification_metrics(tp=40, fp=10, fn=20, tn=30)
+print(f"accuracy={acc:.3f} precision={prec:.3f} recall={rec:.3f} f1={f1:.3f}")
+
+# K-fold split indices by hand (no libraries)
+def kfold_indices(n_samples, k):
+    indices = list(range(n_samples))
+    fold_size = n_samples // k
+    folds = []
+    start = 0
+    for i in range(k):
+        # last fold absorbs any remainder
+        end = start + fold_size if i < k - 1 else n_samples
+        test_idx = indices[start:end]
+        train_idx = indices[:start] + indices[end:]
+        folds.append((train_idx, test_idx))
+        start = end
+    return folds
+
+for fold_num, (train_idx, test_idx) in enumerate(kfold_indices(10, k=5), 1):
+    print(f"Fold {fold_num}: test={test_idx} train={train_idx}")
+</codeblock>
+  <p>Running this prints <code>accuracy=0.700 precision=0.800 recall=0.667 f1=0.727</code> — matching our hand calculation exactly. The k-fold loop prints five rows; fold 1 tests on indices [0, 1] and trains on [2..9], fold 2 tests on [2, 3], and so on, so every index appears in a test set exactly once. (In practice you'd shuffle the indices first so the folds aren't biased by row order.)</p>
+
+  <h3>In code: the library way</h3>
+  <p>scikit-learn gives you all of this in a few lines. We'll cross-validate a model, print a full confusion matrix and report, and compare Ridge vs Lasso regularization strengths.</p>
+  <codeblock>import numpy as np
+from sklearn.datasets import make_classification, make_regression
+from sklearn.linear_model import LogisticRegression, Ridge, Lasso
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.metrics import confusion_matrix, classification_report
+
+# --- classification: cross-validation + confusion matrix ---
+X, y = make_classification(n_samples=400, n_features=8, weights=[0.7, 0.3],
+                           random_state=0)
+clf = LogisticRegression(max_iter=1000)
+
+scores = cross_val_score(clf, X, y, cv=5, scoring="f1")
+print(f"5-fold F1: {scores}")
+print(f"mean={scores.mean():.3f}  std={scores.std():.3f}")
+
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)
+clf.fit(X_tr, y_tr)
+pred = clf.predict(X_te)
+print("Confusion matrix [[TN FP] [FN TP]]:")
+print(confusion_matrix(y_te, pred))
+print(classification_report(y_te, pred, digits=3))
+
+# --- regression: Ridge vs Lasso as lambda (alpha) grows ---
+Xr, yr = make_regression(n_samples=200, n_features=20, n_informative=5,
+                         noise=10.0, random_state=0)
+for alpha in [0.1, 1.0, 10.0]:
+    ridge = Ridge(alpha=alpha).fit(Xr, yr)
+    lasso = Lasso(alpha=alpha).fit(Xr, yr)
+    n_zero = int(np.sum(np.abs(lasso.coef_) < 1e-8))
+    print(f"alpha={alpha:>4}: ridge||w||={np.linalg.norm(ridge.coef_):.1f}  "
+          f"lasso zeros={n_zero}/20")
+</codeblock>
+  <p>Note scikit-learn calls the regularization strength <code>alpha</code> (our \( \lambda \)). The cross-validation block prints five F1 scores plus their mean and standard deviation — a much more trustworthy estimate than any single split. As <code>alpha</code> grows, Ridge's total weight magnitude shrinks, and Lasso zeroes out more of the 20 features (it should keep roughly the 5 truly informative ones), demonstrating L1's automatic feature selection.</p>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
+  <p>Paste these to your Claude Code companion as you study:</p>
+  <ul>
+    <li>"Explain the bias-variance tradeoff to me with a different analogy than the dartboard, then quiz me on which way to push an underfit vs an overfit model."</li>
+    <li>"Generate 5 confusion matrices with different TP/FP/FN/TN values and have me compute accuracy, precision, recall, and F1 by hand, then check my answers."</li>
+    <li>"Run the scikit-learn code from this module and show me what happens to the Lasso zero-count and Ridge weight norm if I change alpha to 0.01 and to 100."</li>
+    <li>"Pair with me to implement stratified k-fold cross-validation from scratch (so each fold keeps the class balance), and review my code for correctness."</li>
+  </ul></div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+  <ul>
+    <li><strong>Tuning on the test set.</strong> If you keep tweaking your model and re-checking the test score until it looks good, you've secretly fit to the test set — your final number is now optimistic. Fix: tune using cross-validation on the training data, and touch the test set <em>once</em>, at the very end. Better still, keep a separate <em>validation</em> set for tuning.</li>
+    <li><strong>The accuracy paradox on imbalanced data.</strong> With 99% negatives, "always predict negative" scores 99% accuracy while being useless. Fix: report precision, recall, F1, or AUC — not accuracy alone — whenever classes are imbalanced.</li>
+    <li><strong>Confusing precision and recall.</strong> Precision is about the predictions you <em>made</em> ("when I say positive, am I right?"); recall is about the positives that <em>exist</em> ("did I find them all?"). They pull in opposite directions as you move the threshold.</li>
+    <li><strong>Data leakage via scaling before the CV split.</strong> If you standardize (subtract the mean, divide by std) using the <em>whole</em> dataset and then cross-validate, statistics from the test folds leaked into training — your scores will be too rosy. Fix: put scaling inside a <code>Pipeline</code> so it's refit on each fold's training portion only. (More on this in <em>Module 7 — Feature Engineering and Preprocessing</em>.)</li>
+    <li><strong>Thinking more data complexity always helps.</strong> Beyond the sweet spot, added flexibility raises variance and hurts test performance. Use a validation curve to find the right complexity.</li>
+    <li><strong>Treating a 0.5 threshold as sacred.</strong> The default threshold is just a convention. If missing a positive is costly, lower it to raise recall; the ROC/AUC view helps you choose deliberately.</li>
+  </ul></div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>A model on a test set produces TP = 90, FP = 30, FN = 10, TN = 870. Compute accuracy, precision, recall, and F1. Is accuracy a fair summary here? Why or why not?
+      <details class="solution"><summary>Show solution</summary>
+      <p>Accuracy = (90 + 870) / (90 + 30 + 10 + 870) = 960 / 1000 = 0.960. Precision = 90 / (90 + 30) = 90/120 = 0.75. Recall = 90 / (90 + 10) = 90/100 = 0.90. F1 = 2 · (0.75 · 0.90)/(0.75 + 0.90) = 2 · 0.675/1.65 ≈ 0.818. Accuracy looks great (0.96) but the data is imbalanced (only 100 positives out of 1000), so accuracy is inflated by the easy negatives. Precision/recall/F1 give a more honest picture.</p>
+      </details>
+    </li>
+    <li>You have a dataset of 12 rows and want 4-fold cross-validation. List the test indices for each of the 4 folds (assume no shuffling), and state how many times each row is used for training.
+      <details class="solution"><summary>Show solution</summary>
+      <p>12 rows, k = 4, so each fold has 12/4 = 3 rows. Fold 1 test = [0,1,2], Fold 2 test = [3,4,5], Fold 3 test = [6,7,8], Fold 4 test = [9,10,11]. Each row is in the test set exactly once and therefore in the training set in the other 3 rounds (k − 1 = 3 times).</p>
+      </details>
+    </li>
+    <li>For a hospital screening test, would you prioritize precision or recall, and why? What happens to each as you lower the decision threshold?
+      <details class="solution"><summary>Show solution</summary>
+      <p>Prioritize <strong>recall</strong>: a false negative means telling a sick patient they're healthy, which can be life-threatening, so you want to catch as many true cases as possible even at the cost of more false alarms (which can be ruled out by follow-up tests). Lowering the threshold predicts "positive" more readily: recall goes <em>up</em> (you catch more true positives) while precision goes <em>down</em> (more false positives sneak in).</p>
+      </details>
+    </li>
+    <li>Two regression models predict house prices. Model A's errors (in $1000s) are [2, 2, 2, 2, 2]. Model B's errors are [0, 0, 0, 0, 10]. Compute MAE and RMSE for each. Which metric reveals Model B's big single mistake?
+      <details class="solution"><summary>Show solution</summary>
+      <p>Model A: MAE = (2+2+2+2+2)/5 = 2.0. RMSE = √((4·5)/5) = √4 = 2.0. Model B: MAE = (0+0+0+0+10)/5 = 2.0. RMSE = √((0+0+0+0+100)/5) = √20 ≈ 4.47. Both have the same MAE (2.0), but RMSE is much larger for Model B (4.47 vs 2.0) because squaring magnifies the single $10k error. RMSE is the metric that flags the big mistake.</p>
+      </details>
+    </li>
+    <li>You train Ridge with \( \lambda = 0 \), then increase \( \lambda \) to a very large value. Describe what happens to (a) the weights, (b) the bias, and (c) the variance of the model. At \( \lambda \to \infty \), what does the model effectively predict?
+      <details class="solution"><summary>Show solution</summary>
+      <p>(a) The weights shrink toward zero as \( \lambda \) grows, because the penalty \( \lambda \sum w_j^2 \) increasingly outweighs the fit term. (b) Bias <em>increases</em> — the model becomes simpler and less able to follow the data's shape. (c) Variance <em>decreases</em> — small weights mean the model reacts less to noise in any particular training sample. As \( \lambda \to \infty \), all weights are forced to ~0, so the model ignores the features entirely and just predicts the constant mean of the training targets (maximal bias, near-zero variance).</p>
+      </details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+  <ul>
+    <li>Look at a train score of 0.99 and a test score of 0.71 and immediately name the problem (overfitting) and a fix (regularize / simplify / get more data).</li>
+    <li>Compute precision, recall, and F1 from a confusion matrix without looking up the formulas.</li>
+    <li>Explain to a friend why one train-test split can mislead you and how k-fold cross-validation helps.</li>
+    <li>Decide whether precision or recall matters more for a given real-world task and justify it.</li>
+    <li>Say what \( \lambda \) does in Ridge/Lasso and which of bias and variance each direction of \( \lambda \) affects.</li>
+  </ul></div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+  <ul>
+    <li><a href="https://www.youtube.com/@statquest">StatQuest (Josh Starmer)</a> — his bias-variance, ROC/AUC, and cross-validation videos are the clearest beginner explanations anywhere.</li>
+    <li><a href="https://developers.google.com/machine-learning/crash-course">Google ML Crash Course</a> — concise, interactive sections on classification thresholds, precision/recall, and ROC.</li>
+    <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn User Guide</a> — the authoritative reference for cross-validation, metrics, and Ridge/Lasso, with runnable examples.</li>
+    <li><a href="https://www.statlearning.com/">An Introduction to Statistical Learning (free PDF)</a> — Chapters 2 and 5-6 cover bias-variance, resampling, and regularization rigorously yet accessibly.</li>
+  </ul></div>
+</section>

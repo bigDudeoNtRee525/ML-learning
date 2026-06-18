@@ -1,0 +1,267 @@
+<section class="module" id="m8" data-title="Classical Algorithms">
+  <div class="module-head">
+    <span class="module-kicker">Module 8</span>
+    <h2>Classical Algorithms Toolbox</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m8"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+  <ul>
+    <li>Explain and hand-compute <strong>k-Nearest Neighbors</strong> (kNN), and implement it from scratch in NumPy.</li>
+    <li>Read a <strong>decision tree</strong>, compute <strong>Gini impurity</strong> and <strong>information gain</strong> to choose a split, and explain why deep trees overfit.</li>
+    <li>Describe how <strong>random forests</strong> use <strong>bagging</strong> and feature randomness to turn many weak trees into one strong model.</li>
+    <li>Explain <strong>gradient boosting</strong> (and where XGBoost fits) at a practical level, and contrast it with bagging.</li>
+    <li>State the <strong>max-margin</strong> intuition behind <strong>support vector machines</strong> and what the <strong>kernel trick</strong> buys you.</li>
+    <li>Apply <strong>naive Bayes</strong>, explain the <strong>generative vs discriminative</strong> distinction, and pick a sensible first algorithm for any tabular problem.</li>
+  </ul></div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+  <p>You've spent Modules 3–7 mastering linear and logistic regression — straight lines and S-curves. They're wonderful, but they all share one assumption: that the relationship you're modeling is essentially a weighted sum of your features. The real world is full of patterns that aren't. "Approve this loan only if the applicant is young <em>and</em> has high debt <em>and</em> lives in a high-risk region" is a nest of if-then rules, not a line. "These two customers behave alike because they're near each other in feature space" is about distance, not slope. The algorithms in this module — neighbors, trees, forests, boosting, margins, and probabilities — each capture a different shape of pattern. And here's the punchline that working data scientists know in their bones: on ordinary <em>tabular</em> data (rows and columns in a spreadsheet — the bread and butter of business ML), a gradient-boosted tree like XGBoost still routinely beats a neural network. The fancy deep learning of Modules 10–14 rules images and text; this classical toolbox quietly wins the Kaggle competitions and powers the dashboards. Learn it well and you can solve most real business problems before lunch.</p></div>
+
+  <h3>Intuition first</h3>
+  <p>Every algorithm here answers the same question — "given this new example, what's my prediction?" — but each has a completely different theory of how the world works. Let's meet them as personalities before we touch any math.</p>
+
+  <h4>k-Nearest Neighbors: "you are who you hang out with"</h4>
+  <p>kNN is the laziest, most intuitive model imaginable. To classify a new point, it looks at the <em>k</em> closest already-labeled points and takes a vote. That's the entire idea. There is no "training" beyond memorizing the data. If you want to know whether a new fruit is an apple or an orange, you find the 3 most similar fruits you've already seen and go with the majority.</p>
+
+  <div class="callout analogy"><p><strong>The new-neighborhood analogy.</strong> You move to a new town and want to guess whether your street is quiet or lively. You don't run a regression — you just look at the five nearest houses. If four of them throw weekend parties, you bet "lively." kNN is exactly this: it makes no grand theory of the whole town, it just trusts the immediate neighbors. The choice of <em>how many</em> neighbors to consult (k) is the only real dial: ask too few (k=1) and one weird neighbor sways you; ask too many and you start averaging in houses across town that aren't really like yours.</p></div>
+
+  <svg class="diagram" viewBox="0 0 320 220" width="100%" role="img" aria-label="A new point with its three nearest neighbors circled">
+    <circle cx="70" cy="60" r="6" fill="#6366f1"/>
+    <circle cx="110" cy="100" r="6" fill="#6366f1"/>
+    <circle cx="60" cy="150" r="6" fill="#6366f1"/>
+    <circle cx="250" cy="70" r="6" fill="#10b981"/>
+    <circle cx="240" cy="140" r="6" fill="#10b981"/>
+    <circle cx="200" cy="110" r="6" fill="#10b981"/>
+    <circle cx="170" cy="120" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="170" y="145" text-anchor="middle" fill="currentColor" font-size="11">new "?"</text>
+    <circle cx="170" cy="120" r="58" fill="none" stroke="#94a3b8" stroke-dasharray="4 3"/>
+    <line x1="170" y1="120" x2="200" y2="110" stroke="#10b981" stroke-width="1"/>
+    <line x1="170" y1="120" x2="110" y2="100" stroke="#6366f1" stroke-width="1"/>
+    <line x1="170" y1="120" x2="240" y2="140" stroke="#10b981" stroke-width="1"/>
+    <text x="285" y="40" text-anchor="middle" fill="#10b981" font-size="11">class B</text>
+    <text x="45" y="40" text-anchor="middle" fill="#6366f1" font-size="11">class A</text>
+  </svg>
+  <p class="caption">With k=3, the new point's three nearest neighbors are two green (class B) and one purple (class A). Majority vote: class B.</p>
+
+  <h4>Decision trees: "a flowchart it builds for itself"</h4>
+  <p>A decision tree is a series of yes/no questions arranged like a flowchart, ending in a prediction. "Is age below 30? If yes, is debt above $5,000? If yes, predict 'high risk'." The clever part is that the tree <em>learns which questions to ask, and in what order</em>, from the data. At each step it searches every feature for the single split that best separates the classes, then repeats on each branch. It's how a doctor diagnoses (asking the most informative question first) turned into an algorithm.</p>
+
+  <div class="callout analogy"><p><strong>The 20-questions analogy.</strong> A good 20-questions player never asks "Is it a platypus?" first. They ask "Is it alive?" — a question that splits the universe roughly in half. Each answer carves away as much uncertainty as possible. A decision tree picks its questions by exactly this principle: choose the split that most reduces the "messiness" of the remaining group. We'll measure messiness with a number called <em>Gini impurity</em>.</p></div>
+
+  <h4>Random forests: "ask a crowd, not one expert"</h4>
+  <p>A single deep tree is a brilliant but erratic expert — it memorizes quirks of the training data and overfits. A random forest grows hundreds of trees, each on a slightly different random slice of the data and a random subset of features, then averages their votes. No single tree is great, but their <em>mistakes are uncorrelated</em>, so they cancel out. This is the wisdom of crowds, mechanized.</p>
+
+  <h4>Gradient boosting: "a team that fixes each other's mistakes"</h4>
+  <p>Boosting also builds many trees, but sequentially and with a twist: each new tree is trained specifically to correct the errors the previous trees made so far. The first tree makes a rough prediction; the second tree focuses on the examples the first got wrong; the third focuses on what's still wrong; and so on. It's relentless self-correction. XGBoost is the famous, fast implementation. On tabular data, this is usually the strongest single tool you own.</p>
+
+  <h4>Support vector machines: "find the widest safe road"</h4>
+  <p>An SVM draws a boundary between two classes, but not just any boundary — the one with the largest possible <em>margin</em>, the widest empty buffer between the boundary and the nearest points of each class. A wide buffer means a confident, robust decision. The "kernel trick" lets it draw curvy boundaries by secretly measuring similarity in a higher-dimensional space, without ever building that space.</p>
+
+  <h4>Naive Bayes: "multiply the clues together"</h4>
+  <p>Naive Bayes computes the probability of each class by combining the evidence from each feature, using Bayes' rule. It's "naive" because it pretends the features are independent (that knowing one tells you nothing about another) — usually false, yet often harmless. It's the classic spam filter: each suspicious word nudges the probability, and the nudges multiply.</p>
+
+  <h3>Making it precise</h3>
+
+  <h4>kNN: distance and voting</h4>
+  <p>To find "nearest," we need a notion of distance. The default is <strong>Euclidean distance</strong> — ordinary straight-line distance. For two points \( \mathbf{a} \) and \( \mathbf{b} \), each a list of feature values, the distance is</p>
+  \[ d(\mathbf{a},\mathbf{b}) = \sqrt{\sum_{j=1}^{m}(a_j - b_j)^2} \]
+  <p>where \( m \) is the number of features, \( a_j \) is the \( j \)-th feature of point \( \mathbf{a} \), and \( b_j \) is the \( j \)-th feature of point \( \mathbf{b} \). In words: for each feature, take the difference, square it (so the sign doesn't matter), add up all those squares, and take the square root. This is the Pythagorean theorem generalized to many dimensions. To classify a new point, compute its distance to every training point, keep the \( k \) smallest, and let those \( k \) labels vote; the most common label wins. There is no equation to "fit" — kNN just stores the data, which is why it's called a <em>lazy</em> learner.</p>
+
+  <div class="callout pitfalls"><p><strong>Scaling is not optional for kNN.</strong> Because distance squares each feature's difference, a feature measured in big units (salary in dollars) dominates a feature in small units (age in years). Always standardize features first (Module 7 — Feature Engineering) or kNN measures distance almost entirely along whichever column happens to have the largest numbers.</p></div>
+
+  <h4>Decision trees: measuring impurity with Gini</h4>
+  <p>A tree needs a number that says "how mixed are the classes in this group?" The <strong>Gini impurity</strong> of a node is</p>
+  \[ G = 1 - \sum_{c=1}^{C} p_c^2 \]
+  <p>where \( C \) is the number of classes and \( p_c \) is the fraction of examples in the node that belong to class \( c \). In words: square the proportion of each class, add those up, and subtract from 1. A pure node (all one class) has one \( p_c = 1 \), so \( G = 1 - 1 = 0 \) — zero impurity, perfectly clean. A 50/50 two-class node has \( G = 1 - (0.5^2 + 0.5^2) = 0.5 \) — maximum mess. Gini ranges from 0 (pure) to a max of \( 1 - 1/C \).</p>
+  <p>To evaluate a candidate split, we compute the <strong>weighted impurity after the split</strong>: the Gini of each child node, weighted by how many examples land in it.</p>
+  \[ G_{\text{split}} = \frac{n_L}{n}G_L + \frac{n_R}{n}G_R \]
+  <p>where \( n \) is the number of examples at the parent, \( n_L \) and \( n_R \) are the counts going left and right, and \( G_L, G_R \) are the children's Gini impurities. The <strong>information gain</strong> (here, the Gini reduction) is \( G_{\text{parent}} - G_{\text{split}} \). The tree tries every feature and every threshold, and picks the split with the largest gain — the question that cleans up the data the most. (Some trees use <em>entropy</em> instead of Gini; they behave almost identically, so we'll stick with Gini.)</p>
+
+  <h4>Random forests and bagging</h4>
+  <p><strong>Bagging</strong> (bootstrap aggregating) means: build each tree on a <em>bootstrap sample</em> — a dataset of the same size drawn <em>with replacement</em> from the original, so some rows repeat and some are left out. Each tree therefore sees a slightly different world. A random forest adds one more trick: at each split, the tree may only consider a random subset of features (often \( \sqrt{m} \) of them). This stops every tree from leaning on the same one dominant feature, making the trees more different from one another. The final prediction is the majority vote (classification) or average (regression) across all trees. Why does averaging help? If each tree's error is partly random and the errors are roughly independent, averaging \( T \) trees shrinks the variance of that random error by roughly a factor of \( T \), while leaving the genuine signal intact.</p>
+
+  <h4>Gradient boosting</h4>
+  <p>Boosting builds the prediction as a running sum of small trees. Start with a constant guess \( F_0 \) (e.g. the overall class rate). Then for each round \( t \), fit a small tree \( h_t \) to the current <em>errors</em> (the gradient of the loss, hence "gradient" boosting) and update</p>
+  \[ F_t(\mathbf{x}) = F_{t-1}(\mathbf{x}) + \eta\, h_t(\mathbf{x}) \]
+  <p>where \( F_t \) is the model after \( t \) rounds, \( h_t \) is the new little tree, and \( \eta \) (eta) is the <strong>learning rate</strong> — a small number like 0.1 that controls how big a correction each tree is allowed to make. Small \( \eta \) plus many trees = careful, accurate learning. This is the same gradient-descent idea from Module 4 — Gradient Descent, except each "step downhill" is taken by adding a whole tree rather than nudging a weight. XGBoost, LightGBM, and CatBoost are optimized, regularized versions of this idea; they're the workhorses of tabular ML.</p>
+
+  <h4>Support vector machines: the max-margin idea</h4>
+  <p>For two classes, an SVM finds a boundary (a line in 2-D, a flat <em>hyperplane</em> in higher dimensions) defined by \( \mathbf{w}\cdot\mathbf{x} + b = 0 \), where \( \mathbf{w} \) is a weight vector giving the boundary's orientation, \( \mathbf{x} \) is an input point, the dot \( \cdot \) means multiply matching components and add, and \( b \) shifts the boundary. Among all boundaries that separate the classes, the SVM picks the one that <strong>maximizes the margin</strong> — the perpendicular distance to the closest points of either class. Those closest points are the <em>support vectors</em>; they alone determine the boundary. The <strong>kernel trick</strong> replaces the dot product \( \mathbf{x}_i\cdot\mathbf{x}_j \) with a <em>kernel function</em> \( K(\mathbf{x}_i,\mathbf{x}_j) \) that measures similarity as if the points had been mapped into a much higher-dimensional space — letting a straight margin in that hidden space appear as a curved boundary in the original one, all without ever computing the high-dimensional coordinates.</p>
+
+  <svg class="diagram" viewBox="0 0 340 200" width="100%" role="img" aria-label="An SVM decision boundary with a wide margin between two classes">
+    <line x1="40" y1="170" x2="300" y2="30" stroke="#6366f1" stroke-width="2"/>
+    <line x1="40" y1="140" x2="300" y2="0" stroke="#94a3b8" stroke-dasharray="4 3"/>
+    <line x1="40" y1="200" x2="300" y2="60" stroke="#94a3b8" stroke-dasharray="4 3"/>
+    <circle cx="80" cy="60" r="6" fill="#6366f1"/>
+    <circle cx="120" cy="50" r="6" fill="#6366f1"/>
+    <circle cx="110" cy="95" r="7" fill="#6366f1" stroke="currentColor" stroke-width="2"/>
+    <circle cx="230" cy="150" r="6" fill="#10b981"/>
+    <circle cx="270" cy="140" r="6" fill="#10b981"/>
+    <circle cx="200" cy="135" r="7" fill="#10b981" stroke="currentColor" stroke-width="2"/>
+    <text x="155" y="110" fill="currentColor" font-size="11" transform="rotate(-28 155 110)">margin</text>
+  </svg>
+  <p class="caption">The solid line is the decision boundary; the dashed lines mark the margin. The two circled points touching the margin are the support vectors — only they matter.</p>
+
+  <h4>Naive Bayes and generative vs discriminative</h4>
+  <p>Bayes' rule lets us flip a conditional probability. To classify, we want \( P(\text{class}\mid \text{features}) \) — the probability of a class given what we observed. Bayes' rule says it's proportional to \( P(\text{class}) \times P(\text{features}\mid \text{class}) \): the class's overall prevalence times how likely those features are if that class were true. The "naive" assumption is that the features are conditionally independent, so the joint feature likelihood factors into a product:</p>
+  \[ P(y\mid x_1,\dots,x_m) \;\propto\; P(y)\prod_{j=1}^{m} P(x_j\mid y) \]
+  <p>where \( y \) is the class, \( x_j \) is the \( j \)-th feature, \( P(y) \) is the prior class probability, and \( P(x_j\mid y) \) is how likely feature \( j \)'s value is within class \( y \). The \( \prod \) symbol means "multiply over all features." We compute this product for each class and pick the largest. Because it models \( P(\text{features}\mid \text{class}) \) — how the data is <em>generated</em> within each class — naive Bayes is a <strong>generative</strong> model. Logistic regression (Module 5) instead models the boundary \( P(\text{class}\mid \text{features}) \) directly; it's <strong>discriminative</strong>. Generative models can be trained from less data and can even invent new samples; discriminative models usually win on raw accuracy when data is plentiful. Most of deep learning is discriminative — except modern generative AI, which brings the generative idea roaring back at enormous scale (Module 14).</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+  <p><strong>Part 1: kNN with k=3.</strong> You have five labeled points with two features each, and you must classify a new point \( q = (3, 3) \).</p>
+  <table style="border-collapse:collapse">
+    <tr><th style="padding:2px 10px">Point</th><th style="padding:2px 10px">x₁</th><th style="padding:2px 10px">x₂</th><th style="padding:2px 10px">Label</th></tr>
+    <tr><td style="padding:2px 10px">P1</td><td style="padding:2px 10px">1</td><td style="padding:2px 10px">2</td><td style="padding:2px 10px">A</td></tr>
+    <tr><td style="padding:2px 10px">P2</td><td style="padding:2px 10px">2</td><td style="padding:2px 10px">3</td><td style="padding:2px 10px">A</td></tr>
+    <tr><td style="padding:2px 10px">P3</td><td style="padding:2px 10px">3</td><td style="padding:2px 10px">5</td><td style="padding:2px 10px">B</td></tr>
+    <tr><td style="padding:2px 10px">P4</td><td style="padding:2px 10px">5</td><td style="padding:2px 10px">4</td><td style="padding:2px 10px">B</td></tr>
+    <tr><td style="padding:2px 10px">P5</td><td style="padding:2px 10px">4</td><td style="padding:2px 10px">2</td><td style="padding:2px 10px">B</td></tr>
+  </table>
+  <p>Compute the Euclidean distance from \( q=(3,3) \) to each point:</p>
+  <ul>
+    <li>P1: \( \sqrt{(3-1)^2+(3-2)^2} = \sqrt{4+1} = \sqrt{5} \approx 2.24 \)</li>
+    <li>P2: \( \sqrt{(3-2)^2+(3-3)^2} = \sqrt{1+0} = \sqrt{1} = 1.00 \)</li>
+    <li>P3: \( \sqrt{(3-3)^2+(3-5)^2} = \sqrt{0+4} = \sqrt{4} = 2.00 \)</li>
+    <li>P4: \( \sqrt{(3-5)^2+(3-4)^2} = \sqrt{4+1} = \sqrt{5} \approx 2.24 \)</li>
+    <li>P5: \( \sqrt{(3-4)^2+(3-2)^2} = \sqrt{1+1} = \sqrt{2} \approx 1.41 \)</li>
+  </ul>
+  <p>Sort by distance: P2 (1.00), P5 (1.41), P3 (2.00), then P1 and P4 (2.24). The three nearest are <strong>P2 (A), P5 (B), P3 (B)</strong>. Vote: A=1, B=2. <strong>Prediction: class B.</strong> Notice that with k=1 we'd have picked P2 and predicted A — the choice of k genuinely changes the answer.</p>
+
+  <p><strong>Part 2: Gini impurity of a node.</strong> A node holds 4 positives and 6 negatives (10 total). The class fractions are \( p_+ = 4/10 = 0.4 \) and \( p_- = 6/10 = 0.6 \). Then</p>
+  \[ G = 1 - (0.4^2 + 0.6^2) = 1 - (0.16 + 0.36) = 1 - 0.52 = 0.48 \]
+  <p>So this node has Gini impurity <strong>0.48</strong> — quite mixed (the max for two classes is 0.5).</p>
+
+  <p><strong>Part 3: Gini of a split.</strong> Suppose a candidate split sends 4 examples left (3 positive, 1 negative) and 6 right (1 positive, 5 negative). Left child: \( G_L = 1 - ((3/4)^2 + (1/4)^2) = 1 - (0.5625 + 0.0625) = 0.375 \). Right child: \( G_R = 1 - ((1/6)^2 + (5/6)^2) = 1 - (0.0278 + 0.6944) = 0.2778 \). Weighted impurity:</p>
+  \[ G_{\text{split}} = \tfrac{4}{10}(0.375) + \tfrac{6}{10}(0.2778) = 0.15 + 0.1667 = 0.3167 \]
+  <p>Information gain \( = 0.48 - 0.3167 = 0.1633 \). The split reduced impurity from 0.48 to about 0.317, a solid gain — the tree would happily make this split.</p></div>
+
+  <h3>In code: from scratch</h3>
+  <p>Let's build kNN classification in pure NumPy so nothing is hidden: compute all distances, take the k nearest, and majority-vote. We'll reproduce the worked example above to confirm we get class B.</p>
+  <codeblock>import numpy as np
+from collections import Counter
+
+def knn_predict(X_train, y_train, query, k=3):
+    # Euclidean distance from the query to every training point.
+    # (X_train - query) broadcasts the query across all rows.
+    diffs = X_train - query                 # shape (n_points, n_features)
+    dists = np.sqrt(np.sum(diffs**2, axis=1))   # one distance per point
+    # Indices of the k smallest distances.
+    nearest = np.argsort(dists)[:k]
+    nearest_labels = y_train[nearest]
+    # Majority vote: most_common returns [(label, count)], take the label.
+    winner = Counter(nearest_labels).most_common(1)[0][0]
+    return winner, dists, nearest
+
+X_train = np.array([[1,2],[2,3],[3,5],[5,4],[4,2]], dtype=float)
+y_train = np.array(["A","A","B","B","B"])
+query = np.array([3,3], dtype=float)
+
+pred, dists, nearest = knn_predict(X_train, y_train, query, k=3)
+print("distances:", np.round(dists, 2))
+print("3 nearest indices:", nearest, "-> labels:", y_train[nearest])
+print("prediction:", pred)
+</codeblock>
+  <p>This prints distances <code>[2.24 1.   2.   2.24 1.41]</code>, the three nearest indices <code>[1 4 2]</code> with labels <code>['A' 'B' 'B']</code>, and <code>prediction: B</code> — exactly matching the by-hand result. The whole "training" was just storing <code>X_train</code> and <code>y_train</code>; all the work happens at prediction time.</p>
+
+  <h3>In code: the library way</h3>
+  <p>Now the real point of this module: once you understand each idea, scikit-learn lets you swap algorithms with one line. Here we train six classical models on the same dataset (breast-cancer diagnosis, built into scikit-learn) and compare test accuracy. Note the <code>StandardScaler</code> for kNN and SVM — both are distance-based and need scaled features.</p>
+  <codeblock>from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+
+X, y = load_breast_cancer(return_X_y=True)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)
+
+models = {
+    "kNN (k=5)":        make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=5)),
+    "Decision Tree":    DecisionTreeClassifier(max_depth=4, random_state=0),
+    "Random Forest":    RandomForestClassifier(n_estimators=200, random_state=0),
+    "Gradient Boosting":GradientBoostingClassifier(random_state=0),
+    "SVM (RBF)":        make_pipeline(StandardScaler(), SVC(kernel="rbf")),
+    "Naive Bayes":      GaussianNB(),
+}
+
+for name, model in models.items():
+    model.fit(X_tr, y_tr)
+    acc = model.score(X_te, y_te)
+    print(f"{name:18s} test accuracy = {acc:.3f}")
+</codeblock>
+  <p>The API is identical for every model: <code>fit</code> to learn, <code>score</code> to evaluate. On this dataset you'll see all six land in the mid-0.90s, with the tree ensembles (random forest, gradient boosting) and the scaled SVM typically at the top and the single decision tree slightly behind. That uniform <code>fit</code>/<code>predict</code>/<code>score</code> interface is scikit-learn's superpower — you can audition a whole toolbox in a loop.</p>
+  <p>For production-grade gradient boosting, install and swap in XGBoost — same shape of code:</p>
+  <codeblock># pip install xgboost
+from xgboost import XGBClassifier
+xgb = XGBClassifier(n_estimators=300, learning_rate=0.1, max_depth=3,
+                    subsample=0.8, eval_metric="logloss", random_state=0)
+xgb.fit(X_tr, y_tr)
+print("XGBoost test accuracy =", round(xgb.score(X_te, y_te), 3))
+</codeblock>
+  <p>The key knobs are <code>n_estimators</code> (how many trees), <code>learning_rate</code> (how big each correction is — smaller needs more trees), and <code>max_depth</code> (how complex each tree is). These three control the bias-variance trade-off you met in Module 6 — Model Evaluation.</p>
+
+  <h3>Which algorithm when? A guide for tabular data</h3>
+  <p>A practical decision order for a new spreadsheet-style problem:</p>
+  <ul>
+    <li><strong>Start with a baseline:</strong> logistic/linear regression (Modules 3 and 5). Fast, interpretable, tells you if the problem is even learnable.</li>
+    <li><strong>Want the best accuracy with little fuss?</strong> Reach for <strong>gradient boosting (XGBoost/LightGBM)</strong>. It handles mixed feature scales, missing values, and nonlinear interactions, and usually wins on tabular data.</li>
+    <li><strong>Want a robust, low-tuning ensemble?</strong> <strong>Random forest</strong> — great defaults, hard to break, gives feature importances for free.</li>
+    <li><strong>Need a model a human can read aloud?</strong> A shallow <strong>decision tree</strong> — every prediction is an explainable chain of questions.</li>
+    <li><strong>Small dataset, clear margins, well-scaled features?</strong> <strong>SVM</strong> can shine, especially with an RBF kernel.</li>
+    <li><strong>Text/spam, very high-dimensional sparse counts, need it fast?</strong> <strong>Naive Bayes</strong> — a strong, cheap baseline.</li>
+    <li><strong>Few features, smooth boundaries, and you want zero training time?</strong> <strong>kNN</strong> — but remember to scale, and beware large datasets (prediction is slow).</li>
+  </ul>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3><p>Paste these to your Claude Code companion as you study:</p>
+  <ul>
+    <li>"Generate 5 practice problems where I compute Gini impurity for a node and for a candidate split, then check my arithmetic step by step."</li>
+    <li>"Run my from-scratch kNN code and show me what the prediction becomes if I change k from 3 to 1, and explain why it flips."</li>
+    <li>"Pair with me to extend my NumPy kNN to do distance-weighted voting (closer neighbors count more) and review my implementation for bugs."</li>
+    <li>"Take the six-model scikit-learn comparison and add 5-fold cross-validation with error bars, then tell me which differences are actually significant."</li>
+  </ul></div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+  <ul>
+    <li><strong>"kNN doesn't need preprocessing."</strong> It needs scaling more than almost any model. Unscaled features let the largest-unit column hijack the distance. Always standardize first.</li>
+    <li><strong>"A deeper tree is a better tree."</strong> A tree grown until every leaf is pure has memorized the training set and will overfit badly. Limit depth (<code>max_depth</code>), require a minimum number of samples per leaf, or prune.</li>
+    <li><strong>"More trees in a forest always helps."</strong> Adding trees reduces variance with diminishing returns and never reduces bias. Past a point (often a few hundred) you're just spending compute. More trees also won't fix a forest of overfit-prone, identical features.</li>
+    <li><strong>"Boosting and bagging are the same."</strong> Bagging (random forest) builds independent trees in parallel and averages — it reduces variance. Boosting builds dependent trees in sequence, each fixing the last — it reduces bias and is more prone to overfitting if you over-train, so watch the learning rate and tree count.</li>
+    <li><strong>"SVM works out of the box."</strong> SVMs are very sensitive to feature scaling and to the kernel and regularization parameters (C, gamma). Scale your features and tune those hyperparameters, or expect mediocre results.</li>
+    <li><strong>"Naive Bayes is wrong because features aren't independent."</strong> The independence assumption is usually false, yet the model often classifies well anyway, because it only needs the <em>ranking</em> of class probabilities to be right, not their exact values. Don't trust its probability numbers, but do trust it as a fast baseline.</li>
+  </ul></div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>Using the worked-example data, classify the query point \( q=(3,3) \) with <strong>k=1</strong> and with <strong>k=5</strong>. What does each predict?
+      <details class="solution"><summary>Show solution</summary>The sorted distances were P2 (1.00, A), P5 (1.41, B), P3 (2.00, B), P1 (2.24, A), P4 (2.24, B). With k=1 the nearest is P2, so the prediction is <strong>A</strong>. With k=5 we use all points: labels are A, B, B, A, B → A=2, B=3 → prediction <strong>B</strong>. This shows how k smooths the decision: tiny k is jumpy, larger k follows the overall majority.</details></li>
+    <li>Compute the Gini impurity of a node with 9 positives and 1 negative. Is it more or less pure than the 4-positive/6-negative node (Gini 0.48)?
+      <details class="solution"><summary>Show solution</summary>\( p_+ = 0.9,\ p_- = 0.1 \). \( G = 1 - (0.9^2 + 0.1^2) = 1 - (0.81 + 0.01) = 1 - 0.82 = 0.18 \). At 0.18 this node is much <strong>purer</strong> than the 0.48 node — most examples agree, so there's far less uncertainty to resolve.</details></li>
+    <li>A candidate split sends 5 examples left (5 positive, 0 negative) and 5 right (0 positive, 5 negative), from a parent of 5 positives and 5 negatives. Compute the parent Gini, the weighted split Gini, and the information gain. What does the result tell you?
+      <details class="solution"><summary>Show solution</summary>Parent: \( G = 1 - (0.5^2+0.5^2) = 0.5 \). Left child is pure (all positive): \( G_L = 0 \). Right child is pure (all negative): \( G_R = 0 \). Weighted split Gini \( = \tfrac{5}{10}(0) + \tfrac{5}{10}(0) = 0 \). Information gain \( = 0.5 - 0 = 0.5 \). This is a <strong>perfect split</strong> — it fully separates the classes, achieving the maximum possible gain for a 50/50 parent.</details></li>
+    <li>Explain, in two or three sentences each, why a random forest is harder to overfit than a single decision tree, and why gradient boosting can overfit if you train too long.
+      <details class="solution"><summary>Show solution</summary><strong>Random forest:</strong> each tree sees a different bootstrap sample and a random subset of features, so the trees make different, largely uncorrelated mistakes. Averaging their votes cancels much of that random error (variance), and because trees are built independently, adding more never increases overfitting. <strong>Gradient boosting:</strong> each new tree deliberately fits the residual errors of the current model, so the ensemble keeps chasing the training data ever more closely. Train for too many rounds (or with too high a learning rate) and it starts modeling noise — classic overfitting. The fix is early stopping, a small learning rate, and shallow trees.</details></li>
+    <li>You have a 5-million-row dataset with 80 mixed numeric and categorical features, lots of missing values, and you need strong accuracy without much hand-tuning. Which algorithm from this module do you reach for first, and which would you specifically avoid? Justify both.
+      <details class="solution"><summary>Show solution</summary><strong>Reach for gradient boosting (XGBoost/LightGBM).</strong> It handles mixed feature scales without scaling, has built-in handling for missing values, captures nonlinear feature interactions automatically, and gives top-tier tabular accuracy with modest tuning. <strong>Avoid kNN.</strong> With 5 million rows, kNN must compute distances to (potentially) every stored point at prediction time, making inference painfully slow; it also degrades in high dimensions and would require careful scaling and encoding of the categoricals first. (A single decision tree would be interpretable but less accurate; naive Bayes is fast but its independence assumption is shaky across 80 correlated features.)</details></li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+  <ul>
+    <li>Classify a new point by kNN by hand, and explain why scaling matters for it.</li>
+    <li>Compute Gini impurity for a node and the weighted Gini and information gain for a split.</li>
+    <li>State the difference between bagging (random forest) and boosting (XGBoost) and what each one reduces.</li>
+    <li>Explain the max-margin idea and what the kernel trick does, in plain words.</li>
+    <li>Pick a sensible first algorithm for a described tabular problem and defend the choice.</li>
+  </ul></div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+  <ul>
+    <li><a href="https://www.youtube.com/@statquest">StatQuest (Josh Starmer)</a> — superb, gentle visual explanations of decision trees, random forests, gradient boost, and SVMs; watch these for intuition.</li>
+    <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn User Guide</a> — the authoritative, example-rich reference for every estimator used in this module.</li>
+    <li><a href="https://www.statlearning.com/">An Introduction to Statistical Learning (ISLP, free PDF)</a> — chapters on trees, SVMs, and resampling give the rigorous-but-readable theory behind today's intuitions.</li>
+    <li><a href="https://www.kaggle.com/learn">Kaggle Learn</a> — short, hands-on courses on intro ML and especially gradient boosting with XGBoost on real tabular data.</li>
+  </ul></div>
+</section>

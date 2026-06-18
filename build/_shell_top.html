@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Machine Learning from Zero — a complete, rigorous, beginner-first ML curriculum: from 'what is ML?' through classical ML, neural networks, and a working understanding of transformers and LLMs.">
+<title>Machine Learning from Zero — A Beginner's Curriculum</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- KaTeX (math) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+
+<!-- highlight.js (code) — both themes; JS toggles by mode -->
+<link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" disabled>
+
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root{
+  --font-ui: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-read: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sidebar-w: 320px;
+  --content-max: 50rem;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+  --speed: .2s;
+}
+html[data-theme="light"]{
+  --bg: #fcfbf9;
+  --bg-elev: #ffffff;
+  --sidebar-bg: #f6f4ef;
+  --text: #1f2328;
+  --text-soft: #586069;
+  --text-faint: #8a929c;
+  --border: #e8e3da;
+  --border-strong: #d8d2c7;
+  --accent: #4f46e5;
+  --accent-2: #6d28d9;
+  --accent-soft: #eef0fe;
+  --code-bg: #f6f8fa;
+  --code-border: #e8e3da;
+  --selection: #dfe1fb;
+}
+html[data-theme="dark"]{
+  --bg: #0e1116;
+  --bg-elev: #161b22;
+  --sidebar-bg: #11151b;
+  --text: #e7ebf0;
+  --text-soft: #a7b0bd;
+  --text-faint: #6e7884;
+  --border: #242b35;
+  --border-strong: #313a46;
+  --accent: #8b93ff;
+  --accent-2: #c4b5fd;
+  --accent-soft: #1b2030;
+  --code-bg: #10151c;
+  --code-border: #232b35;
+  --selection: #2a2f54;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-read);
+  font-size:18px;
+  line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+::selection{background:var(--selection);}
+h1,h2,h3,h4,h5{font-family:var(--font-ui);line-height:1.25;color:var(--text);font-weight:700;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+p{margin:0 0 1.05rem;}
+ul,ol{margin:0 0 1.1rem;padding-left:1.4rem;}
+li{margin:.4rem 0;}
+strong{font-weight:600;}
+hr{border:none;border-top:1px solid var(--border);margin:2.4rem 0;}
+img{max-width:100%;}
+
+/* ============================================================
+   TOP PROGRESS BAR (fixed, full width)
+   ============================================================ */
+#top-progress{position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:60;}
+#top-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .35s ease;}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+#sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+  background:var(--sidebar-bg);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  z-index:50;
+  transition:transform var(--speed) ease;
+}
+.sb-head{padding:1.5rem 1.4rem 1rem;border-bottom:1px solid var(--border);}
+.sb-title{font-family:var(--font-ui);font-weight:800;font-size:1.18rem;letter-spacing:-.02em;}
+.sb-title .spark{color:var(--accent);}
+.sb-sub{font-family:var(--font-ui);color:var(--text-soft);font-size:.82rem;margin-top:.15rem;}
+.sb-progress{margin-top:.95rem;}
+.sb-progress-text{font-family:var(--font-ui);font-size:.76rem;color:var(--text-soft);margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:center;}
+.sb-progress-text .pct-badge{color:var(--accent);font-weight:700;}
+.sb-bar{height:6px;background:var(--accent-soft);border-radius:99px;overflow:hidden;}
+#sb-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:99px;transition:width .35s ease;}
+
+#sb-nav{list-style:none;margin:0;padding:.6rem .6rem 1rem;overflow-y:auto;flex:1;font-family:var(--font-ui);}
+#sb-nav::-webkit-scrollbar{width:9px;}
+#sb-nav::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:9px;border:2px solid var(--sidebar-bg);}
+.sb-item{margin:1px 0;}
+.sb-link{
+  display:flex;align-items:center;gap:.55rem;
+  padding:.46rem .6rem;border-radius:var(--radius-sm);
+  color:var(--text-soft);font-size:.875rem;font-weight:500;cursor:pointer;
+  transition:background var(--speed),color var(--speed);
+  position:relative;
+}
+.sb-link:hover{background:var(--accent-soft);color:var(--text);text-decoration:none;}
+.sb-link.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+.sb-num{
+  flex:0 0 auto;min-width:1.5rem;height:1.5rem;border-radius:6px;
+  display:grid;place-items:center;font-size:.72rem;font-weight:700;
+  background:var(--bg-elev);border:1px solid var(--border);color:var(--text-soft);
+}
+.sb-link.active .sb-num{background:var(--accent);color:#fff;border-color:var(--accent);}
+.sb-item.done .sb-num{background:#10b981;border-color:#10b981;color:#fff;}
+.sb-item.done .sb-num::after{content:"✓";}
+.sb-item.done .sb-num span{display:none;}
+.sb-text{flex:1;overflow:hidden;text-overflow:ellipsis;}
+.sb-caret{flex:0 0 auto;color:var(--text-faint);transition:transform var(--speed);font-size:.7rem;}
+.sb-item.open > .sb-link .sb-caret{transform:rotate(90deg);}
+.sb-sublist{list-style:none;margin:.1rem 0 .3rem;padding:0 0 0 2.05rem;display:none;}
+.sb-item.open .sb-sublist{display:block;}
+.sb-sublink{display:block;padding:.3rem .55rem;border-radius:6px;color:var(--text-faint);font-size:.8rem;cursor:pointer;border-left:2px solid var(--border);margin-left:.1rem;}
+.sb-sublink:hover{color:var(--text);background:var(--accent-soft);text-decoration:none;}
+.sb-sublink.active{color:var(--accent);border-left-color:var(--accent);}
+
+.sb-foot{padding:.8rem 1.1rem;border-top:1px solid var(--border);font-family:var(--font-ui);}
+.sb-reset{background:none;border:1px solid var(--border-strong);color:var(--text-soft);font-family:var(--font-ui);
+  font-size:.76rem;padding:.4rem .7rem;border-radius:7px;cursor:pointer;width:100%;transition:all var(--speed);}
+.sb-reset:hover{border-color:#e11d48;color:#e11d48;}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+.main-wrap{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column;}
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:.8rem;
+  padding:.7rem 1.6rem;
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:saturate(160%) blur(10px);
+  border-bottom:1px solid var(--border);
+  font-family:var(--font-ui);
+}
+.crumb{font-weight:600;font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.crumb .crumb-kicker{color:var(--text-faint);font-weight:500;}
+.topbar .spacer{flex:1;}
+.pct{font-size:.8rem;color:var(--text-soft);white-space:nowrap;}
+.icon-btn{
+  display:grid;place-items:center;width:38px;height:38px;border-radius:9px;
+  background:var(--bg-elev);border:1px solid var(--border);color:var(--text);
+  cursor:pointer;font-size:1.05rem;transition:all var(--speed);
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+#menu-btn{display:none;}
+
+#content{
+  width:100%;max-width:var(--content-max);
+  margin:0 auto;padding:2.4rem 2rem 5rem;
+}
+
+/* ============================================================
+   MODULE / SECTION
+   ============================================================ */
+.module{
+  padding-top:2.2rem;margin-top:2.2rem;border-top:1px solid var(--border);
+  scroll-margin-top:80px;
+}
+.module:first-of-type{border-top:none;margin-top:0;}
+.module-head{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem;margin-bottom:1.4rem;}
+.module-kicker{
+  font-family:var(--font-ui);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  padding:.28rem .7rem;border-radius:99px;
+}
+.module-head h2{margin:0;font-size:1.92rem;letter-spacing:-.02em;flex:1 1 100%;order:3;}
+.module-head h2{flex-basis:100%;}
+.done-toggle{
+  display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;
+  font-family:var(--font-ui);font-size:.82rem;color:var(--text-soft);
+  background:var(--bg-elev);border:1px solid var(--border);padding:.35rem .75rem;border-radius:99px;
+  transition:all var(--speed);user-select:none;order:2;margin-left:auto;
+}
+.done-toggle:hover{border-color:#10b981;color:#10b981;}
+.done-toggle input{accent-color:#10b981;width:16px;height:16px;cursor:pointer;}
+.done-toggle.is-done{border-color:#10b981;color:#10b981;background:color-mix(in srgb,#10b981 10%,var(--bg-elev));}
+
+.module h3{font-size:1.32rem;margin:2.2rem 0 .9rem;letter-spacing:-.01em;}
+.module h4{font-size:1.08rem;margin:1.5rem 0 .7rem;font-family:var(--font-ui);color:var(--text);}
+.caption{font-family:var(--font-ui);font-size:.82rem;color:var(--text-soft);text-align:center;margin:.3rem 0 1.4rem;}
+
+/* intro / welcome */
+.intro h1{font-size:2.6rem;letter-spacing:-.03em;margin:.2rem 0 .6rem;}
+.intro .lede{font-size:1.22rem;color:var(--text-soft);max-width:42rem;}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.7rem;margin:1.2rem 0 1.6rem;font-family:var(--font-ui);}
+.legend .leg{display:flex;gap:.6rem;align-items:flex-start;font-size:.85rem;padding:.6rem .7rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-elev);}
+.legend .swatch{flex:0 0 auto;width:1.4rem;height:1.4rem;border-radius:6px;display:grid;place-items:center;font-size:.85rem;}
+.legend .leg b{font-family:var(--font-ui);display:block;color:var(--text);}
+.legend .leg span{color:var(--text-soft);}
+.cta-row{display:flex;flex-wrap:wrap;gap:.8rem;margin:1.6rem 0 .5rem;}
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;font-family:var(--font-ui);font-weight:600;font-size:.95rem;
+  padding:.7rem 1.3rem;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:all var(--speed);
+}
+.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;}
+.btn-primary:hover{filter:brightness(1.07);text-decoration:none;transform:translateY(-1px);}
+.btn-ghost{background:var(--bg-elev);border-color:var(--border-strong);color:var(--text);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+
+/* ============================================================
+   CALLOUTS
+   ============================================================ */
+.callout{
+  --c:var(--accent);
+  background:color-mix(in srgb, var(--c) 8%, var(--bg-elev));
+  border:1px solid color-mix(in srgb, var(--c) 22%, var(--border));
+  border-left:4px solid var(--c);
+  border-radius:var(--radius);
+  padding:1.05rem 1.3rem;margin:1.6rem 0;
+}
+.callout > h3,.callout > h4{color:var(--c);margin-top:0;font-size:1.05rem;display:flex;align-items:center;gap:.5rem;}
+.callout > h3::before{font-family:var(--font-ui);}
+.callout p:last-child,.callout ul:last-child,.callout ol:last-child{margin-bottom:0;}
+.callout.objectives{--c:#4f46e5;}
+.callout.objectives > h3::before{content:"🎯";}
+.callout.hook{--c:#d97706;}
+.callout.hook > h3::before{content:"💡";}
+.callout.analogy{--c:#0d9488;}
+.callout.analogy::before{content:"Analogy";font-family:var(--font-ui);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--c);display:block;margin-bottom:.3rem;}
+.callout.worked{--c:#7c3aed;}
+.callout.worked > h3::before{content:"✍️";}
+.callout.companion{--c:#059669;}
+.callout.companion > h3::before{content:"🤖";}
+.callout.pitfalls{--c:#e11d48;}
+.callout.pitfalls > h3::before{content:"⚠️";}
+.callout.selfcheck{--c:#2563eb;}
+.callout.selfcheck > h3::before{content:"✅";}
+.callout.resources{--c:#0891b2;}
+.callout.resources > h3::before{content:"📚";}
+.callout.note{--c:#64748b;}
+
+/* exercises */
+ol.exercises{counter-reset:ex;list-style:none;padding-left:0;}
+ol.exercises > li{
+  counter-increment:ex;background:var(--bg-elev);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem 1.2rem 1rem 3.1rem;margin:.9rem 0;position:relative;
+}
+ol.exercises > li::before{
+  content:counter(ex);position:absolute;left:1rem;top:1rem;
+  width:1.6rem;height:1.6rem;border-radius:50%;background:var(--accent);color:#fff;
+  font-family:var(--font-ui);font-weight:700;font-size:.8rem;display:grid;place-items:center;
+}
+details.solution{margin-top:.7rem;border-top:1px dashed var(--border-strong);padding-top:.6rem;}
+details.solution > summary{
+  cursor:pointer;font-family:var(--font-ui);font-weight:600;font-size:.85rem;color:var(--accent);
+  list-style:none;display:inline-flex;align-items:center;gap:.4rem;user-select:none;
+}
+details.solution > summary::-webkit-details-marker{display:none;}
+details.solution > summary::before{content:"▸";transition:transform var(--speed);display:inline-block;}
+details.solution[open] > summary::before{transform:rotate(90deg);}
+details.solution[open] > summary{margin-bottom:.6rem;}
+details.solution > *:not(summary){font-size:.96rem;}
+
+/* ============================================================
+   CODE
+   ============================================================ */
+.code-wrap{position:relative;margin:1.3rem 0;}
+.code-wrap pre{
+  margin:0;background:var(--code-bg);border:1px solid var(--code-border);
+  border-radius:var(--radius);padding:1.05rem 1.15rem;overflow-x:auto;
+  font-family:var(--font-mono);font-size:.86rem;line-height:1.6;
+}
+.code-wrap pre code{font-family:var(--font-mono);background:none;padding:0;font-size:inherit;}
+.code-wrap pre::-webkit-scrollbar{height:10px;}
+.code-wrap pre::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:10px;}
+.copy-btn{
+  position:absolute;top:.55rem;right:.55rem;
+  font-family:var(--font-ui);font-size:.72rem;font-weight:600;
+  background:var(--bg-elev);color:var(--text-soft);border:1px solid var(--border-strong);
+  padding:.3rem .6rem;border-radius:7px;cursor:pointer;opacity:0;transition:all var(--speed);
+}
+.code-wrap:hover .copy-btn{opacity:1;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);}
+.copy-btn.copied{border-color:#10b981;color:#10b981;}
+/* inline code */
+:not(pre) > code{
+  font-family:var(--font-mono);font-size:.86em;
+  background:var(--accent-soft);color:var(--accent-2);
+  padding:.1em .4em;border-radius:5px;
+}
+html[data-theme="dark"] :not(pre) > code{color:var(--accent);}
+
+/* tables */
+table{border-collapse:collapse;width:100%;margin:1.2rem 0;font-family:var(--font-ui);font-size:.88rem;}
+th,td{border:1px solid var(--border);padding:.5rem .7rem;text-align:left;}
+th{background:var(--accent-soft);font-weight:600;}
+tr:nth-child(even) td{background:color-mix(in srgb,var(--text) 3%,var(--bg-elev));}
+
+/* katex */
+.katex{font-size:1.04em;}
+.katex-display{overflow-x:auto;overflow-y:hidden;padding:.4rem 0;}
+
+/* diagrams */
+svg.diagram{display:block;max-width:min(100%,520px);height:auto;margin:1.2rem auto .2rem;}
+
+/* ============================================================
+   FOOTER + BACK-TO-TOP
+   ============================================================ */
+.site-foot{margin-left:0;padding:2rem;text-align:center;font-family:var(--font-ui);
+  font-size:.82rem;color:var(--text-faint);border-top:1px solid var(--border);}
+#totop{
+  position:fixed;bottom:1.4rem;right:1.4rem;z-index:30;
+  width:42px;height:42px;border-radius:50%;border:1px solid var(--border-strong);
+  background:var(--bg-elev);color:var(--text);cursor:pointer;font-size:1.1rem;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity var(--speed),transform var(--speed);
+}
+#totop.show{opacity:1;pointer-events:auto;}
+#totop:hover{color:var(--accent);border-color:var(--accent);transform:translateY(-2px);}
+
+/* overlay for mobile */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:45;opacity:0;pointer-events:none;transition:opacity var(--speed);}
+body.nav-open #overlay{opacity:1;pointer-events:auto;}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:980px){
+  :root{--content-max:46rem;}
+  #sidebar{transform:translateX(-100%);box-shadow:var(--shadow);}
+  body.nav-open #sidebar{transform:translateX(0);}
+  .main-wrap{margin-left:0;}
+  #menu-btn{display:grid;}
+  #content{padding:1.8rem 1.2rem 4rem;}
+  body{font-size:17px;}
+}
+@media (max-width:560px){
+  .module-head h2{font-size:1.55rem;}
+  .intro h1{font-size:2rem;}
+  .pct{display:none;}
+  #content{padding:1.4rem 1rem 4rem;}
+  .code-wrap pre{font-size:.8rem;}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;}}
+</style>
+<script>
+/* Set theme before first paint to avoid a flash of the wrong colours */
+(function(){try{
+  var t=localStorage.getItem('mlc-theme');
+  if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  document.documentElement.setAttribute('data-theme',t);
+  var l=document.getElementById('hljs-light'),d=document.getElementById('hljs-dark');
+  if(l)l.disabled=(t==='dark'); if(d)d.disabled=(t!=='dark');
+}catch(e){}})();
+</script>
+</head>
+<body>
+<div id="top-progress"><div id="top-progress-fill"></div></div>
+
+<nav id="sidebar" aria-label="Course navigation">
+  <div class="sb-head">
+    <div class="sb-title"><span class="spark">▮</span> Machine Learning <em style="font-style:normal;color:var(--accent)">from Zero</em></div>
+    <div class="sb-sub">A complete beginner-first curriculum</div>
+    <div class="sb-progress">
+      <div class="sb-progress-text"><span><span id="sb-count">0</span> / <span id="sb-total">0</span> complete</span><span class="pct-badge" id="sb-pct">0%</span></div>
+      <div class="sb-bar"><div id="sb-bar-fill"></div></div>
+    </div>
+  </div>
+  <ul id="sb-nav"></ul>
+  <div class="sb-foot">
+    <button class="sb-reset" id="reset-btn">Reset my progress</button>
+  </div>
+</nav>
+<div id="overlay"></div>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <button class="icon-btn" id="menu-btn" aria-label="Open navigation">☰</button>
+    <div class="crumb" id="crumb"><span class="crumb-kicker">Welcome</span></div>
+    <div class="spacer"></div>
+    <div class="pct" id="pct-label">0% complete</div>
+    <button class="icon-btn" id="theme-btn" aria-label="Toggle dark mode" title="Toggle light / dark">🌙</button>
+  </header>
+
+  <main id="content">
+
+    <section class="module intro" id="welcome" data-title="Welcome &amp; how to use">
+      <span class="module-kicker">Start here</span>
+      <h1>Machine Learning, from absolute zero.</h1>
+      <p class="lede">A complete, rigorous, beginner-first path that takes you from "what even <em>is</em> machine learning?" through classical ML, the real machinery of neural networks, and a genuine working understanding of the transformers and large language models behind tools like ChatGPT — plus the practical skill to build things yourself.</p>
+
+      <h3>Who this is for</h3>
+      <p>You. Even if you have never written a line of ML code and the last math you saw was in high school. This course assumes <strong>no prior ML knowledge</strong> and only <strong>basic high-school math</strong> — every other piece of math you need is taught gently, right when you need it, intuition first. If you can write a simple <code>for</code> loop in Python (or are willing to learn alongside), you can do this.</p>
+
+      <h3>How this course works</h3>
+      <p>Every module follows the same confidence-building rhythm, refined from how the best courses on earth teach beginners (Andrew Ng, fast.ai, Google, 3Blue1Brown, StatQuest):</p>
+      <ol>
+        <li><strong>Why should I care?</strong> — a concrete, real reason the idea matters.</li>
+        <li><strong>Intuition first</strong> — plain language and analogies <em>before</em> any symbols.</li>
+        <li><strong>Making it precise</strong> — the math, introduced gently, every symbol defined, every formula also explained in words.</li>
+        <li><strong>Worked example by hand</strong> — real numbers, every step shown.</li>
+        <li><strong>In code, twice</strong> — first <em>from scratch</em> so the idea is transparent, then the <em>library way</em> (scikit-learn / PyTorch) so you see how little code it takes.</li>
+        <li><strong>Pitfalls, exercises (with full solutions), and a self-check</strong> — so you actually <em>know</em> you know it.</li>
+      </ol>
+      <p>The order is deliberate: ideas are introduced once, then <em>reused</em>. The cost function and gradient descent you meet in Modules 3–4 power everything up to and including neural networks. Nothing is "left as an exercise"; nothing is hand-waved.</p>
+
+      <h3>How to read the coloured boxes</h3>
+      <div class="legend">
+        <div class="leg"><span class="swatch" style="background:#eef0fe">🎯</span><div><b>Objectives</b><span>what you'll be able to do</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#fef3e2">💡</span><div><b>Why care?</b><span>real-world motivation</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#e0f5f1">🔗</span><div><b>Analogy</b><span>an everyday comparison</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#f1e9fe">✍️</span><div><b>Worked example</b><span>numbers, by hand</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#e3f7ee">🤖</span><div><b>Claude Code companion</b><span>prompts to study with</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#fde7ec">⚠️</span><div><b>Pitfalls</b><span>traps to avoid</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#e3edfd">✅</span><div><b>Self-check</b><span>can you do this?</span></div></div>
+        <div class="leg"><span class="swatch" style="background:#e0f3f7">📚</span><div><b>Resources</b><span>best free links</span></div></div>
+      </div>
+
+      <div class="callout companion">
+        <h3>Your Claude Code study companion</h3>
+        <p>You're doing this course with a <strong>Claude Code</strong> instance open on the side — a brilliant move. Treat it as a tireless tutor sitting next to you: ask it to re-explain anything that doesn't click, to quiz you, to run and debug your code, and to pair-program the projects. Every module ends with a green <strong>"Work this with your Claude Code companion"</strong> box of copy-paste prompts. <strong>Module 0</strong> has a full setup guide for using it well — start there.</p>
+      </div>
+
+      <h3>What you need</h3>
+      <ul>
+        <li>A modern web browser (you're using one now).</li>
+        <li><strong>An internet connection</strong> while reading — the math and code formatting are rendered live by KaTeX and highlight.js from a CDN.</li>
+        <li><a href="https://colab.research.google.com/" target="_blank" rel="noopener">Google Colab</a> to actually <em>run</em> the Python — it's free, needs no installation, and even gives you a free GPU later on. Module 0 walks you through it.</li>
+      </ul>
+
+      <div class="callout note">
+        <h3>Your progress is saved automatically</h3>
+        <p>Tick <strong>"Mark module complete"</strong> at the top of any module and the progress bars fill in. It's stored in your browser (localStorage), so it survives refreshes and closing the tab. The <em>Reset my progress</em> button at the bottom of the sidebar clears it.</p>
+      </div>
+
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#m0">Start with Module 0 →</a>
+        <a class="btn btn-ghost" href="#projects">See the project track</a>
+      </div>
+    </section>

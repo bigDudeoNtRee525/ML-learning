@@ -1,0 +1,249 @@
+<section class="module" id="m3" data-title="Linear Regression">
+  <div class="module-head">
+    <span class="module-kicker">Module 3</span>
+    <h2>Linear Regression: The Reusable Primitive</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m3"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+    <ul>
+      <li>Explain what a <em>model</em> is by writing the linear hypothesis \( \hat{y} = wx + b \) and saying out loud what every symbol means.</li>
+      <li>Measure how wrong a model is using the <em>mean squared error</em> (MSE) cost, and compute it by hand on a tiny dataset.</li>
+      <li>Extend from one feature to many features and write the prediction in clean matrix form.</li>
+      <li>Implement linear regression from scratch in NumPy, including the closed-form <em>normal equation</em>, and verify your numbers.</li>
+      <li>Fit the same model in scikit-learn with three lines and read off <code>coef_</code> and <code>intercept_</code>.</li>
+      <li>Spot the classic traps: confusing correlation with causation, forgetting to scale, and extrapolating past your data.</li>
+    </ul>
+  </div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+    <p>Imagine you manage a small coffee cart. You've noticed that on warmer days you sell more iced drinks. You have a notebook with twelve days of data: the temperature each morning and the number of iced drinks you sold. Tomorrow the forecast says 28&deg;C. How many cups of ice and how much milk should you prep? Eyeballing the notebook works badly. Linear regression turns that notebook into a single rule — "expect about 4 extra drinks for every degree warmer" — that gives you a concrete number for any temperature. The very same machinery predicts house prices, estimates how a drug dose affects blood pressure, and forms the literal last layer of many neural networks you'll build in Module 10. Learn this one idea well and you'll reuse it for the rest of the course — that's why we call it the reusable primitive.</p>
+  </div>
+
+  <h3>Intuition first</h3>
+  <p>A <strong>model</strong> is just a rule that turns inputs into a prediction. The input is called a <strong>feature</strong> (here, the morning temperature). The thing we want to predict is the <strong>target</strong> or <strong>label</strong> (here, drinks sold). Linear regression makes the simplest possible assumption: as the feature goes up, the target goes up (or down) in a straight, steady way. No bends, no surprises — just a straight line drawn through your scattered data points.</p>
+
+  <p>Picture your twelve days as dots on a graph: temperature along the bottom, drinks sold up the side. Warmer days are dots toward the right and higher up. Linear regression asks one question: <em>of all the straight lines I could draw through this cloud of dots, which one passes closest to all of them at once?</em> That best line is your model. To predict tomorrow's sales, you find 28 on the bottom axis, go straight up to the line, and read off the height.</p>
+
+  <div class="callout analogy"><p><strong>Analogy — the tightrope through a crowd.</strong> Think of stretching a single straight rope across a room full of floating balloons, where each balloon is a data point. You can slide the rope up and down (that's the <em>intercept</em>) and tilt it (that's the <em>slope</em>). Your goal is to position the rope so the total stretch of all the little rubber bands connecting each balloon to the rope is as small as possible. Some balloons end up above the rope, some below — that's fine. You only care that the rope sits snugly in the middle of the whole crowd. Linear regression is the math that finds the exact best rope.</p></div>
+
+  <p>The line has two knobs you can turn. The <strong>slope</strong> says how steep the line is: "how many more drinks per extra degree." The <strong>intercept</strong> says how high the line sits when the feature is zero: "drinks sold at 0&deg;C." Turn those two knobs until the line hugs the data, and you're done.</p>
+
+  <svg class="diagram" viewBox="0 0 320 220" width="100%" style="max-width:420px" role="img" aria-label="Scatter of points with a fitted straight line and vertical residual lines">
+    <line x1="40" y1="180" x2="300" y2="180" stroke="currentColor" stroke-width="1"/>
+    <line x1="40" y1="180" x2="40" y2="20" stroke="currentColor" stroke-width="1"/>
+    <text x="170" y="205" font-size="11" fill="currentColor" text-anchor="middle">feature x (temperature)</text>
+    <text x="14" y="100" font-size="11" fill="currentColor" text-anchor="middle" transform="rotate(-90 14 100)">target y (drinks)</text>
+    <!-- fitted line -->
+    <line x1="50" y1="160" x2="290" y2="50" stroke="#6366f1" stroke-width="2.5"/>
+    <!-- points with residuals -->
+    <line x1="80" y1="150" x2="80" y2="145" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+    <circle cx="80" cy="150" r="4" fill="#10b981"/>
+    <line x1="130" y1="110" x2="130" y2="125" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+    <circle cx="130" cy="110" r="4" fill="#10b981"/>
+    <line x1="180" y1="105" x2="180" y2="98" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+    <circle cx="180" cy="105" r="4" fill="#10b981"/>
+    <line x1="230" y1="60" x2="230" y2="78" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+    <circle cx="230" cy="60" r="4" fill="#10b981"/>
+    <circle cx="270" cy="62" r="4" fill="#10b981"/>
+    <text x="295" y="46" font-size="10" fill="#6366f1" text-anchor="end">best line</text>
+  </svg>
+  <p class="caption">Green dots are data; the purple line is the fitted model. The short dashed segments are <em>residuals</em> — the vertical gaps the model is trying to make small.</p>
+
+  <h3>Making it precise</h3>
+  <p>Now we name things with symbols. Each symbol is just a number with a job; define it once and it stays the same throughout.</p>
+
+  <p>For a single feature, the model — also called the <strong>hypothesis</strong> — is:</p>
+  \[ \hat{y} = w\,x + b \]
+  <p>where:</p>
+  <ul>
+    <li>\( x \) is the <strong>feature</strong> — one input number for one example (e.g. a temperature like 28).</li>
+    <li>\( \hat{y} \) (read "y-hat") is the model's <strong>prediction</strong> — the number it guesses for that input. The little hat means "estimated," to distinguish it from the true value \( y \).</li>
+    <li>\( w \) is the <strong>weight</strong> (also called the slope) — a number we adjust that controls how strongly the feature pushes the prediction up or down.</li>
+    <li>\( b \) is the <strong>bias</strong> (also called the intercept) — a number we adjust that shifts the whole line up or down; it is the prediction when \( x = 0 \).</li>
+  </ul>
+  <p>That equation is the whole model. "Learning" means choosing good values for \( w \) and \( b \). To choose them we need a way to score how bad a given pair \( (w, b) \) is. That score is the <strong>cost function</strong> (also called the loss).</p>
+
+  <p>The most common cost for regression is the <strong>mean squared error</strong>. The idea in words: for each example, take the gap between the prediction and the truth, square it (so over- and under-shooting both count as positive, and big mistakes count extra), then average over all examples. In symbols:</p>
+  \[ J(w, b) = \frac{1}{m} \sum_{i=1}^{m} \left( \hat{y}^{(i)} - y^{(i)} \right)^2 \]
+  <p>where:</p>
+  <ul>
+    <li>\( m \) is the <strong>number of examples</strong> (rows in your dataset).</li>
+    <li>The superscript \( (i) \) means "the \( i \)-th example," so \( x^{(i)} \) is the feature of example \( i \) and \( y^{(i)} \) is its true target. It is an index, not a power.</li>
+    <li>\( \hat{y}^{(i)} = w\,x^{(i)} + b \) is the prediction for that example.</li>
+    <li>\( \hat{y}^{(i)} - y^{(i)} \) is the <strong>residual</strong> (the dashed gap in the figure): how far off we were on example \( i \).</li>
+    <li>\( J(w,b) \) is the cost — one single number measuring total wrongness for the chosen \( w, b \). Lower is better; the best line is the one that makes \( J \) smallest.</li>
+  </ul>
+  <p>You may see \( \tfrac{1}{2m} \) instead of \( \tfrac{1}{m} \) elsewhere; the extra \( \tfrac12 \) just makes a derivative cleaner in Module 4 and doesn't change which \( (w,b) \) is best. We'll use \( \tfrac1m \) here.</p>
+
+  <h4>From one feature to many</h4>
+  <p>Real problems have several features (temperature, day-of-week, whether it rained). Give each feature its own weight and add them up:</p>
+  \[ \hat{y} = w_1 x_1 + w_2 x_2 + \dots + w_n x_n + b \]
+  <p>where \( n \) is the number of features and \( w_j \) is the weight for feature \( j \). Writing this with a sum for every example gets noisy fast, so we package the numbers into vectors and matrices — this is <strong>vectorization</strong>, and it makes code both shorter and dramatically faster.</p>
+  <p>Stack one example's features into a row vector and all weights into a column vector. A neat trick lets us absorb the bias \( b \) into the weights: add a constant feature equal to \( 1 \) to every example, and give it weight \( b \). Then for the whole dataset:</p>
+  \[ \hat{\mathbf{y}} = \mathbf{X}\,\mathbf{w} \]
+  <p>where \( \mathbf{X} \) is the <strong>design matrix</strong> of shape \( m \times (n+1) \) — one row per example, one column per feature plus a leading column of ones; \( \mathbf{w} \) is the weight vector of length \( n+1 \) (its first entry is the bias); and \( \hat{\mathbf{y}} \) is the length-\( m \) vector of all predictions at once. One matrix multiply replaces every loop. (If matrices feel shaky, revisit Module 1 — Just-Enough Math Intuition.)</p>
+
+  <h4>The normal equation (closed form)</h4>
+  <p>For linear regression with MSE there is a remarkable shortcut: the exact best \( \mathbf{w} \) can be computed directly with one formula, no iteration needed. It is called the <strong>normal equation</strong>:</p>
+  \[ \mathbf{w} = \left( \mathbf{X}^{\top} \mathbf{X} \right)^{-1} \mathbf{X}^{\top} \mathbf{y} \]
+  <p>where \( \mathbf{X}^{\top} \) is \( \mathbf{X} \) transposed (rows and columns swapped) and the \( {}^{-1} \) means matrix inverse. You don't need to derive this now — just know it gives the same answer that minimizing \( J \) would, in one step. It's perfect for small problems. For huge datasets the inverse gets expensive, which is exactly why Module 4 — Gradient Descent introduces an iterative alternative that scales.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p>Three days of data, one feature. Let \( x \) be a (made-up, tiny) temperature index and \( y \) the drinks sold:</p>
+    <p>\( (x,y) = (1, 2),\ (2, 2.5),\ (3, 3.5) \), so \( m = 3 \).</p>
+    <p>Suppose we <em>guess</em> the line \( w = 1 \), \( b = 1 \), giving the model \( \hat{y} = 1\cdot x + 1 \). Let's score this guess.</p>
+    <p><strong>Step 1 — predictions \( \hat{y} = x + 1 \):</strong></p>
+    <ul>
+      <li>\( x=1:\ \hat{y} = 1 + 1 = 2 \)</li>
+      <li>\( x=2:\ \hat{y} = 2 + 1 = 3 \)</li>
+      <li>\( x=3:\ \hat{y} = 3 + 1 = 4 \)</li>
+    </ul>
+    <p><strong>Step 2 — residuals \( \hat{y} - y \):</strong></p>
+    <ul>
+      <li>\( 2 - 2 = 0 \)</li>
+      <li>\( 3 - 2.5 = 0.5 \)</li>
+      <li>\( 4 - 3.5 = 0.5 \)</li>
+    </ul>
+    <p><strong>Step 3 — squared residuals:</strong></p>
+    <ul>
+      <li>\( 0^2 = 0 \)</li>
+      <li>\( 0.5^2 = 0.25 \)</li>
+      <li>\( 0.5^2 = 0.25 \)</li>
+    </ul>
+    <p><strong>Step 4 — average them (the MSE):</strong></p>
+    \[ J = \frac{0 + 0.25 + 0.25}{3} = \frac{0.5}{3} \approx 0.1667 \]
+    <p>So our guessed line scores \( J \approx 0.167 \). Is that good? We have nothing to compare it to yet — so let's find the <em>best possible</em> line by hand using the normal equation on this tiny set.</p>
+    <p><strong>Step 5 — set up the design matrix</strong> (add a column of ones for the bias):</p>
+    \[ \mathbf{X} = \begin{bmatrix} 1 & 1 \\ 1 & 2 \\ 1 & 3 \end{bmatrix}, \quad \mathbf{y} = \begin{bmatrix} 2 \\ 2.5 \\ 3.5 \end{bmatrix} \]
+    <p>Here the first column is the ones (its weight will be \( b \)) and the second column is \( x \) (its weight will be \( w \)).</p>
+    <p><strong>Step 6 — compute \( \mathbf{X}^{\top}\mathbf{X} \):</strong> this 2&times;2 result counts and sums things.</p>
+    \[ \mathbf{X}^{\top}\mathbf{X} = \begin{bmatrix} m & \sum x \\ \sum x & \sum x^2 \end{bmatrix} = \begin{bmatrix} 3 & 6 \\ 6 & 14 \end{bmatrix} \]
+    <p>because \( \sum x = 1+2+3 = 6 \) and \( \sum x^2 = 1+4+9 = 14 \).</p>
+    <p><strong>Step 7 — compute \( \mathbf{X}^{\top}\mathbf{y} \):</strong></p>
+    \[ \mathbf{X}^{\top}\mathbf{y} = \begin{bmatrix} \sum y \\ \sum x y \end{bmatrix} = \begin{bmatrix} 8 \\ 17.5 \end{bmatrix} \]
+    <p>because \( \sum y = 2 + 2.5 + 3.5 = 8 \) and \( \sum xy = (1)(2)+(2)(2.5)+(3)(3.5) = 2 + 5 + 10.5 = 17.5 \).</p>
+    <p><strong>Step 8 — invert the 2&times;2 matrix.</strong> For \( \begin{bmatrix} a & b \\ c & d \end{bmatrix} \) the inverse is \( \frac{1}{ad-bc}\begin{bmatrix} d & -b \\ -c & a \end{bmatrix} \). Here \( ad - bc = (3)(14) - (6)(6) = 42 - 36 = 6 \).</p>
+    \[ (\mathbf{X}^{\top}\mathbf{X})^{-1} = \frac{1}{6}\begin{bmatrix} 14 & -6 \\ -6 & 3 \end{bmatrix} \]
+    <p><strong>Step 9 — multiply to get the weights</strong> \( \mathbf{w} = (\mathbf{X}^{\top}\mathbf{X})^{-1}\,\mathbf{X}^{\top}\mathbf{y} \):</p>
+    \[ \mathbf{w} = \frac{1}{6}\begin{bmatrix} 14 & -6 \\ -6 & 3 \end{bmatrix}\begin{bmatrix} 8 \\ 17.5 \end{bmatrix} = \frac{1}{6}\begin{bmatrix} 14(8) - 6(17.5) \\ -6(8) + 3(17.5) \end{bmatrix} = \frac{1}{6}\begin{bmatrix} 112 - 105 \\ -48 + 52.5 \end{bmatrix} = \frac{1}{6}\begin{bmatrix} 7 \\ 4.5 \end{bmatrix} \]
+    \[ \mathbf{w} = \begin{bmatrix} 1.1667 \\ 0.75 \end{bmatrix} \]
+    <p>So the <em>best</em> line is \( b \approx 1.1667 \) (intercept) and \( w = 0.75 \) (slope): \( \hat{y} = 0.75x + 1.1667 \).</p>
+    <p><strong>Step 10 — sanity check its cost.</strong> Predictions: \( x=1 \to 1.9167 \), \( x=2 \to 2.6667 \), \( x=3 \to 3.4167 \). Residuals: \( -0.0833,\ 0.1667,\ -0.0833 \). Squared: \( 0.00694,\ 0.02778,\ 0.00694 \). MSE \( = (0.00694+0.02778+0.00694)/3 \approx 0.01389 \). That's far below our earlier guess of \( 0.167 \) — the best line really is much better, exactly as it should be.</p>
+  </div>
+
+  <h3>In code: from scratch</h3>
+  <p>Let's reproduce the worked example in NumPy: first score the guessed line, then solve the normal equation. The numbers should match what we computed by hand.</p>
+  <codeblock>import numpy as np
+
+# Tiny dataset from the worked example
+x = np.array([1.0, 2.0, 3.0])
+y = np.array([2.0, 2.5, 3.5])
+m = len(x)
+
+# --- Score a guessed line w=1, b=1 ---
+w_guess, b_guess = 1.0, 1.0
+y_hat = w_guess * x + b_guess          # predictions: [2, 3, 4]
+residuals = y_hat - y                   # [0, 0.5, 0.5]
+mse_guess = np.mean(residuals ** 2)     # average of squared residuals
+print("Guessed predictions:", y_hat)
+print("Guessed MSE:", round(mse_guess, 4))
+
+# --- Solve for the BEST line with the normal equation ---
+# Build the design matrix X: a column of ones (for b) and the x column
+X = np.column_stack([np.ones(m), x])    # shape (3, 2)
+# w_best = (X^T X)^(-1) X^T y
+w_best = np.linalg.inv(X.T @ X) @ X.T @ y
+b_opt, w_opt = w_best[0], w_best[1]      # first entry is bias, second is slope
+print("Best intercept b:", round(b_opt, 4))
+print("Best slope w:", round(w_opt, 4))
+
+# Cost of the best line
+y_hat_best = X @ w_best
+mse_best = np.mean((y_hat_best - y) ** 2)
+print("Best MSE:", round(mse_best, 5))
+</codeblock>
+  <p>Running this prints <code>Guessed MSE: 0.1667</code>, then <code>Best intercept b: 1.1667</code>, <code>Best slope w: 0.75</code>, and <code>Best MSE: 0.01389</code> — exactly our hand calculations. Note <code>X.T @ X</code> uses the <code>@</code> operator for matrix multiplication and <code>X.T</code> for the transpose. In real code prefer <code>np.linalg.solve(X.T @ X, X.T @ y)</code> over an explicit inverse — it's more accurate and faster — but the inverse makes the formula obvious here.</p>
+
+  <h3>In code: the library way</h3>
+  <p>scikit-learn wraps all of that behind a tidy <code>fit</code>/<code>predict</code> interface. You hand it your features and targets; it finds the best \( w \) and \( b \) for you. Notice the shape: scikit-learn expects features as a 2D array (rows = examples, columns = features), so we reshape our single feature into a column.</p>
+  <codeblock>import numpy as np
+from sklearn.linear_model import LinearRegression
+
+x = np.array([1.0, 2.0, 3.0]).reshape(-1, 1)   # shape (3, 1): one column = one feature
+y = np.array([2.0, 2.5, 3.5])
+
+model = LinearRegression()      # by default it learns an intercept (bias) too
+model.fit(x, y)                 # this is where the learning happens
+
+print("slope  (coef_):", model.coef_)        # the learned weight(s)
+print("intercept (b):", model.intercept_)    # the learned bias
+
+# Predict for new inputs, e.g. x = 4 and x = 5
+new_x = np.array([[4.0], [5.0]])
+print("predictions:", model.predict(new_x))
+
+# A built-in goodness-of-fit score (R^2): 1.0 is perfect
+print("R^2 on training data:", round(model.score(x, y), 4))
+</codeblock>
+  <p>This prints <code>slope (coef_): [0.75]</code> and <code>intercept (b): 1.1666...</code> — the same answer the normal equation gave, because under the hood scikit-learn solves essentially the same least-squares problem. The predictions for \( x=4,5 \) are about \( 4.17 \) and \( 4.92 \). The <code>R^2</code> score (about \( 0.96 \)) reports the fraction of the target's variation the line explains; you'll meet it properly in Module 6 — Model Evaluation. Three lines — <code>LinearRegression()</code>, <code>fit</code>, <code>predict</code> — and you have a working model, because you now understand exactly what those lines are doing.</p>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
+    <p>Paste these to your Claude Code companion as you study:</p>
+    <ul>
+      <li>"Explain the mean squared error to me with a completely different analogy than the tightrope one, and tell me why we square the residuals instead of taking absolute values."</li>
+      <li>"Generate 5 practice problems where I'm given a small dataset and a guessed \( w \) and \( b \), and I compute the MSE by hand. Then check my answers step by step."</li>
+      <li>"Run the from-scratch NumPy code in this module, then change the dataset to (1,3),(2,5),(3,7),(4,9) and show me what the slope and intercept become — and explain why they came out that way."</li>
+      <li>"Pair with me to implement linear regression from scratch using the normal equation on the California Housing dataset from scikit-learn, then compare my result to LinearRegression and review my code for bugs."</li>
+    </ul>
+  </div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+    <ul>
+      <li><strong>"The slope proves the feature causes the target."</strong> No — linear regression measures <em>association</em>, not causation. Ice cream sales and drowning deaths both rise in summer; a regression linking them is real but neither causes the other (hot weather drives both). A model can fit beautifully and still encode a confounder, not a cause.</li>
+      <li><strong>Forgetting that residuals are squared, not absolute.</strong> Squaring means a single big miss hurts much more than several small ones. That makes linear regression sensitive to <em>outliers</em>; one wild data point can yank the whole line toward it.</li>
+      <li><strong>Ignoring units and scale with multiple features.</strong> A weight of \( 0.001 \) on "house area in square metres" and \( 5 \) on "number of bedrooms" does not mean bedrooms matter more — the features live on different scales. To compare importances or to help iterative methods, standardize features first (Module 7 — Feature Engineering). The normal equation doesn't <em>need</em> scaling, but gradient descent in Module 4 strongly does.</li>
+      <li><strong>Extrapolating far outside the data.</strong> A line fit on temperatures 10&ndash;30&deg;C may predict negative drink sales at &minus;40&deg;C. The straight-line assumption is only trustworthy in the range you actually observed; predictions far outside it are guesses, not science.</li>
+      <li><strong>Expecting a straight line to fit a curve.</strong> If the true relationship bends (sales plateau on very hot days), a single straight line will systematically miss. The cure isn't abandoning linear models — it's adding curved <em>features</em> like \( x^2 \), which keeps the model linear in its weights (you'll see this in Module 7).</li>
+      <li><strong>Reading \( x^{(i)} \) as "x to the power i."</strong> The parenthesized superscript is an <em>index</em> naming the example, not an exponent. \( x^{(2)} \) is the feature of the second example; \( x^2 \) is x squared.</li>
+    </ul>
+  </div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>Using the model \( \hat{y} = 2x + 1 \), compute the predictions for \( x = 0, 3, 10 \) and state the slope and intercept in plain words.
+      <details class="solution"><summary>Show solution</summary><p>Predictions: \( \hat{y}(0) = 2(0)+1 = 1 \); \( \hat{y}(3) = 2(3)+1 = 7 \); \( \hat{y}(10) = 2(10)+1 = 21 \). The slope is 2, meaning the prediction rises by 2 for every increase of 1 in \( x \). The intercept is 1, meaning the prediction is 1 when \( x = 0 \).</p></details>
+    </li>
+    <li>For the dataset \( (1,1),(2,3),(3,4) \) and the guessed line \( w=1, b=0 \), compute each residual, each squared residual, and the MSE.
+      <details class="solution"><summary>Show solution</summary><p>Predictions \( \hat{y}=x \): at \( x=1,2,3 \) they are \( 1, 2, 3 \). Residuals \( \hat{y}-y \): \( 1-1=0 \), \( 2-3=-1 \), \( 3-4=-1 \). Squared: \( 0, 1, 1 \). MSE \( = (0+1+1)/3 = 2/3 \approx 0.667 \).</p></details>
+    </li>
+    <li>You fit a model to predict monthly electricity bill from home size and get \( \hat{y} = 0.8\,x_1 + 25\,x_2 + 40 \), where \( x_1 \) is floor area in square metres and \( x_2 \) is the number of air conditioners. Interpret each weight and the intercept in everyday language.
+      <details class="solution"><summary>Show solution</summary><p>The weight \( 0.8 \) on \( x_1 \): each extra square metre of floor area adds about &dollar;0.80 to the predicted monthly bill, holding the number of AC units fixed. The weight \( 25 \) on \( x_2 \): each additional air conditioner adds about &dollar;25, holding area fixed. The intercept \( 40 \): a (hypothetical) home with zero area and zero AC units would be predicted &dollar;40 — often not physically meaningful, just the line's baseline. "Holding the other fixed" matters: in multiple regression each weight describes its feature's effect with the others held constant.</p></details>
+    </li>
+    <li>Set up (you may use NumPy) the normal equation for \( (0,1),(1,3),(2,5) \) and find \( w \) and \( b \). Then verify by predicting at the three training points.
+      <details class="solution"><summary>Show solution</summary><p>Design matrix \( \mathbf{X}=\begin{bmatrix}1&amp;0\\1&amp;1\\1&amp;2\end{bmatrix} \), \( \mathbf{y}=\begin{bmatrix}1\\3\\5\end{bmatrix} \). Then \( \mathbf{X}^{\top}\mathbf{X}=\begin{bmatrix}3&amp;3\\3&amp;5\end{bmatrix} \), \( \mathbf{X}^{\top}\mathbf{y}=\begin{bmatrix}9\\13\end{bmatrix} \). Determinant \( =3(5)-3(3)=6 \), inverse \( =\tfrac16\begin{bmatrix}5&amp;-3\\-3&amp;3\end{bmatrix} \). Weights \( =\tfrac16\begin{bmatrix}5(9)-3(13)\\-3(9)+3(13)\end{bmatrix}=\tfrac16\begin{bmatrix}6\\12\end{bmatrix}=\begin{bmatrix}1\\2\end{bmatrix} \). So \( b=1, w=2 \), i.e. \( \hat{y}=2x+1 \). Check: \( x=0\to1 \), \( x=1\to3 \), \( x=2\to5 \) — exact fit (MSE \( =0 \)), as expected since the points are perfectly collinear.</p></details>
+    </li>
+    <li>A friend fits a regression of city temperature (feature) on ice-cream sales (target) and another of ice-cream sales (feature) on temperature (target). They're surprised the two slopes aren't reciprocals of each other and conclude one model is "wrong." What would you tell them?
+      <details class="solution"><summary>Show solution</summary><p>Neither is wrong; they answer different questions and minimize different residuals. Regressing \( y \) on \( x \) minimizes vertical gaps in \( y \); regressing \( x \) on \( y \) minimizes horizontal gaps in \( x \). Only with a perfect (\( R^2=1 \)) fit do the slopes become exact reciprocals; with any scatter they differ. The deeper lesson echoes a pitfall above: linear regression is directional and descriptive, not a statement about causation or a symmetric physical law. Choose the direction that matches what you actually want to predict.</p></details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+    <ul>
+      <li>Write \( \hat{y}=wx+b \) and explain, without notes, what \( w \), \( b \), \( x \), and \( \hat{y} \) each mean.</li>
+      <li>Compute the MSE of a given line on a 3- or 4-point dataset by hand and get the right number.</li>
+      <li>Explain why we add a column of ones to the design matrix and what the normal equation does.</li>
+      <li>Fit a <code>LinearRegression</code> in scikit-learn and correctly read off <code>coef_</code> and <code>intercept_</code>.</li>
+      <li>Give a concrete example of why a good fit does not prove causation.</li>
+    </ul>
+  </div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+    <ul>
+      <li><a href="https://www.youtube.com/@statquest">StatQuest — Linear Regression playlist</a> — Josh Starmer's gentle, visual walk-through of fitting lines and least squares; perfect first watch.</li>
+      <li><a href="https://www.coursera.org/specializations/machine-learning-introduction">Andrew Ng's Machine Learning Specialization</a> — Course 1 covers exactly this hypothesis and cost function; the canonical beginner treatment.</li>
+      <li><a href="https://scikit-learn.org/stable/modules/linear_model.html">scikit-learn User Guide — Linear Models</a> — the official reference for <code>LinearRegression</code> and its many cousins you'll meet later.</li>
+      <li><a href="https://www.statlearning.com/">An Introduction to Statistical Learning (free PDF)</a> — Chapter 3 is a rigorous-but-readable deep dive into linear regression and interpreting coefficients.</li>
+    </ul>
+  </div>
+</section>

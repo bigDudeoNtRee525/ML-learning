@@ -1,0 +1,365 @@
+<section class="module" id="m13" data-title="Sequences, NLP &amp; Attention">
+  <div class="module-head">
+    <span class="module-kicker">Module 13</span>
+    <h2>Sequences, NLP, and the Road to Attention</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m13"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+    <ul>
+      <li>Explain why text and other sequences break the "fixed grid of numbers" assumption every model so far has relied on — they have <em>order</em> and <em>variable length</em>.</li>
+      <li>Describe a recurrent network (RNN / LSTM) in plain words as a model that carries a <em>hidden state</em> forward, and say <em>why</em> remembering things from long ago is genuinely hard for it.</li>
+      <li>Explain what a <em>word embedding</em> is — words turned into vectors where similar meanings sit nearby — and compute <em>cosine similarity</em> between two vectors by hand and in code.</li>
+      <li>Explain <em>tokenization</em> and <em>Byte-Pair Encoding (BPE)</em>: why models read sub-word chunks instead of whole words or single letters.</li>
+      <li>Compute a tiny <em>self-attention</em> step from scratch — build Q, K, V, score them, softmax the scores, and mix the values — and explain why attention fixes the RNN's memory problem.</li>
+      <li>See clearly how this module is the on-ramp to <strong>Module 14 — Transformers and LLMs, Conceptually</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+    <p>Read this sentence: <em>"The trophy didn't fit in the suitcase because it was too big."</em> What does "it" refer to — the trophy or the suitcase? You know instantly it's the trophy (a suitcase being too big wouldn't stop something fitting <em>inside</em> it). To get that right, a model must connect "it" all the way back to "trophy," seven words earlier, while ignoring the equally-close "suitcase." Every model you've built so far — linear regression, logistic regression, the dense and convolutional networks of <strong>Modules 10–12</strong> — would choke on this, because they expect a fixed-size grid of numbers with no notion of <em>order</em>. Language is the opposite: it's an ordered stream of variable length where a word's meaning depends on words far away. This module is the story of how the field learned to handle that — first clumsily with recurrence, then beautifully with <em>attention</em>, the single idea that powers every modern translator, chatbot, and large language model. By the end you'll have computed an attention step with your own hands, and Module 14's transformers will feel like an assembly of parts you already understand.</p>
+  </div>
+
+  <h3>Intuition first</h3>
+  <p>Until now, every input was a tidy rectangle: a house had exactly 4 features (Module 3), an image had exactly 28×28 pixels (Module 12). The model could assume "feature 3 is always the bedroom count." Text refuses to cooperate in two ways. First, <strong>length varies</strong>: one review is 5 words, the next is 500. Second, <strong>order carries meaning</strong>: "dog bites man" and "man bites dog" use identical words but mean opposite things. A model that treats input as an unordered bag of features literally cannot tell those two sentences apart. So we need machinery built for ordered, variable-length streams.</p>
+
+  <p>The first good idea was <strong>recurrence</strong>: read the sequence one item at a time, left to right, keeping a running summary in your head that you update at each step. That running summary is called the <em>hidden state</em>.</p>
+
+  <div class="callout analogy">
+    <p><strong>Reading aloud with a sticky note.</strong> Imagine reading a sentence one word at a time, and after each word you scribble a quick summary of "the story so far" on a single sticky note, crossing out the old summary and writing a new one. You never look back at earlier words — only at your latest note. By the end, the note is your understanding of the whole sentence. That sticky note is the hidden state, and rewriting it at every word is exactly what a recurrent network does. The flaw is already visible: a single small note can only hold so much. By word 200, the gist of word 1 has been overwritten and re-summarized so many times that it's faded to almost nothing. That fading is the <em>long-range memory</em> problem, and it's the whole reason attention was invented.</p>
+  </div>
+
+  <p>Here's the recurrent loop as a picture. The same little box is applied again and again; each copy takes the next word and the previous note, and produces an updated note.</p>
+
+  <svg class="diagram" viewBox="0 0 460 180" role="img" aria-label="An RNN unrolled across three words, passing a hidden state forward">
+    <!-- hidden state arrows -->
+    <line x1="40" y1="90" x2="100" y2="90" stroke="#10b981" stroke-width="2" marker-end="url(#rnnar)"/>
+    <line x1="160" y1="90" x2="220" y2="90" stroke="#10b981" stroke-width="2" marker-end="url(#rnnar)"/>
+    <line x1="280" y1="90" x2="340" y2="90" stroke="#10b981" stroke-width="2" marker-end="url(#rnnar)"/>
+    <line x1="400" y1="90" x2="445" y2="90" stroke="#10b981" stroke-width="2" marker-end="url(#rnnar)"/>
+    <!-- cells -->
+    <rect x="100" y="65" width="60" height="50" rx="8" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <rect x="220" y="65" width="60" height="50" rx="8" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <rect x="340" y="65" width="60" height="50" rx="8" fill="none" stroke="#6366f1" stroke-width="2"/>
+    <text x="130" y="95" text-anchor="middle" font-size="13" fill="#6366f1">RNN</text>
+    <text x="250" y="95" text-anchor="middle" font-size="13" fill="#6366f1">RNN</text>
+    <text x="370" y="95" text-anchor="middle" font-size="13" fill="#6366f1">RNN</text>
+    <!-- inputs -->
+    <text x="130" y="160" text-anchor="middle" font-size="12" fill="currentColor">"the"</text>
+    <text x="250" y="160" text-anchor="middle" font-size="12" fill="currentColor">"cat"</text>
+    <text x="370" y="160" text-anchor="middle" font-size="12" fill="currentColor">"sat"</text>
+    <line x1="130" y1="145" x2="130" y2="117" stroke="currentColor" stroke-width="1.3" marker-end="url(#rnnar)"/>
+    <line x1="250" y1="145" x2="250" y2="117" stroke="currentColor" stroke-width="1.3" marker-end="url(#rnnar)"/>
+    <line x1="370" y1="145" x2="370" y2="117" stroke="currentColor" stroke-width="1.3" marker-end="url(#rnnar)"/>
+    <text x="30" y="80" text-anchor="middle" font-size="11" fill="#10b981">h₀</text>
+    <text x="190" y="80" text-anchor="middle" font-size="11" fill="#10b981">h₁</text>
+    <text x="310" y="80" text-anchor="middle" font-size="11" fill="#10b981">h₂</text>
+    <text x="430" y="80" text-anchor="middle" font-size="11" fill="#10b981">h₃</text>
+    <defs><marker id="rnnar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor"/></marker></defs>
+  </svg>
+  <p class="caption">The same RNN cell, "unrolled" across three words. The green hidden state \( h \) (the sticky note) is the only path information can travel along — everything word 1 contributes must survive being rewritten at every later step.</p>
+
+  <p>Before any of this works, though, we hit a more basic problem: a neural network only eats <em>numbers</em>, and "cat" is not a number. We need two things — a way to <strong>chop text into pieces</strong> (tokenization) and a way to <strong>turn each piece into a vector</strong> (embeddings). Let's build intuition for both, then return to fix the RNN's memory with attention.</p>
+
+  <h3>Words as vectors: embeddings</h3>
+  <p>The naive way to turn a word into numbers is <em>one-hot encoding</em>: give every word in your vocabulary its own slot, and represent a word as a vector that is 1 in its slot and 0 everywhere else. With a 50,000-word vocabulary, "cat" becomes a 50,000-long vector of zeros with a single 1. This is hopeless for two reasons: the vectors are gigantic, and — worse — <em>every pair of distinct words is equally far apart</em>. "cat" and "dog" are exactly as unrelated as "cat" and "democracy," because their 1s sit in different slots. The numbers carry zero meaning.</p>
+
+  <p>An <strong>embedding</strong> fixes this. Instead of one slot per word, we represent each word as a short, <em>dense</em> vector — say 50 to 300 numbers, none of them necessarily zero — and we <em>learn</em> those numbers during training (with gradient descent, Module 4). The training pressure pushes words that appear in similar contexts to get similar vectors. The famous result: words land in a space where <em>nearby means "similar in meaning."</em> "cat" and "dog" end up close; "cat" and "democracy" end up far. Even directions become meaningful — the vector arithmetic <em>king − man + woman ≈ queen</em> roughly works, because the "royalty" and "gender" ideas got encoded along consistent directions.</p>
+
+  <div class="callout analogy">
+    <p><strong>A map of meaning.</strong> Think of a giant map where every word is a pin. We don't decide where the pins go; training slides them around until words used in similar ways cluster together — a "kitchen" neighborhood (spoon, plate, oven), a "weather" neighborhood (rain, storm, cloudy), and so on. To ask "how related are two words?" you just measure how close their pins are. The twist versus a real map: it has dozens or hundreds of dimensions, not two, so a single pin can be near "fruit" along one axis and near "tech company" along another. That's how one vector for "apple" can sit between both worlds.</p>
+  </div>
+
+  <p>How do we measure "closeness" between two vectors? Not raw distance — we usually care about <em>direction</em>, not length. The standard tool is <strong>cosine similarity</strong>: the cosine of the angle between two vectors. It's 1 when they point the same way, 0 when perpendicular (unrelated), and −1 when opposite. We'll make this precise in a moment and compute it by hand.</p>
+
+  <h3>Tokenization and Byte-Pair Encoding (BPE)</h3>
+  <p>Before a word can become a vector, we must decide what a "word" even is — that's <strong>tokenization</strong>, the step that splits raw text into the units a model processes (called <em>tokens</em>). Two obvious choices both fail:</p>
+  <ul>
+    <li><strong>Split on whole words.</strong> Now your vocabulary is enormous, and you choke on anything unseen: a new word, a typo ("teh"), a name, an emoji, or "antidisestablishmentarianism" all become a single <em>unknown</em> token, and the model learns nothing from them. Worse, "run," "running," and "runs" are three unrelated entries that share no structure.</li>
+    <li><strong>Split into single characters.</strong> Now your vocabulary is tiny and nothing is ever "unknown" — but sequences become very long (each word is many tokens), and the model must rediscover from scratch that "c-a-t" forms a meaningful chunk. Long sequences are expensive (you'll see exactly why under attention).</li>
+  </ul>
+
+  <p><strong>Byte-Pair Encoding (BPE)</strong> is the practical compromise that nearly every modern language model uses: tokens are <em>sub-word</em> chunks, learned from data. The recipe is delightfully simple. Start with every text broken into individual characters. Then repeat: find the <em>most frequent adjacent pair</em> of symbols and merge it into a new single symbol; record that merge. Do this a fixed number of times (e.g. 30,000 merges). Frequent pieces like "th", "ing", and common whole words like "the" get merged early and become single tokens; rare words get left as several smaller pieces.</p>
+
+  <p>The payoff: common words are one token (efficient), rare or novel words gracefully fall back to known sub-word pieces (no "unknown" token ever needed), and related words share structure — "running" might tokenize as <code>run</code> + <code>ning</code>, sharing the <code>run</code> token with "runs." A worked BPE merge sequence appears in the exercises, and you'll see real tokenizer output in the library section below. The one thing to internalize now: <strong>tokens are usually not whole words.</strong> "tokenization" itself might be three tokens; a space is often glued to the front of the next token. This trips up almost every beginner.</p>
+
+  <h3>The wall RNNs hit — and the idea that breaks through</h3>
+  <p>Recurrent networks (and their smarter cousin the <strong>LSTM</strong>, which adds gates to protect the hidden state and helps a lot) carried the field for years. But they have two stubborn problems baked into their design:</p>
+  <ul>
+    <li><strong>They're forgetful over long ranges.</strong> Information from word 1 must pass through every intermediate step to reach word 200, getting squeezed and rewritten each time. Mathematically, the influence tends to shrink multiplicatively at each step (the "vanishing gradient" problem from <strong>Module 11 — Training Deep Networks That Actually Work</strong>), so long-range links fade. LSTMs soften this but don't cure it.</li>
+    <li><strong>They're inherently sequential.</strong> To compute the hidden state at word 200 you need word 199's, which needs 198's, and so on. You cannot compute them in parallel — the loop forbids it. On modern GPUs that love doing thousands of things at once, this is a brutal bottleneck. Training on huge text is painfully slow.</li>
+  </ul>
+
+  <p>Here's the breakthrough question that leads to attention: <em>why force information through a single bottleneck note, step by step at all?</em> What if, when processing the word "it," the model could look <strong>directly</strong> at every other word in the sentence at the same time and decide, for each one, "how much should this word inform my understanding of 'it' right now?" No relay race, no fading — every word reachable in one hop, and all the looking can happen in parallel. That direct, all-to-all, learnable looking-up is <strong>self-attention</strong>.</p>
+
+  <h3>Making it precise</h3>
+  <h4>Cosine similarity</h4>
+  <p>For two vectors \( \mathbf{a} \) and \( \mathbf{b} \) (bold means "a list of numbers," a vector), cosine similarity is:</p>
+  \[ \cos(\theta) = \frac{\mathbf{a} \cdot \mathbf{b}}{\lVert \mathbf{a} \rVert \, \lVert \mathbf{b} \rVert} \]
+  <p>Reading each piece: \( \mathbf{a} \cdot \mathbf{b} \) is the <em>dot product</em> — multiply the vectors element by element and add up the results (you met this in <strong>Module 1 — Just-Enough Math Intuition</strong>). \( \lVert \mathbf{a} \rVert \) (read "the norm of a") is the vector's length, computed as \( \sqrt{a_1^2 + a_2^2 + \dots} \). Dividing the dot product by both lengths cancels out how <em>long</em> the vectors are, leaving only how <em>aligned</em> their directions are — exactly the cosine of the angle \( \theta \) between them. Value near 1 means "pointing the same way" (similar); near 0 means "perpendicular" (unrelated); near −1 means "opposite."</p>
+
+  <h4>Self-attention</h4>
+  <p>Self-attention starts from a sequence of token vectors — say \( n \) tokens, each a vector. From each token vector we produce <em>three</em> new vectors by multiplying it with three learned weight matrices:</p>
+  <ul>
+    <li>a <strong>Query</strong> \( \mathbf{q} \) — "what am I, this token, looking for?"</li>
+    <li>a <strong>Key</strong> \( \mathbf{k} \) — "what do I, this token, offer to others who might look at me?"</li>
+    <li>a <strong>Value</strong> \( \mathbf{v} \) — "if someone attends to me, here's the actual information I hand over."</li>
+  </ul>
+  <p>The names are a database metaphor: a query is matched against keys, and you retrieve the matching values — except here the match is <em>soft</em> (every key matches a little), and the weights are learned. Stacking the per-token vectors as rows gives matrices \( Q \), \( K \), \( V \). The whole operation is one compact formula:</p>
+  \[ \text{Attention}(Q, K, V) = \text{softmax}\!\left( \frac{Q K^{\top}}{\sqrt{d_k}} \right) V \]
+  <p>Let's unpack it left to right, because every symbol earns its place:</p>
+  <ul>
+    <li>\( Q K^{\top} \) — multiply the queries by the <em>transpose</em> (the flip, rows-become-columns) of the keys. Entry \( (i, j) \) of the result is the dot product of token \( i \)'s query with token \( j \)'s key: a raw <em>score</em> for "how much should token \( i \) attend to token \( j \)?" High when their directions align. For \( n \) tokens this is an \( n \times n \) <em>score matrix</em> — every token scored against every token.</li>
+    <li>\( \div \sqrt{d_k} \) — divide by the square root of \( d_k \), the dimension (length) of the key vectors. This is just a scaling fix: in high dimensions dot products get large, which would make the next step (softmax) too "spiky." Dividing keeps the numbers tame. (\( d_k = 64 \) is typical.)</li>
+    <li>\( \text{softmax}(\cdot) \) — applied to <em>each row</em>, softmax (from <strong>Module 5 — Logistic Regression and Classification</strong>) turns that row of raw scores into positive weights that sum to 1. Now row \( i \) reads "I, token \( i \), put 70% of my attention on token A, 30% on token B." These are the <em>attention weights</em>.</li>
+    <li>\( \times V \) — multiply the weight matrix by the values. Each token's output is a <em>weighted average of all the value vectors</em>, weighted by how much it chose to attend to each. Token "it" pulls mostly the value of "trophy" and gets an updated representation infused with "trophy."</li>
+  </ul>
+
+  <p>That's the entire mechanism. Notice the two RNN problems vanish at once: every token reaches every other token in <em>one</em> step (no fading relay), and the whole \( n \times n \) computation is one big matrix multiply that a GPU does in parallel (no sequential loop). The price — which we'll flag now and pay attention to in Module 14 — is that an \( n \times n \) score matrix means cost grows with the <em>square</em> of the sequence length. Double the text, quadruple the work. That quadratic cost is the central tension in modern long-context models.</p>
+
+  <svg class="diagram" viewBox="0 0 460 200" role="img" aria-label="Attention weights from the word it to other words in a sentence">
+    <text x="40" y="30" font-size="13" fill="currentColor">"it"</text>
+    <circle cx="30" cy="25" r="6" fill="#6366f1"/>
+    <!-- targets -->
+    <text x="300" y="40" font-size="12" fill="currentColor">the</text>
+    <text x="300" y="80" font-size="12" fill="currentColor">trophy</text>
+    <text x="300" y="120" font-size="12" fill="currentColor">the</text>
+    <text x="300" y="160" font-size="12" fill="currentColor">suitcase</text>
+    <!-- edges with varying thickness = attention weight -->
+    <line x1="55" y1="25" x2="290" y2="36" stroke="#10b981" stroke-width="1" opacity="0.5"/>
+    <line x1="55" y1="25" x2="290" y2="76" stroke="#10b981" stroke-width="7"/>
+    <line x1="55" y1="25" x2="290" y2="116" stroke="#10b981" stroke-width="1" opacity="0.5"/>
+    <line x1="55" y1="25" x2="290" y2="156" stroke="#10b981" stroke-width="2.5"/>
+    <text x="150" y="44" font-size="10" fill="#10b981">0.05</text>
+    <text x="158" y="58" font-size="10" fill="#10b981">0.62</text>
+    <text x="150" y="108" font-size="10" fill="#10b981">0.05</text>
+    <text x="150" y="140" font-size="10" fill="#10b981">0.28</text>
+  </svg>
+  <p class="caption">Self-attention from the word "it." Thicker line = more attention. The model has learned to point "it" mostly at "trophy" (0.62), with some at "suitcase" (0.28) and almost none at the function word "the." These weights are the softmaxed scores, and they sum to 1.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+    <p><strong>Part A: cosine similarity.</strong> Compare \( \mathbf{a} = [1, 0] \) and \( \mathbf{b} = [0.7, 0.7] \). Dot product: \( (1)(0.7) + (0)(0.7) = 0.7 \). Lengths: \( \lVert \mathbf{a} \rVert = \sqrt{1^2 + 0^2} = 1 \); \( \lVert \mathbf{b} \rVert = \sqrt{0.7^2 + 0.7^2} = \sqrt{0.49 + 0.49} = \sqrt{0.98} \approx 0.99 \). Cosine similarity \( = \frac{0.7}{1 \times 0.99} \approx 0.707 \). That's the cosine of 45°, which is exactly right: \( [0.7, 0.7] \) points up-and-right at 45°, while \( [1, 0] \) points straight right, so the angle between them is 45° and \( \cos 45^\circ \approx 0.707 \). The vectors are <em>somewhat</em> similar — pointing partly the same way.</p>
+
+    <p><strong>Part B: self-attention for 2 tokens.</strong> Two tokens with tiny 2-dimensional Q, K, V vectors. (To keep the arithmetic clean we'll <em>skip</em> the \( \sqrt{d_k} \) scaling here and note where it would go — the code section below includes it.)</p>
+    <ul>
+      <li>Queries: \( \mathbf{q}_1 = [1, 0] \), \( \mathbf{q}_2 = [0.5, 0.5] \)</li>
+      <li>Keys: \( \mathbf{k}_1 = [1, 1] \), \( \mathbf{k}_2 = [0, 2] \)</li>
+      <li>Values: \( \mathbf{v}_1 = [2, 0] \), \( \mathbf{v}_2 = [0, 4] \)</li>
+    </ul>
+    <p><strong>Step 1 — score every query against every key</strong> (the \( Q K^{\top} \) matrix). Each entry is a dot product:</p>
+    <ul>
+      <li>\( \mathbf{q}_1 \cdot \mathbf{k}_1 = (1)(1) + (0)(1) = 1 \) &nbsp;&nbsp; \( \mathbf{q}_1 \cdot \mathbf{k}_2 = (1)(0) + (0)(2) = 0 \)</li>
+      <li>\( \mathbf{q}_2 \cdot \mathbf{k}_1 = (0.5)(1) + (0.5)(1) = 1 \) &nbsp;&nbsp; \( \mathbf{q}_2 \cdot \mathbf{k}_2 = (0.5)(0) + (0.5)(2) = 1 \)</li>
+    </ul>
+    <p>So the 2×2 score matrix is \( \begin{bmatrix} 1 & 0 \\ 1 & 1 \end{bmatrix} \). Row 1 is token 1's scores against tokens 1 and 2; row 2 is token 2's. (With scaling we'd divide each by \( \sqrt{2} \approx 1.414 \) here.)</p>
+    <p><strong>Step 2 — softmax each row</strong> into attention weights. Softmax of a row \( [s_1, s_2] \) is \( \big[\frac{e^{s_1}}{e^{s_1}+e^{s_2}}, \frac{e^{s_2}}{e^{s_1}+e^{s_2}}\big] \). For <em>row 1</em>, \( [1, 0] \): \( e^{1} = 2.718 \), \( e^{0} = 1 \), sum \( = 3.718 \). Weights \( = [\,2.718/3.718,\; 1/3.718\,] = [0.731,\; 0.269] \). Token 1 attends 73% to itself and 27% to token 2 — makes sense, its query \( [1,0] \) aligns more with key \( [1,1] \) than with \( [0,2] \).</p>
+    <p>For <em>row 2</em>, \( [1, 1] \): both scores equal, so \( e^{1} = e^{1} \) and the weights split evenly: \( [0.5,\; 0.5] \). Token 2 has no preference between the two keys.</p>
+    <p><strong>Step 3 — mix the values</strong> using those weights (the \( \times V \) step). Each token's output is a weighted average of \( \mathbf{v}_1 = [2,0] \) and \( \mathbf{v}_2 = [0,4] \):</p>
+    <ul>
+      <li>Token 1 output \( = 0.731 \cdot [2, 0] + 0.269 \cdot [0, 4] = [1.462, 0] + [0, 1.076] = [1.462,\; 1.076] \).</li>
+      <li>Token 2 output \( = 0.5 \cdot [2, 0] + 0.5 \cdot [0, 4] = [1, 0] + [0, 2] = [1,\; 2] \).</li>
+    </ul>
+    <p>And that's a complete self-attention pass. Each token walked away with a new vector that blends information from every token, weighted by learned relevance. Token 1, attending mostly to itself, kept more of \( \mathbf{v}_1 \); token 2, attending equally, landed exactly between the two values. Every number here is reproduced by the code below.</p>
+  </div>
+
+  <h3>In code: from scratch</h3>
+  <p>First, cosine similarity on a toy "embedding" where two of the three words are meant to be related. We hand-pick vectors so "cat" and "dog" point similarly while "car" points elsewhere.</p>
+  <codeblock>import numpy as np
+
+def cosine(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+# pretend these tiny 2D vectors came out of a trained embedding
+cat = np.array([0.9, 0.1])
+dog = np.array([0.8, 0.2])
+car = np.array([0.1, 0.95])
+
+print(f"cat vs dog: {cosine(cat, dog):.3f}")   # animals -> high
+print(f"cat vs car: {cosine(cat, car):.3f}")   # unrelated -> low</codeblock>
+  <p>This prints <code>cat vs dog: 0.991</code> and <code>cat vs car: 0.214</code>. The two animals score near 1 (their pins sit close on our map of meaning), while "cat" and "car" — similar spelling, unrelated meaning — score low. That gap is the whole point of embeddings: similarity reflects <em>meaning</em>, not letters.</p>
+
+  <p>Now self-attention for the same three-step recipe, this time <em>with</em> the \( \sqrt{d_k} \) scaling that real models use. We reuse the exact Q, K, V from the worked example so you can match the (scaled) numbers.</p>
+  <codeblock>import numpy as np
+
+def softmax(x):
+    # subtract the row max for numerical stability, then normalize each row
+    e = np.exp(x - x.max(axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+# two tokens, each with a 2D query, key, and value (stacked as rows)
+Q = np.array([[1.0, 0.0],
+              [0.5, 0.5]])
+K = np.array([[1.0, 1.0],
+              [0.0, 2.0]])
+V = np.array([[2.0, 0.0],
+              [0.0, 4.0]])
+
+d_k = Q.shape[1]                       # key/query dimension = 2
+scores = Q @ K.T / np.sqrt(d_k)        # 2x2 raw scores, scaled
+weights = softmax(scores)              # each row sums to 1
+output  = weights @ V                  # weighted mix of the value vectors
+
+print("scaled scores:\n", np.round(scores, 3))
+print("attention weights:\n", np.round(weights, 3))
+print("output:\n", np.round(output, 3))</codeblock>
+  <p>The output is:</p>
+  <codeblock>scaled scores:
+ [[0.707 0.   ]
+ [0.707 0.707]]
+attention weights:
+ [[0.67  0.33 ]
+ [0.5   0.5  ]]
+output:
+ [[1.34  1.321]
+ [1.    2.   ]]</codeblock>
+  <p>Compare to the by-hand result: the weights here are \( [0.67, 0.33] \) instead of \( [0.731, 0.269] \), and token-1's output is \( [1.34, 1.321] \) instead of \( [1.462, 1.076] \). The shapes match exactly; the small differences come entirely from the \( \div \sqrt{2} \) scaling we skipped by hand — dividing the scores shrinks the gap between them, so softmax produces gentler, less peaky weights. Token 2's scores were already equal, so scaling doesn't change its 50/50 split or its \( [1, 2] \) output. This three-line core — <code>scores → softmax → mix values</code> — is, no exaggeration, the heart of every transformer in Module 14.</p>
+
+  <h3>In code: the library way</h3>
+  <p>You will almost never hand-roll tokenization; you load a tokenizer that ships with a pretrained model. Hugging Face's <code>AutoTokenizer</code> downloads the right one and turns a sentence into tokens and integer IDs. (Install with <code>pip install transformers</code>; the first run downloads a small tokenizer file.)</p>
+  <codeblock>from transformers import AutoTokenizer
+
+tok = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+sentence = "Tokenization isn't magic."
+tokens = tok.tokenize(sentence)        # human-readable sub-word pieces
+ids    = tok.encode(sentence)          # integer ids the model actually eats
+
+print(tokens)
+print(ids)
+print(tok.convert_ids_to_tokens(ids))  # ids back to tokens (with specials)</codeblock>
+  <p>This prints something like:</p>
+  <codeblock>['token', '##ization', 'isn', "'", 't', 'magic', '.']
+[101, 19204, 3989, 3475, 1005, 1056, 3894, 1012, 102]
+['[CLS]', 'token', '##ization', 'isn', "'", 't', 'magic', '.', '[SEP]']</codeblock>
+  <p>Look closely and the lessons from the BPE section come alive. "Tokenization" splits into <code>token</code> + <code>##ization</code> — the <code>##</code> marks a piece that continues the previous word, exactly the sub-word behavior we wanted. "isn't" breaks into <code>isn</code> + <code>'</code> + <code>t</code>. And the model's own bookends <code>[CLS]</code> and <code>[SEP]</code> get added automatically. Every token maps to an integer ID; those IDs are what get looked up in the embedding table next.</p>
+
+  <p>That lookup is one line in PyTorch. <code>torch.nn.Embedding</code> is literally a learnable table with one row per vocabulary entry; you index it with token IDs and get back the embedding vectors, which then flow into the rest of the network and get trained by gradient descent.</p>
+  <codeblock>import torch
+import torch.nn as nn
+
+vocab_size, dim = 30522, 8             # bert vocab size, tiny 8D embeddings
+embedding = nn.Embedding(vocab_size, dim)
+
+ids = torch.tensor([101, 19204, 3989]) # a few token ids from above
+vectors = embedding(ids)               # shape: (3 tokens, 8 numbers each)
+print(vectors.shape)                   # torch.Size([3, 8])</codeblock>
+  <p>This prints <code>torch.Size([3, 8])</code>: three token IDs in, three 8-dimensional vectors out. The values start random and become meaningful only after training — which is the crucial point of the pitfalls below: embeddings are <em>learned</em>, never hand-written.</p>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
+    <p>Paste these to your Claude Code companion as you study:</p>
+    <ul>
+      <li>"Run my from-scratch self-attention NumPy code, then change \( \mathbf{q}_1 \) to <code>[0, 1]</code> and show me how the attention weights and outputs change — explain in words why token 1 now attends differently."</li>
+      <li>"Walk me through Byte-Pair Encoding on the toy corpus 'low low lower newest widest' step by step: show each most-frequent pair, each merge, and the final vocabulary."</li>
+      <li>"Generate 4 practice problems where I compute a 2×2 attention step by hand (give me small Q, K, V), then check my score matrix, softmax, and final outputs."</li>
+      <li>"Pair with me to extend my NumPy attention to 3 tokens and 3-dimensional vectors, and review whether my matrix shapes and the softmax axis are correct."</li>
+    </ul>
+  </div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+    <ul>
+      <li><strong>"Embeddings are hand-designed dictionaries."</strong> No — nobody decides that "cat" should be \( [0.9, 0.1] \). Embeddings start as random numbers and are <em>learned</em> by gradient descent alongside the rest of the model; the meaningful geometry (cat near dog) <em>emerges</em> from training on lots of text. The toy vectors in this module were hand-picked only to illustrate cosine similarity.</li>
+      <li><strong>Confusing tokens with words.</strong> A token is usually a <em>sub-word</em>. "tokenization" can be several tokens, and a leading space is often part of a token. When you hear "this model has a 4,000-token limit," that is not 4,000 words — it's often closer to 3,000 English words. Always check the actual tokenizer output, as we did above.</li>
+      <li><strong>Thinking BPE understands grammar or meaning.</strong> BPE is pure frequency-counting on character sequences — it merges common adjacent pairs and knows nothing about syntax or semantics. The <em>meaning</em> all comes later, from the embeddings and attention that operate on the resulting tokens.</li>
+      <li><strong>"Attention is just a fancy RNN."</strong> They're opposites in spirit. An RNN passes information <em>step by step</em> through a single hidden state (sequential, forgetful). Attention lets every token read every other token <em>directly and simultaneously</em> (parallel, no fading). That difference is exactly why transformers replaced RNNs.</li>
+      <li><strong>Forgetting attention is quadratic in sequence length.</strong> The score matrix is \( n \times n \), so doubling the input roughly <em>quadruples</em> compute and memory. This is why context windows are a big deal and why "efficient attention" is an active research area — a theme you'll meet again in Module 14.</li>
+      <li><strong>Mixing up Q, K, and V.</strong> A query asks ("what am I looking for?"), a key advertises ("what do I offer?"), a value delivers ("here's my actual content"). The score uses query·key; the <em>output</em> is built from values. Swapping them silently produces wrong results that still run without error.</li>
+    </ul>
+  </div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>Compute the cosine similarity of \( \mathbf{a} = [3, 4] \) and \( \mathbf{b} = [4, 3] \) by hand. Are they more or less similar than \( [1, 0] \) and \( [0.7, 0.7] \) from the worked example?
+      <details class="solution"><summary>Show solution</summary><p>Dot product: \( (3)(4) + (4)(3) = 12 + 12 = 24 \). Lengths: \( \lVert \mathbf{a} \rVert = \sqrt{9 + 16} = \sqrt{25} = 5 \); \( \lVert \mathbf{b} \rVert = \sqrt{16 + 9} = 5 \). Cosine \( = 24 / (5 \times 5) = 24/25 = 0.96 \). That's much closer to 1 than the worked example's \( 0.707 \), so these two vectors are <em>more</em> similar — they point in nearly the same direction (a small angle, about 16°), whereas \( [1,0] \) and \( [0.7,0.7] \) were 45° apart.</p></details>
+    </li>
+    <li>Run one BPE merge by hand. Starting vocabulary is characters; the corpus is the single word "banana" (treat it as the character sequence b a n a n a). What is the most frequent adjacent pair, and what does one merge produce?
+      <details class="solution"><summary>Show solution</summary><p>List the adjacent pairs in "b a n a n a": (b,a), (a,n), (n,a), (a,n), (n,a). Counts: (a,n) appears twice, (n,a) appears twice, (b,a) once. There's a tie between "an" and "na" at 2 each; BPE breaks ties by a fixed rule (e.g. first encountered), so say we merge "an". The sequence becomes b "an" "an" a — that is, b · an · an · a, four symbols instead of six. If we ran a second merge, "an a" or "an an" pairs would now be candidates. Notice how repeated structure ("an") gets compressed into a single reusable token, which is exactly why BPE makes frequent patterns cheap.</p></details>
+    </li>
+    <li>For a self-attention step, the raw score matrix (before softmax) for two tokens is \( \begin{bmatrix} 2 & 0 \\ 0 & 0 \end{bmatrix} \). Softmax each row to get the attention weights. Which token is more "decisive" about where it looks, and why?
+      <details class="solution"><summary>Show solution</summary><p>Row 1, \( [2, 0] \): \( e^2 = 7.389 \), \( e^0 = 1 \), sum \( = 8.389 \). Weights \( = [7.389/8.389,\; 1/8.389] = [0.881,\; 0.119] \). Row 2, \( [0, 0] \): both \( e^0 = 1 \), sum \( = 2 \), weights \( = [0.5,\; 0.5] \). Token 1 is far more decisive — it pours 88% of its attention onto token 1 and only 12% onto token 2, because its scores differ a lot. Token 2's scores are equal, so it spreads attention evenly (maximum uncertainty). Larger gaps between scores produce sharper, more confident attention.</p></details>
+    </li>
+    <li>Continuing exercise 3, suppose the value vectors are \( \mathbf{v}_1 = [10, 0] \) and \( \mathbf{v}_2 = [0, 10] \). Compute each token's output vector.
+      <details class="solution"><summary>Show solution</summary><p>Token 1 used weights \( [0.881, 0.119] \): output \( = 0.881 \cdot [10, 0] + 0.119 \cdot [0, 10] = [8.81, 0] + [0, 1.19] = [8.81,\; 1.19] \). Token 2 used weights \( [0.5, 0.5] \): output \( = 0.5 \cdot [10, 0] + 0.5 \cdot [0, 10] = [5,\; 5] \). Token 1, attending mostly to \( \mathbf{v}_1 \), comes out close to \( [10, 0] \); token 2, attending equally, lands exactly between the two values. The output is always a weighted average of the value vectors.</p></details>
+    </li>
+    <li>Explain, in 3–4 sentences, why a plain RNN struggles with the sentence "The keys that I left on the kitchen table this morning before the long meeting are gone," specifically linking "keys" to "are." Then say how self-attention handles the same link.
+      <details class="solution"><summary>Show solution</summary><p>For the RNN to make "are" (plural) agree with "keys," information about "keys" must travel through every word in between — "that I left on the kitchen table this morning before the long meeting" — surviving the hidden state being rewritten at each of those ~12 steps. Over that distance the contribution of "keys" tends to fade (the long-range memory / vanishing-gradient problem), so the agreement is fragile. Self-attention removes the relay entirely: when processing "are," the model computes a direct attention score between "are" and "keys" and can place high weight on it in a single hop, regardless of the 12 words in between. Distance no longer dilutes the connection.</p></details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+    <ul>
+      <li>Explain in one breath why sequences need special models (order + variable length) and why a bag-of-features model fails on "dog bites man" vs "man bites dog."</li>
+      <li>Describe an RNN's hidden state as a sticky-note summary and name its two weaknesses (forgetful, sequential).</li>
+      <li>Compute cosine similarity between two small vectors and say what near-1, near-0, and near-−1 mean.</li>
+      <li>State why we use sub-word tokens (BPE) instead of whole words or single characters, and not be surprised that "tokenization" is several tokens.</li>
+      <li>Carry out a 2-token self-attention step end to end: build the score matrix from Q and K, softmax each row, and mix the V vectors — and say why this beats recurrence.</li>
+    </ul>
+  </div>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+    <ul>
+      <li><a href="https://jalammar.github.io/illustrated-transformer/">Jay Alammar — The Illustrated Transformer</a> — the friendliest visual walkthrough of Q/K/V and self-attention; read it right after this module and before Module 14.</li>
+      <li><a href="https://www.youtube.com/@statquest">StatQuest — Word Embeddings &amp; Attention (YouTube)</a> — Josh Starmer's slow, picture-first explanations of embeddings and the attention mechanism.</li>
+      <li><a href="https://huggingface.co/learn/llm-course">Hugging Face LLM Course</a> — hands-on chapters on tokenizers (including BPE) and embeddings using the exact <code>AutoTokenizer</code> tools above.</li>
+      <li><a href="https://www.youtube.com/watch?v=kCc8FmEb1nY">Karpathy — Let's build GPT (YouTube)</a> — builds self-attention from scratch in code; ambitious but the single best way to make attention click once you've finished here.</li>
+    </ul>
+  </div>
+
+  <div class="callout projects"><h3>Projects</h3>
+    <p>Pick one or work through several. Each is small enough to finish in a sitting yet real enough to teach something the prose can't. Use your Claude Code companion to pair, debug, and check your numbers — but type the core loops yourself.</p>
+
+    <div class="project">
+      <h4>Project 1 — Build a tiny BPE tokenizer from scratch</h4>
+      <ul>
+        <li><strong>Goal:</strong> implement Byte-Pair Encoding end to end so you truly understand why tokens are sub-words.</li>
+        <li><strong>Dataset:</strong> any small plain-text file — a few paragraphs of a public-domain book from Project Gutenberg, or even the toy corpus <code>"low low lower newest widest"</code>.</li>
+        <li><strong>Milestones:</strong> (1) split the text into characters and count adjacent pairs; (2) write a loop that finds the most frequent pair, merges it everywhere, and records the merge; (3) run it for N merges and print the learned vocabulary; (4) write an <code>encode</code> function that applies the learned merges to a new word.</li>
+        <li><strong>Success:</strong> your tokenizer turns a frequent word into one token and a rare word into several sub-word pieces, with no "unknown" token ever needed.</li>
+        <li><strong>Stretch:</strong> compare your token count for a paragraph against Hugging Face's <code>bert-base-uncased</code> tokenizer and explain the differences.</li>
+      </ul>
+    </div>
+
+    <div class="project">
+      <h4>Project 2 — A cosine-similarity word-neighbors explorer</h4>
+      <ul>
+        <li><strong>Goal:</strong> see the "map of meaning" for real by finding each word's nearest neighbors in a pretrained embedding.</li>
+        <li><strong>Dataset:</strong> a small set of pretrained GloVe vectors (e.g. the 50-dimensional <code>glove.6B.50d</code> file), or any few-thousand-word embedding table you can load.</li>
+        <li><strong>Milestones:</strong> (1) load the vectors into a dictionary mapping word to NumPy array; (2) implement cosine similarity; (3) write <code>nearest(word, k)</code> that returns the k most similar words; (4) try it on "king", "paris", "happy".</li>
+        <li><strong>Success:</strong> the neighbors of "king" are clearly royalty/leadership words, not random ones.</li>
+        <li><strong>Stretch:</strong> test the famous analogy by computing <code>king - man + woman</code> and finding its nearest neighbor; report whether "queen" shows up near the top.</li>
+      </ul>
+    </div>
+
+    <div class="project">
+      <h4>Project 3 — Self-attention, fully from scratch in NumPy</h4>
+      <ul>
+        <li><strong>Goal:</strong> generalize the 2-token by-hand example into a working attention function for any number of tokens and dimensions.</li>
+        <li><strong>Dataset:</strong> none needed — make up small random Q, K, V matrices, or derive them from a few embedding vectors plus random weight matrices.</li>
+        <li><strong>Milestones:</strong> (1) write a row-wise <code>softmax</code>; (2) compute scaled scores <code>Q @ K.T / sqrt(d_k)</code>; (3) softmax and mix the values; (4) assert every row of the weight matrix sums to 1.</li>
+        <li><strong>Success:</strong> for the module's 2-token inputs your function reproduces the printed scaled output <code>[[1.34, 1.321], [1.0, 2.0]]</code>.</li>
+        <li><strong>Stretch:</strong> add a causal mask (set scores above the diagonal to a large negative number before softmax) so each token can attend only to itself and earlier tokens — the trick that makes a language model predict left to right.</li>
+      </ul>
+    </div>
+
+    <div class="project">
+      <h4>Project 4 — Inspect a real tokenizer's quirks</h4>
+      <ul>
+        <li><strong>Goal:</strong> build intuition for how token counts differ from word counts, and how leading spaces and casing change tokenization.</li>
+        <li><strong>Dataset:</strong> a dozen sentences of your own, including a long rare word, an emoji, a number like "1234567", and a word with and without a leading space.</li>
+        <li><strong>Milestones:</strong> (1) load <code>AutoTokenizer</code> for both <code>bert-base-uncased</code> and <code>gpt2</code>; (2) for each sentence print the tokens and the token count; (3) compare token count to word count; (4) tokenize <code>"hello"</code> versus <code>" hello"</code> and note the difference.</li>
+        <li><strong>Success:</strong> you can state, with examples, three concrete ways tokens differ from words.</li>
+        <li><strong>Stretch:</strong> find the single English sentence under 10 words that produces the most tokens you can, and explain why.</li>
+      </ul>
+    </div>
+
+    <div class="project">
+      <h4>Project 5 — RNN vs. attention on a long-range agreement task</h4>
+      <ul>
+        <li><strong>Goal:</strong> feel the long-range memory problem by making a model decide subject-verb agreement across a long gap.</li>
+        <li><strong>Dataset:</strong> generate synthetic sentences of the form "The [noun(s)] that ... [verb]", where the verb must agree (is/are) with a noun many words back; vary the gap length.</li>
+        <li><strong>Milestones:</strong> (1) generate a few thousand labeled examples; (2) train a small PyTorch RNN to predict is/are; (3) train a small single-layer self-attention model on the same data; (4) plot accuracy versus gap length for both.</li>
+        <li><strong>Success:</strong> the RNN's accuracy decays as the gap grows while the attention model stays roughly flat — the module's central claim, made visible.</li>
+        <li><strong>Stretch:</strong> visualize the attention weights for "are" and confirm the model puts high weight on the far-back subject noun.</li>
+      </ul>
+    </div>
+  </div>
+</section>

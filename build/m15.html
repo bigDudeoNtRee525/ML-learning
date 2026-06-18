@@ -1,0 +1,295 @@
+<section class="module" id="m15" data-title="Workflow, Deployment & Ethics">
+  <div class="module-head">
+    <span class="module-kicker">Module 15</span>
+    <h2>Practical ML Workflow, Deployment, Ethics, and Next Steps</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m15"><span>Mark module complete</span></label>
+  </div>
+
+  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+  <ul>
+    <li>Run a project end-to-end with a disciplined loop: <strong>frame the problem → get and clean data → build a baseline → train a model → evaluate → iterate</strong>, and know what each step is for.</li>
+    <li>Do <strong>error analysis</strong> — look at your model's actual mistakes, bucket them by cause, and use that to decide <em>what to fix next</em> instead of guessing.</li>
+    <li>Read bias vs variance <em>in practice</em> and choose rationally between <strong>more data</strong>, <strong>better features</strong>, and a <strong>bigger model</strong>.</li>
+    <li><strong>Save and load</strong> a trained model and wrap it in a tiny <strong>web demo with Gradio</strong> (and know when you'd reach for a <strong>FastAPI</strong> endpoint instead).</li>
+    <li>Audit a model for <strong>fairness</strong> with concrete checks, and name real ways ML systems cause harm.</li>
+    <li>Escape <strong>tutorial hell</strong> by shipping independent projects, and map out exactly <strong>where to go next</strong>.</li>
+  </ul></div>
+
+  <div class="callout hook"><h3>Why should I care?</h3>
+  <p>In 2018 a large company quietly switched off an internal résumé-screening tool it had spent years building. The model had learned from a decade of past hiring data — and because the company's past engineers were mostly men, the model taught itself that résumés containing the word "women's" (as in "women's chess club captain") were a negative signal. Nobody coded that rule. The accuracy on the historical data looked fine. The failure wasn't in the math from Modules 3–14; it was in everything <em>around</em> the math: the problem was framed badly, the data encoded a bias, no one audited fairness, and there was no monitoring to catch the drift. This module is about that surrounding 90%. You already know how models learn. Now you'll learn how to run a real project so it actually works, ships, and doesn't quietly do harm — the difference between someone who can train a model and someone who can be trusted to deploy one.</p></div>
+
+  <h3>Intuition first</h3>
+  <p>Up to now each module taught one technique. A real project is not one technique — it's a <em>loop</em> you walk around many times, and most of the value comes from doing the loop well, not from any single fancy step. Here is the whole loop in one picture.</p>
+
+  <svg class="diagram" viewBox="0 0 520 220" width="100%" role="img" aria-label="The machine learning project loop: frame, data, baseline, model, evaluate, iterate">
+    <defs>
+      <marker id="ah15" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6 z" fill="#6366f1"/></marker>
+    </defs>
+    <rect x="20" y="20" width="120" height="40" rx="8" fill="none" stroke="#6366f1"/>
+    <text x="80" y="44" text-anchor="middle" fill="currentColor" font-size="12">1. Frame problem</text>
+    <rect x="200" y="20" width="120" height="40" rx="8" fill="none" stroke="#6366f1"/>
+    <text x="260" y="44" text-anchor="middle" fill="currentColor" font-size="12">2. Get / clean data</text>
+    <rect x="380" y="20" width="120" height="40" rx="8" fill="none" stroke="#6366f1"/>
+    <text x="440" y="44" text-anchor="middle" fill="currentColor" font-size="12">3. Baseline</text>
+    <rect x="380" y="160" width="120" height="40" rx="8" fill="none" stroke="#6366f1"/>
+    <text x="440" y="184" text-anchor="middle" fill="currentColor" font-size="12">4. Model</text>
+    <rect x="200" y="160" width="120" height="40" rx="8" fill="none" stroke="#10b981"/>
+    <text x="260" y="178" text-anchor="middle" fill="currentColor" font-size="12">5. Evaluate +</text>
+    <text x="260" y="192" text-anchor="middle" fill="currentColor" font-size="12">error analysis</text>
+    <rect x="20" y="160" width="120" height="40" rx="8" fill="none" stroke="#10b981"/>
+    <text x="80" y="184" text-anchor="middle" fill="currentColor" font-size="12">6. Iterate</text>
+    <line x1="140" y1="40" x2="198" y2="40" stroke="#6366f1" marker-end="url(#ah15)"/>
+    <line x1="320" y1="40" x2="378" y2="40" stroke="#6366f1" marker-end="url(#ah15)"/>
+    <line x1="440" y1="60" x2="440" y2="158" stroke="#6366f1" marker-end="url(#ah15)"/>
+    <line x1="378" y1="180" x2="322" y2="180" stroke="#6366f1" marker-end="url(#ah15)"/>
+    <line x1="200" y1="180" x2="142" y2="180" stroke="#6366f1" marker-end="url(#ah15)"/>
+    <line x1="80" y1="158" x2="80" y2="62" stroke="#10b981" stroke-dasharray="5 4" marker-end="url(#ah15)"/>
+    <text x="96" y="112" fill="currentColor" font-size="11">go round again</text>
+  </svg>
+  <p class="caption">The project loop. The green steps (evaluate and iterate) are where beginners lose the most ground — they jump back to "model" and tweak knobs blindly instead of looking at the mistakes.</p>
+
+  <p>Let's walk the six steps the way an experienced practitioner thinks about them.</p>
+
+  <p><strong>1. Frame the problem.</strong> Before any code, answer: <em>What decision will this model inform, and how will we know it's good?</em> Choose one number — your <em>primary metric</em> — that you'll optimize, and decide what counts as "good enough to ship." A spam filter that's 99% accurate sounds great until you realize 99% of email is spam, so a model that flags <em>everything</em> as spam also scores 99% (you met this trap in Module 5 — Logistic Regression). Framing means picking the right metric (often precision/recall or a cost-weighted score, not raw accuracy) and writing down the bar before you start, so you can't fool yourself later.</p>
+
+  <p><strong>2. Get and clean data.</strong> This is usually the largest chunk of real work. Garbage in, garbage out is not a slogan — it's the single most common reason projects fail. You'll spend time here on the skills from Module 2 — Working With Data and Module 7 — Feature Engineering: handling missing values, fixing labels, removing leakage, and understanding how the data was collected.</p>
+
+  <div class="callout analogy"><p><strong>The cooking analogy.</strong> Building a model without a baseline is like inventing an elaborate sauce before you've tasted plain pasta. Maybe the plain pasta was already delicious and your sauce makes it worse — but you'd never know, because you never tasted the simple version first. A <em>baseline</em> is the plain pasta: the dumbest reasonable approach (predict the average, predict the majority class, a single short decision tree). Every fancy model you build afterward must beat the plain pasta, or it isn't earning its complexity. Pros taste the pasta first, every time.</p></div>
+
+  <p><strong>3. Baseline.</strong> Build the simplest thing that produces a prediction, and measure it. For regression, predicting the mean of the training targets is a baseline. For classification, predicting the most common class is a baseline. A baseline does two priceless things: it tells you whether the problem is even learnable (if a logistic regression barely beats "always guess the majority," your features may carry no signal), and it gives you a number to beat so you can tell if your later work helped.</p>
+
+  <p><strong>4. Model.</strong> Now — and only now — try stronger models: the algorithms from Module 8, the neural networks from Modules 10–13. Start simple and add complexity only when the data justifies it.</p>
+
+  <p><strong>5. Evaluate + error analysis.</strong> Compute your metric on held-out data (Module 6 — Model Evaluation), but don't stop at the number. <em>Open the mistakes and read them.</em> Pull out the examples the model got wrong and group them by cause. This one habit — looking at your errors instead of just their count — separates people who improve their models from people who spin in circles.</p>
+
+  <p><strong>6. Iterate.</strong> Error analysis points to the next fix. Maybe half your errors are blurry photos, so you need data augmentation. Maybe a fifth are actually mislabeled, so the ceiling on accuracy is lower than you thought and you should clean labels. You change <em>one</em> thing, walk the loop again, and compare to your previous best.</p>
+
+  <h3>Making it precise</h3>
+
+  <h4>Diagnosing what to fix next: bias vs variance, in practice</h4>
+  <p>You met bias and variance as concepts in Module 6. In a real project they become a practical decision tool. You compare three numbers: the error a human (or some known ceiling) achieves, the error on your <em>training</em> set, and the error on your <em>validation</em> set. Write them as \( E_{\text{human}} \), \( E_{\text{train}} \), and \( E_{\text{val}} \), where each \( E \) is an error rate (fraction wrong, so smaller is better).</p>
+  <p>Two gaps tell you everything:</p>
+  \[ \text{Avoidable bias} = E_{\text{train}} - E_{\text{human}}, \qquad \text{Variance} = E_{\text{val}} - E_{\text{train}} \]
+  <p>In words: <em>avoidable bias</em> is how far your model is from what's achievable even on data it has already seen — if this is large, your model is too weak (underfitting). <em>Variance</em> is how much worse the model does on new data than on its training data — if this is large, your model memorized the training set (overfitting). The fix you choose depends on which gap dominates:</p>
+  <ul>
+    <li><strong>High avoidable bias</strong> (training error itself is too high) → make the model <em>stronger</em>: a bigger network, more features, less regularization, or train longer. More data will <em>not</em> help here, because the model can't even fit the data it has.</li>
+    <li><strong>High variance</strong> (big gap between training and validation) → <em>more data</em> (the single most reliable cure for overfitting), or more regularization, or a simpler model. A bigger model would make this <em>worse</em>.</li>
+  </ul>
+  <p>This is why "should I get more data or a bigger model?" is not a matter of taste — the two gaps answer it for you. Collecting 100,000 more images when your problem is high bias is wasted months; reaching for a giant model when your problem is high variance just overfits faster.</p>
+
+  <h4>Error analysis, made precise</h4>
+  <p>Error analysis is structured counting. Take the \( m \) examples your model got wrong on a validation sample, assign each one to a <em>cause category</em>, and count how many fall in each. The category with the largest count, weighted by how fixable it is, is where your next effort goes. The key quantity is the <em>potential gain</em> from fixing a category:</p>
+  \[ \text{potential gain} = \frac{\text{errors in that category}}{\text{total examples evaluated}} \]
+  <p>where the numerator is how many mistakes that one cause is responsible for and the denominator is the size of the sample you scored. If 50% of your errors are blurry images but blurry images are only 5% of all your data, fixing blur can lift overall accuracy by at most a few points — the math caps your upside before you waste a week on it. This simple fraction keeps you honest about which fix is worth doing.</p>
+
+  <div class="callout worked"><h3>Worked example — by hand</h3>
+  <p>You've trained an image classifier that sorts photos into "cat" and "dog." On a validation set of 200 images it gets 180 right and <strong>20 wrong</strong> (90% accuracy). Instead of guessing, you open all 20 mistakes one by one and write down, for each, the most likely cause. Here is your tally sheet after going through them:</p>
+  <table>
+    <thead><tr><th>Cause category</th><th>Count (of 20 errors)</th><th>Share of errors</th><th>Share of all 200 images</th></tr></thead>
+    <tbody>
+      <tr><td>Blurry / motion-blurred photo</td><td>9</td><td>45%</td><td>4.5%</td></tr>
+      <tr><td>Animal partly occluded (behind furniture)</td><td>5</td><td>25%</td><td>2.5%</td></tr>
+      <tr><td>Mislabeled in the dataset (it's actually correct!)</td><td>4</td><td>20%</td><td>2.0%</td></tr>
+      <tr><td>Unusual breed / costume</td><td>2</td><td>10%</td><td>1.0%</td></tr>
+    </tbody>
+  </table>
+  <p>Now reason it through, number by number.</p>
+  <p><strong>Step 1 — current state.</strong> Error rate is \( 20/200 = 0.10 \), so accuracy is 90%. The most you could ever reach is 100%, so there are 10 percentage points of accuracy on the table, total.</p>
+  <p><strong>Step 2 — the mislabeled bucket is a free lesson.</strong> 4 of your 20 "errors" are not errors at all — the dataset's <em>label</em> is wrong and your model was right. That means your true accuracy is already \( (180 + 4)/200 = 92\% \), and it means at least \( 4/200 = 2\% \) of your labels are noisy. Cleaning labels both raises your measured score and raises the ceiling everything else is measured against. This is why you always check for mislabeling first.</p>
+  <p><strong>Step 3 — rank the real fixes by potential gain.</strong> The 9 blurry errors are \( 9/200 = 4.5\% \) of all images. Even if a fix (e.g., training with blur augmentation, see Module 12 — CNNs) eliminated <em>every</em> blurry mistake, you could gain at most 4.5 percentage points. Occlusion caps at \( 5/200 = 2.5\% \); unusual breeds cap at just \( 2/200 = 1.0\% \).</p>
+  <p><strong>Step 4 — decide.</strong> The verdict writes itself: (a) first, fix the 4 mislabeled examples and spot-check the rest of the labels, because bad labels poison both training and evaluation; (b) then invest in the <em>blur</em> bucket, since it has by far the largest potential gain (4.5 points); (c) ignore the "unusual breed" bucket for now — a week of work there buys at most 1 point. Notice you made all of these calls from a single tally of 20 images, in about ten minutes, without retraining anything. That is the leverage of error analysis.</p>
+  </div>
+
+  <h3>In code: from scratch</h3>
+  <p>Here's a tiny, dependency-free error-analysis routine. You give it the true labels, the model's predictions, and a function that assigns a <em>cause</em> to each example; it returns the misclassified examples and a tally of causes sorted by how many errors each one accounts for. This is exactly the by-hand process above, automated.</p>
+  <codeblock>from collections import Counter
+
+def error_analysis(X, y_true, y_pred, cause_fn):
+    """Collect misclassified examples and tally them by cause.
+
+    X         : list of inputs (e.g. dicts describing each image)
+    y_true    : list of correct labels
+    y_pred    : list of model predictions
+    cause_fn  : function(x) -> str, your guess at why x is hard
+    """
+    mistakes = []
+    causes = Counter()
+    for x, yt, yp in zip(X, y_true, y_pred):
+        if yt != yp:                       # only look at the errors
+            cause = cause_fn(x)
+            mistakes.append((x, yt, yp, cause))
+            causes[cause] += 1
+
+    total = len(y_true)
+    print(f"{len(mistakes)} errors out of {total} "
+          f"({len(mistakes)/total:.1%} error rate)\n")
+    print("Cause                  count   share of all data")
+    for cause, n in causes.most_common():  # biggest bucket first
+        print(f"{cause:<22}{n:>5}   {n/total:>10.1%}")
+    return mistakes, causes
+
+
+# --- a small synthetic example you can run as-is ---
+# Each image is a dict of attributes; the "model" got some wrong.
+X = [{"id": i, "blurry": i % 5 == 0, "occluded": i % 7 == 0}
+     for i in range(200)]
+y_true = ["cat"] * 200
+# Pretend the model misses exactly the blurry-or-occluded ones.
+y_pred = ["dog" if (x["blurry"] or x["occluded"]) else "cat" for x in X]
+
+def cause_fn(x):
+    if x["blurry"]:   return "blurry"
+    if x["occluded"]: return "occluded"
+    return "other"
+
+mistakes, causes = error_analysis(X, y_true, y_pred, cause_fn)</codeblock>
+  <p>Running this prints the error rate and a sorted table. Every 5th image is blurry (40 images) and, of the every-7th-occluded images, the ones that weren't already counted as blurry add up to 23 more — so you'll see exactly: 63 errors out of 200 (31.5% error rate), with the <code>blurry</code> bucket largest (40, = 20.0% of all data) and <code>occluded</code> second (23, = 11.5%, since the blurry ones were already counted first by the <code>elif</code>). The ordering and the "share of all data" column tell you immediately that attacking blur is where the points are — the same conclusion you reached by hand, now reproducible on thousands of examples.</p>
+
+  <h3>In code: the library way</h3>
+  <p>Once a model is good enough, you need two things: a way to <strong>save and reload</strong> it (so you don't retrain every time) and a way to let other people <strong>use</strong> it. For classic scikit-learn models, <code>joblib</code> handles saving; for PyTorch, <code>torch.save</code> stores the learned weights. Then <strong>Gradio</strong> turns any Python function into a shareable web page in a few lines.</p>
+  <codeblock>import joblib
+from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+
+# 1) Train a quick model (you'd use your real, evaluated model here).
+data = load_iris()
+clf = RandomForestClassifier(n_estimators=100, random_state=0)
+clf.fit(data.data, data.target)
+
+# 2) SAVE it to disk so you never have to retrain to use it.
+joblib.dump(clf, "iris_model.joblib")
+
+# 3) LOAD it back (e.g. in a separate app file or after a restart).
+clf = joblib.load("iris_model.joblib")
+print(clf.predict([[5.1, 3.5, 1.4, 0.2]]))   # -> array([0])  (setosa)</codeblock>
+  <p>The first part trains an iris classifier, writes it to <code>iris_model.joblib</code>, then loads it back and predicts on one flower — printing <code>[0]</code>, the "setosa" class. Saving and loading like this is what lets your training script and your serving app be two separate programs.</p>
+  <p>Now wrap that loaded model in a Gradio web UI. <code>gr.Interface</code> takes a function, a list of input widgets, and an output widget, and builds the whole page — text boxes, a Submit button, and a result area — automatically.</p>
+  <codeblock>import gradio as gr
+import joblib
+
+clf = joblib.load("iris_model.joblib")
+names = ["setosa", "versicolor", "virginica"]
+
+def classify(sepal_len, sepal_wid, petal_len, petal_wid):
+    features = [[sepal_len, sepal_wid, petal_len, petal_wid]]
+    probs = clf.predict_proba(features)[0]        # one prob per class
+    return {names[i]: float(probs[i]) for i in range(3)}
+
+demo = gr.Interface(
+    fn=classify,
+    inputs=[
+        gr.Number(label="sepal length (cm)", value=5.1),
+        gr.Number(label="sepal width (cm)",  value=3.5),
+        gr.Number(label="petal length (cm)", value=1.4),
+        gr.Number(label="petal width (cm)",  value=0.2),
+    ],
+    outputs=gr.Label(num_top_classes=3),
+    title="Iris classifier",
+    description="Enter four measurements; see the predicted species.",
+)
+
+if __name__ == "__main__":
+    demo.launch()   # opens a local web page; share=True gives a public link</codeblock>
+  <p>Run this with <code>python app.py</code> and Gradio prints a local URL (like <code>http://127.0.0.1:7860</code>). Open it and you have a real, clickable web app: four number boxes, a Submit button, and a bar chart of class probabilities — built from a function and a list. Passing <code>share=True</code> to <code>launch()</code> gives you a temporary public link you can text to a friend. This is the fastest path from "a model on my laptop" to "something a human can actually try."</p>
+
+  <div class="callout note"><h3>When to use FastAPI instead</h3>
+  <p>Gradio is perfect for <em>demos</em> and for letting non-programmers poke at your model. But when another <em>program</em> needs predictions — a mobile app, a website backend, a scheduled job — you want a plain JSON API, not a web UI. That's <strong>FastAPI</strong>. You write a function decorated with <code>@app.post("/predict")</code> that takes JSON in and returns JSON out, and it serves many requests efficiently. Rule of thumb: <em>Gradio for humans to click, FastAPI for software to call.</em> Many teams ship both — a Gradio demo for stakeholders and a FastAPI endpoint for production.</p></div>
+
+  <h3>Fairness, bias auditing, and responsible AI</h3>
+  <p>A model that is accurate <em>on average</em> can still be systematically wrong for a particular group of people — and that's how ML causes real harm. The crucial idea: <strong>check your metrics separately for each subgroup, not just overall.</strong> A loan model with 92% overall accuracy might be 95% accurate for one group and 80% for another; the average hides the gap.</p>
+  <p>Three concrete, checkable fairness questions you can ask of almost any classifier, given a sensitive attribute (such as gender, race, or age group) you must <em>not</em> discriminate on:</p>
+  <ul>
+    <li><strong>Demographic parity:</strong> does the model approve (predict the positive class for) each group at similar rates? Compare \( P(\hat{y}=1 \mid \text{group A}) \) with \( P(\hat{y}=1 \mid \text{group B}) \), where \( \hat{y}=1 \) means "approved." Big gaps deserve scrutiny.</li>
+    <li><strong>Equal opportunity:</strong> among people who actually deserve approval, does the model approve each group at similar rates? This compares the <em>true positive rate</em> across groups — arguably the fairer question, since it asks "of the qualified people, are we treating groups equally?"</li>
+    <li><strong>Calibration:</strong> when the model says "70% likely," is that true for every group? If "70%" really means 70% for one group but 50% for another, the scores mean different things for different people.</li>
+  </ul>
+  <p>These definitions can conflict — you usually cannot satisfy all of them at once, which is itself an important truth: fairness involves explicit trade-offs and value choices, not a single button. Here's a minimal subgroup audit you can run on any predictions:</p>
+  <codeblock>import numpy as np
+
+def subgroup_audit(y_true, y_pred, group):
+    """Print accuracy and positive-prediction rate per group."""
+    y_true, y_pred, group = map(np.array, (y_true, y_pred, group))
+    print(f"{'group':<10}{'n':>6}{'accuracy':>11}{'approval rate':>16}")
+    for g in np.unique(group):
+        m = group == g
+        acc = (y_pred[m] == y_true[m]).mean()
+        approval = (y_pred[m] == 1).mean()       # rate of positive class
+        print(f"{str(g):<10}{m.sum():>6}{acc:>11.1%}{approval:>16.1%}")
+
+# Toy data: group B is approved far less often than group A.
+y_true = [1,1,0,1, 1,0,0,0]
+y_pred = [1,1,0,1, 0,0,0,0]
+group  = ["A","A","A","A", "B","B","B","B"]
+subgroup_audit(y_true, y_pred, group)</codeblock>
+  <p>This prints accuracy and approval rate for each group. In the toy data, group A is approved 75% of the time and group B 0% — a glaring disparity you would never see from overall accuracy alone (which is 87.5%). Running this kind of breakdown <em>before</em> you ship is the single most practical fairness habit. Real audits use libraries like <code>fairlearn</code>, but the idea is exactly this loop: slice by group, compare the metrics, investigate gaps.</p>
+  <div class="callout warn"><p><strong>Harm is concrete, not abstract.</strong> Documented ML failures include résumé screeners that downranked women, healthcare risk scores that gave Black patients lower priority for the same illness (because the model used past <em>spending</em> as a proxy for need, and less had historically been spent on them), facial recognition with far higher error rates on darker-skinned faces, and recidivism scores that flagged Black defendants as high-risk more often. The common thread: the data encoded historical inequity, no one audited subgroups, and the system shipped anyway. Auditing is not optional polish — it's part of building the thing correctly.</p></div>
+
+  <div class="callout companion"><h3>Work this with your Claude Code companion</h3><p>Paste these to your Claude Code companion as you study:</p>
+  <ul>
+    <li>"Here are 15 of my model's misclassified examples (pasted below). Help me bucket them by cause and build a tally table, then tell me which fix has the highest potential gain."</li>
+    <li>"My training error is 3% and my validation error is 18%. Is this a bias or a variance problem, and what are my three best options to fix it? Explain your reasoning."</li>
+    <li>"Pair with me to wrap my saved scikit-learn model in a Gradio app. Here's my <code>predict</code> function — review my <code>gr.Interface</code> call and run it locally."</li>
+    <li>"Write a subgroup fairness audit for my predictions, slicing by the 'region' column, and flag any group whose accuracy or approval rate differs from the others by more than 10 points."</li>
+  </ul></div>
+
+  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
+  <ul>
+    <li><strong>Optimizing the wrong metric.</strong> "My accuracy is 98%!" on data that's 98% one class means your model learned nothing. Pick a metric that matches the real-world cost of each error <em>before</em> you train (precision/recall, cost-weighted score), and report it on a held-out set.</li>
+    <li><strong>No baseline.</strong> Without a dumb baseline you have no idea whether your fancy model is good. Always measure "predict the majority class / the mean" first, and make everything beat it.</li>
+    <li><strong>Ignoring data quality.</strong> Beginners spend days tuning hyperparameters while 5% of their labels are wrong. Cleaning data and fixing labels almost always beats another round of tuning. Look at your data; look at your errors.</li>
+    <li><strong>Deploying without monitoring.</strong> A model is not "done" when it ships. The world drifts — last year's spam looks nothing like this year's. Log predictions, track your metric over time, and set an alarm for when it degrades.</li>
+    <li><strong>Fairness as an afterthought.</strong> Bolting on a fairness check the week before launch is too late; the bias is baked into data choices made months earlier. Audit subgroups from the first baseline onward.</li>
+    <li><strong>Never shipping (tutorial hell).</strong> The opposite failure: endlessly watching courses and never building anything of your own. A finished, imperfect project teaches more than ten tutorials. Ship something small and real.</li>
+  </ul></div>
+
+  <h3>Escaping tutorial hell &amp; what to build next</h3>
+  <p>Tutorial hell is the comfortable trap of always following someone else's steps. You feel productive, but you're building <em>their</em> project, not the skill of starting from a blank file. The cure is deliberate and a little uncomfortable: pick a question <em>you</em> care about, find or scrape your own messy data, and walk the whole loop from this module without a tutorial holding your hand. You'll get stuck — that getting-stuck-and-unsticking is the actual learning, and it's exactly where your Claude Code companion shines as a pair-programmer rather than a lecturer.</p>
+  <p>Concrete first independent projects, in rough order of difficulty:</p>
+  <ul>
+    <li><strong>Predict something local:</strong> house prices in your city, or whether a tweet about a topic is positive — find the data, build a baseline, beat it, deploy a Gradio demo.</li>
+    <li><strong>Reproduce then twist:</strong> take a Kaggle competition, get a baseline submission in, then change one thing (a feature, a model) and measure whether it helped.</li>
+    <li><strong>Fine-tune a small model:</strong> use a pretrained model from Hugging Face on your own small labeled dataset (ties back to Module 14 — Transformers and LLMs).</li>
+    <li><strong>Ship it end-to-end:</strong> data → model → saved artifact → Gradio app with a public link → a written README explaining your error analysis and fairness check. This last project is the one to put in front of an employer.</li>
+  </ul>
+
+  <div class="callout resources"><h3>Curated resources</h3>
+  <ul>
+    <li><a href="https://www.statlearning.com/">An Introduction to Statistical Learning (ISLP)</a> — the gold-standard free textbook to deepen the statistics behind everything you've learned; read it cover to cover next.</li>
+    <li><a href="https://course.fast.ai/">fast.ai Practical Deep Learning</a> — top-down, project-first deep learning; perfect for building real things and escaping tutorial hell.</li>
+    <li><a href="https://www.coursera.org/specializations/machine-learning-introduction">Andrew Ng Machine Learning Specialization</a> — and his Deep Learning Specialization next; the "Structuring ML Projects" course is the definitive deep dive on the bias/variance and error-analysis decisions here.</li>
+    <li><a href="https://karpathy.ai/zero-to-hero.html">Karpathy — Neural Networks: Zero to Hero</a> — build a neural net and a GPT from scratch; the best way to truly understand Modules 10–14.</li>
+    <li><a href="https://huggingface.co/learn/llm-course">Hugging Face LLM Course</a> — hands-on with modern transformers and deployment; pairs naturally with the Gradio skills above.</li>
+    <li><a href="https://www.gradio.app/guides/quickstart">Gradio Quickstart</a> — the official 5-minute guide to turning any model into a shareable demo.</li>
+  </ul></div>
+
+  <h3>Exercises</h3>
+  <ol class="exercises">
+    <li>A fraud detector achieves 99.2% accuracy. Fraud is 0.8% of transactions. Is this model good? What metric should you report instead, and what's a baseline that would also score ~99%?
+      <details class="solution"><summary>Show solution</summary><p>It's almost certainly useless. A model that predicts "never fraud" for every transaction scores \( 1 - 0.008 = 99.2\% \) accuracy too — that's your baseline, and the fancy model has not beaten it. Accuracy is the wrong metric for such an imbalanced problem. Report <strong>precision and recall</strong> (or a precision-recall AUC), because the real costs are missing fraud (false negative) and annoying honest customers (false positive). The right framing weights those costs explicitly. You'd want, for example, high recall on fraud while keeping false positives tolerable. See Module 5 and Module 6 for these metrics.</p></details>
+    </li>
+    <li>You measure: human error 1%, training error 2%, validation error 13%. Compute the avoidable bias and the variance, say which problem dominates, and name two appropriate fixes (and one fix that would <em>not</em> help).
+      <details class="solution"><summary>Show solution</summary><p>Avoidable bias \( = E_{\text{train}} - E_{\text{human}} = 2\% - 1\% = 1\% \) (small). Variance \( = E_{\text{val}} - E_{\text{train}} = 13\% - 2\% = 11\% \) (large). <strong>Variance dominates</strong> — the model fits the training data well but generalizes poorly, i.e. it's overfitting. Appropriate fixes: <strong>get more training data</strong> (the most reliable cure), add <strong>regularization</strong> or use a <strong>simpler model</strong>, or for images, <strong>data augmentation</strong>. A fix that would <em>not</em> help: making the model <em>bigger</em> — that increases capacity and would overfit even more. (Reducing avoidable bias is already nearly done since it's only 1%.)</p></details>
+    </li>
+    <li>You run error analysis on 100 validation examples; your model makes 25 errors. You bucket them: 12 are "background too cluttered," 8 are "object too small," 5 are "actually mislabeled." For each bucket compute the maximum possible accuracy gain from fixing it completely. What do you do first, and why?
+      <details class="solution"><summary>Show solution</summary><p>Potential gain = errors in bucket ÷ total examples. Cluttered: \( 12/100 = 12\% \). Small object: \( 8/100 = 8\% \). Mislabeled: \( 5/100 = 5\% \). <strong>Do the mislabeled bucket first</strong> even though its 5% is smallest — those 5 aren't really model errors, so your true accuracy is already \( (75+5)/100 = 80\% \), and 5% noisy labels are corrupting both training and your evaluation. After cleaning labels (and spot-checking the rest), attack the <strong>cluttered-background</strong> bucket next, since it has the largest potential gain (12 points) — e.g. with augmentation or more cluttered training images. The "small object" bucket is third.</p></details>
+    </li>
+    <li>Sketch (in words or code) how you'd take a model you've trained in a Jupyter notebook and turn it into something a non-technical colleague can try from a link, in under 20 lines of new code. List every step.
+      <details class="solution"><summary>Show solution</summary><p>Steps: (1) <strong>Save</strong> the trained model from the notebook with <code>joblib.dump(model, "model.joblib")</code> (or <code>torch.save(model.state_dict(), "model.pt")</code> for PyTorch). (2) In a new file <code>app.py</code>, <strong>load</strong> it with <code>joblib.load("model.joblib")</code>. (3) Write a <code>predict</code> function that takes the raw inputs a human would enter and returns a readable result (e.g. class name and probability). (4) Wrap it in <code>gr.Interface(fn=predict, inputs=[...], outputs=...)</code> choosing widgets that match the inputs. (5) Call <code>demo.launch(share=True)</code> to get a public link. (6) Send the link. The library-way code above is essentially this template; it's well under 20 lines.</p></details>
+    </li>
+    <li>(Open-ended) A bank's loan model has 91% overall accuracy. A subgroup audit shows: applicants under 25 are approved 30% of the time with 78% accuracy; applicants over 25 are approved 65% of the time with 94% accuracy. Name two possible causes and two concrete next steps before this model is allowed to ship.
+      <details class="solution"><summary>Show solution</summary><p>Possible causes: (1) <strong>Training data imbalance / historical bias</strong> — if the bank historically rarely approved young applicants, the model learned that pattern and now perpetuates it, regardless of true creditworthiness. (2) <strong>Fewer or noisier examples for the under-25 group</strong>, so the model is genuinely worse for them (note the lower accuracy, 78% vs 94%) — a data-quantity/quality problem, not necessarily intentional bias. (3) A feature acting as a <strong>proxy</strong> for age (e.g. "years of credit history") that bakes age in indirectly. Concrete next steps: (a) measure a fairness criterion explicitly — e.g. <strong>equal opportunity</strong>, comparing the true-positive rate across age groups among applicants who actually repaid; (b) <strong>collect or up-weight more young-applicant data</strong> and re-examine which features drive the gap, removing or auditing age proxies; (c) involve domain/legal stakeholders, since lending fairness is regulated and the "right" trade-off is a value decision, not just a metric. Do not ship until the subgroup accuracy and approval gaps are understood and justified.</p></details>
+    </li>
+  </ol>
+
+  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
+  <ul>
+    <li>Name the six steps of the project loop and explain what a baseline is for.</li>
+    <li>Given human, training, and validation error, decide whether you have a bias or variance problem and pick a sensible fix (and reject a wrong one).</li>
+    <li>Run an error-analysis tally on a model's mistakes and use potential gain to choose what to fix first.</li>
+    <li>Save a model, reload it, and wrap it in a Gradio demo — and say when you'd use FastAPI instead.</li>
+    <li>Run a subgroup audit and explain why average accuracy can hide unfair behavior.</li>
+  </ul></div>
+
+  <div class="callout hook"><h3>One last word — go build</h3>
+  <p>You started this course unable to define a model and you can now frame a problem, train one, diagnose it, deploy it, and audit it for harm. That is the full arc of a working ML practitioner. The one thing left is the thing no course can do for you: <strong>finish a project of your own</strong>. Pick something you genuinely want to exist, point your new skills and your Claude Code companion at it, and walk the loop until it ships. You don't need permission and you don't need to be "ready" — you already are. Go build it.</p></div>
+</section>

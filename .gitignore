@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Editor / OS cruft
+*.swp
+*~
+.vscode/
+.idea/
+
+# Node (none needed to build, but just in case)
+node_modules/
