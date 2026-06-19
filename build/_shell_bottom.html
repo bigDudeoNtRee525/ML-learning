@@ -423,6 +423,43 @@ window.MLViz = (function(){
   // initial active state
   onScroll();
 
+  /* ---------- ACTIVE-LEARNING COMPONENTS ---------- */
+  // Predict cards: clicking an option locks it in and reveals the explanation.
+  document.querySelectorAll('.predict').forEach(function(p){
+    var correct = p.getAttribute('data-correct');
+    p.querySelectorAll('.opt').forEach(function(o){
+      o.addEventListener('click', function(){
+        if(p.classList.contains('answered')) return;
+        p.classList.add('answered');
+        var chosen = o.getAttribute('data-opt');
+        p.querySelectorAll('.opt').forEach(function(x){
+          var v = x.getAttribute('data-opt');
+          if(v === correct) x.classList.add('correct');
+          else if(v === chosen) x.classList.add('wrong');
+          else x.classList.add('dim');
+        });
+        var verdict = p.querySelector('.verdict');
+        if(verdict){
+          if(chosen === correct){ verdict.textContent = '▶ ' + (verdict.getAttribute('data-ok') || 'Nailed it.'); verdict.className = 'verdict ok'; }
+          else { verdict.textContent = '▶ ' + (verdict.getAttribute('data-no') || 'Not quite — here’s why:'); verdict.className = 'verdict no'; }
+        }
+      });
+    });
+  });
+  // Recall flip cards
+  document.querySelectorAll('.recall .card').forEach(function(c){
+    c.addEventListener('click', function(){ c.classList.toggle('flipped'); });
+  });
+  // Boss / generic prompt copy buttons
+  document.querySelectorAll('.prompt .copy').forEach(function(b){
+    b.addEventListener('click', function(){
+      var txt = (b.parentNode.textContent || '').replace(/^\s*copy(?:ied ✓)?\s*/, '').trim();
+      function ok(){ b.textContent = 'copied ✓'; setTimeout(function(){ b.textContent = 'copy'; }, 1400); }
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok, ok); }
+      else { fallback(txt); ok(); }
+    });
+  });
+
   /* ---------- INTERACTIVE WIDGETS ---------- */
   if(window.MLViz && MLViz.mountAll) MLViz.mountAll();
 })();

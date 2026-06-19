@@ -5,151 +5,152 @@
     <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m4"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
-    <ul>
-      <li>Picture a model's cost as a <em>landscape</em> and explain why "learning" means walking downhill on it.</li>
-      <li>Say in plain words what a <em>gradient</em> is, and why we step in the <em>negative</em> gradient direction.</li>
-      <li>Apply the update rule \( w := w - \alpha \frac{\partial J}{\partial w} \) by hand, and explain what each piece means.</li>
-      <li>Choose a sensible <em>learning rate</em> \( \alpha \) and predict what happens when it is too big or too small.</li>
-      <li>Distinguish <em>batch</em>, <em>mini-batch</em>, and <em>stochastic</em> gradient descent, and say when you'd use each.</li>
-      <li>Write a correct gradient-descent loop from scratch in NumPy that fits a line, and run the same fit with scikit-learn.</li>
+  <p class="lead">In Module 3 we said "find the \( w \) and \( b \) that make the cost small" — and then quietly skipped the only interesting part: <em>how</em>. This is the how. It's one line of math, run a few billion times, and it trains everything from a straight line to ChatGPT. You're not going to read about it. You're going to <em>be</em> it, break it, debug it, and get quizzed until it's boring.</p>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · the problem, before the lesson</div>
+  <h3>You're a robot, lost in fog</h3>
+  <p>You wake up somewhere on a hillside. The fog is so thick you can't see your own hands, let alone the valley below. You have to get to the lowest point. You have exactly <strong>one sense</strong>: you can feel the slope of the ground under your feet — which way it tilts, and how steeply.</p>
+  <p>That's the whole game. No map. No view of the bottom. Just the tilt beneath you, here, now. <strong>What's your move?</strong> Don't scroll — actually decide your strategy in one sentence before you read on.</p>
+
+  <p>Got it? Here's the thing: you almost certainly just invented gradient descent. The instinct is "feel which way the ground falls, step that way, repeat." That instinct, written down carefully, trains every model in this course. The rest of this module is making that instinct precise enough to give to a computer — and finding the two stupid-simple ways it blows up.</p>
+
+  <div class="callback"><b>One trap, flagged early.</b> If you only ever walk downhill, you can get stuck in a shallow dip that isn't the deepest valley — a <em>local minimum</em>. For the bowl-shaped costs in this module there's only one valley, so it never bites. It comes back to haunt us in <b>Module 10</b> (neural nets), where the landscape is full of dips.</p>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · lock in a guess</div>
+  <h3>Predict before you peek</h3>
+  <p>You figured out the rule: step in the direction the ground goes <em>down</em> — opposite the slope. Steeper ground, bigger step you can afford. Flat ground, you're basically there. Fine. Now commit to this before we go further, because the answer is the single most common way training explodes.</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">You make each step <em>proportional to the slope</em> (steep = big step). On a very steep wall, you get greedy and crank that step size way up. What happens?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> You reach the bottom even faster — bigger steps, less waiting.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> You overshoot the bottom, slam into the far wall, and bounce back and forth — possibly forever, getting worse each time.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> Nothing changes. Step size doesn't really matter; you end up in the same place.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>A big step on a steep slope flings you <em>past</em> the bottom and up the opposite wall — where it's <em>also</em> steep, so the next big step flings you back, even further. The size of the step has a name: the <strong>learning rate</strong>. Getting it wrong is most beginners' first real bug, and you'll watch it happen live in the lab two beats from now.</p>
+    </div>
+  </div>
+
+  <div class="predict" data-correct="c">
+    <p class="q">Opposite problem. You're terrified of overshooting, so you make every step tiny — like 0.001 of the slope. Direction is always correct. What's the catch?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> No catch. Small and safe always wins.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> It overshoots anyway, just more slowly.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> It works, but it crawls — it could take thousands of steps to get anywhere, burning compute for nothing.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>Tiny steps are correct and useless. Move 0.006 toward a target three units away and do the math on how long that takes. The learning rate has a Goldilocks zone: too big diverges, too small crawls, and the sweet spot is narrower than beginners expect. Finding it is a real engineering decision, not a footnote.</p>
+    </div>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · now (and only now) the math</div>
+  <h3>You already invented it — here's the notation</h3>
+  <p>The "height of the hill" is the <strong>cost</strong> \( J(w) \): one number that says how wrong the model is, as a function of a knob \( w \) we can turn. The "slope you feel" is the <strong>derivative</strong> \( \frac{dJ}{dw} \): how fast the cost changes when you nudge \( w \). Read that slope as the answer to one question:</p>
+  <p class="aside"><em>"If I nudge \( w \) up a hair, does the cost go up or down, and how fast?"</em> Positive slope → cost rises as \( w \) grows → you should <em>decrease</em> \( w \). Negative slope → you should <em>increase</em> \( w \). Near zero → flat ground, probably the bottom.</p>
+  <p>Your whole foggy-robot strategy is exactly one line:</p>
+
+  <div class="math-card"><div class="eq">\[ w \;\leftarrow\; w \;-\; \alpha\,\frac{dJ}{dw} \]</div>
+    <p class="legend"><b>w</b> the knob you're tuning. <b>dJ/dw</b> the slope — which way is uphill and how steep. <b>α</b> (alpha) the <strong>learning rate</strong>, your step size, a small positive number <em>you</em> choose. <b>−</b> the magic minus sign: subtracting the slope walks you <em>downhill</em>.</p></div>
+
+  <p>Read it out loud: "new knob = old knob, minus a little bit of the slope." That little bit is \( \alpha \). The minus sign is the entire trick — if the slope is positive (cost climbing as \( w \) grows) you subtract a positive number and \( w \) shrinks; if the slope is negative you subtract a negative and \( w \) grows. Either way, you move toward lower cost. \( \alpha \) is a <em>hyperparameter</em>: a dial you set by hand, not something the algorithm learns.</p>
+  <p>The whole of training — linear regression, logistic regression, the network behind ChatGPT — is this line, run millions of times. That is not a metaphor. It is literally this line.</p>
+
+  <p>When there are two knobs (\( w \) and \( b \)), apply the same rule to each, using each one's own slope (now called a <em>partial derivative</em>, \( \frac{\partial J}{\partial w} \) — "partial" just means "slope in one knob's direction, holding the other fixed"):</p>
+  <div class="math-card"><div class="eq">\[ w \leftarrow w - \alpha\,\frac{\partial J}{\partial w}, \qquad b \leftarrow b - \alpha\,\frac{\partial J}{\partial b} \]</div>
+    <p class="legend">Compute <em>both</em> slopes first from the current \( (w,b) \), <em>then</em> update both. Never update \( w \) and recompute \( b \)'s slope from the changed \( w \) — they take one synchronized step together. The full list of partials is called the <strong>gradient</strong>, written \( \nabla J \). It points the fastest way <em>uphill</em>; we go the opposite way. That's the entire algorithm.</p></div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · be the algorithm (by hand)</div>
+  <h3>Run it in your own head first</h3>
+  <p>Forget data for a second. Take the cleanest possible hill: \( J(w) = (w-3)^2 \). It's a bowl with its lowest point obviously at \( w = 3 \) (cost 0 there). Pretend you don't know that and let gradient descent find it. The slope is \( \frac{dJ}{dw} = 2(w-3) \) (chain rule: power comes down, times the derivative of the inside, which is 1). Start at \( w = 0 \), learning rate \( \alpha = 0.1 \), so the rule is \( w \leftarrow w - 0.1\cdot 2(w-3) \).</p>
+  <p><strong>Do Step 1 yourself before you open the answer.</strong> At \( w = 0 \): what's the slope, and where does the step land you?</p>
+
+  <details class="spoiler"><summary>Check Step 1</summary><div class="body"><p>Slope \( = 2(0-3) = -6 \). Update: \( w = 0 - 0.1\times(-6) = 0 + 0.6 = \mathbf{0.6} \). The slope was negative (cost falls as \( w \) rises), so you moved <em>right</em>, toward 3. Correct direction.</p></div></details>
+
+  <p>Now the rest of the march — verify each line:</p>
+  <ul>
+    <li><strong>Step 1.</strong> \( w=0 \): slope \( 2(0-3)=-6 \). \( w = 0 - 0.1(-6) = \mathbf{0.6} \).</li>
+    <li><strong>Step 2.</strong> \( w=0.6 \): slope \( 2(0.6-3)=-4.8 \). \( w = 0.6 - 0.1(-4.8) = \mathbf{1.08} \).</li>
+    <li><strong>Step 3.</strong> \( w=1.08 \): slope \( 2(1.08-3)=-3.84 \). \( w = 1.08 + 0.384 = \mathbf{1.464} \).</li>
+    <li><strong>Step 4.</strong> \( w=1.464 \): slope \( 2(1.464-3)=-3.072 \). \( w = 1.464 + 0.3072 = \mathbf{1.7712} \).</li>
+  </ul>
+  <p>The values march \( 0 \to 0.6 \to 1.08 \to 1.464 \to 1.7712 \to \dots \), each step <em>smaller</em> than the last — because the slope keeps shrinking as you near the bottom. Gradient descent is self-braking: steep ground = big steps, flat ground = tiny steps, so it glides into the minimum instead of blowing past it (as long as \( \alpha \) isn't too big — hold that thought).</p>
+  <p>There's a tidy pattern hiding here. Each step, the <em>distance to the target</em> multiplies by \( (1 - 2\alpha) = 0.8 \). Check it: distance starts at 3; after step 1 it's \( 3 - 0.6 = 2.4 = 0.8\times 3 \); after step 2 it's \( 3 - 1.08 = 1.92 = 0.8\times 2.4 \). So \( w \) never <em>quite</em> reaches 3 — it gets exponentially close. That's why we run "enough" iterations instead of expecting a perfect landing. Remember this multiplier; it's about to tell us exactly when things explode.</p>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · the lab — three missions</div>
+  <h3>Automate it, then break it on purpose</h3>
+  <p>Now the computer applies \( w \leftarrow w - \alpha\cdot 2(w-3) \) for you, one step per click (or hit Run). This is the same bowl you just walked by hand. Your job isn't to "play with it" — it's to complete three missions. Drag the learning-rate slider and watch the slope line flatten as the ball nears the bottom.</p>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> gradient descent, with stakes</div>
+    <p class="aside">Start at \( w = 0 \). The ball sits at the current \( w \); each Step does \( w \leftarrow w - \alpha\cdot 2(w-3) \). Watch the cost readout — is it shrinking or growing?</p>
+    <div class="mlviz" data-widget="gradient-descent"></div>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Reach the bottom in <b>8 steps or fewer</b> <small>Get the cost under 0.05 (w ≈ 3). Small α crawls — go bigger, but not too big. Try around α = 0.3.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Make it <b>diverge</b> on purpose <small>Crank α until the cost shoots UP instead of down. This is the overshoot you predicted in Beat 02.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Find the <b>edge of stability</b> <small>Get it to bounce side to side <em>without</em> diverging — a steady oscillation that never settles and never explodes. It lives right around α = 1.0.</small></span></li>
     </ul>
   </div>
+  <p class="aside">When you nailed Mission 3 you found something deep: there's a razor-sharp threshold where the <em>same</em> algorithm flips from "converges" to "explodes." That threshold is what makes choosing \( \alpha \) a real decision.</p>
 
-  <div class="callout hook"><h3>Why should I care?</h3>
-    <p>In <strong>Module 3 — Linear Regression</strong> you met a model \( \hat{y} = wx + b \) and a cost (mean squared error) that scores how wrong it is. But we cheated: we said "find the \( w \) and \( b \) that make the cost small" without saying <em>how</em>. Gradient descent is the <em>how</em>. It is the single algorithm that trains almost everything you'll ever build — linear regression, logistic regression (Module 5), and every neural network and large language model in Modules 10–14. When ChatGPT was trained, the same idea you'll code in 15 lines today was run billions of times over trillions of words. Learn it once, deeply, and you understand the engine under the entire field. Concretely: imagine you run a coffee cart and want to predict daily sales from the temperature. You have a hunch sales rise with heat, but by how much? Gradient descent is the procedure that nudges your guess for "extra cups per degree" up and down until it best matches what actually happened.</p>
+  <div class="predict" data-correct="a">
+    <p class="q">Before you compute it: with the distance-multiplier rule \( (1 - 2\alpha) \), what's the exact \( \alpha \) where the bowl tips from converging to diverging?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> α = 1.0 — there the multiplier is \( 1 - 2 = -1 \), magnitude exactly 1, so it oscillates forever without shrinking or growing.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> α = 0.5 — half the slope, so it should be the tipping point.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> α = 3.0 — the distance to the target is 3, so that's where it breaks.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>The multiplier is \( (1-2\alpha) \). Convergence needs its <em>magnitude</em> below 1. At \( \alpha = 1.0 \) it's exactly \( -1 \): from \( w=0 \) you bounce \( 0 \to 6 \to 0 \to 6 \to\dots \), mirror-imaged across 3, never closer, never farther. Above 1.0 the magnitude exceeds 1 and the distance grows every step — divergence. That's the edge you felt in Mission 3.</p>
+    </div>
   </div>
 
-  <h3>Intuition first</h3>
-  <p>A model has <em>knobs</em> (we call them parameters: the weight \( w \) and the bias \( b \)). For every setting of the knobs there is a single number that says "how badly are we doing?" — the <em>cost</em>. If you imagine the knobs as a position and the cost as height, you get a <em>landscape</em>: hills where the model is bad, valleys where it is good. Training is just finding the bottom of a valley.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · fix the broken loop</div>
+  <h3>This code looks right. It isn't.</h3>
+  <p>A beginner wrote this to descend our bowl. It runs without errors — and the cost <em>grows</em> every single step instead of shrinking. Read it. Find the bug <strong>before</strong> you open the answer. There is exactly one wrong character.</p>
+  <codeblock>def train(w=0.0, lr=0.1, steps=20):
+    for i in range(steps):
+        grad = 2 * (w - 3)        # slope of J(w) = (w-3)**2
+        w = w + lr * grad         # take a step   # <-- something is wrong on this line
+        print(i, round(w, 3), round((w - 3) ** 2, 3))
+    return w</codeblock>
+  <details class="spoiler"><summary>Show the bug &amp; why</summary><div class="body"><p><code>w = w + lr * grad</code> walks <em>uphill</em>. The gradient points toward <em>higher</em> cost, so to go down you must <strong>subtract</strong> it: <code>w = w - lr * grad</code>. That one flipped sign is the difference between a model that learns and a model that screams off to infinity. Note this is a <em>different</em> failure from the lab: there, divergence came from too-big a step in the right direction; here, every step is the right size but the wrong way. Two ways to break the same one-line rule.</p></div></details>
 
-  <div class="callout analogy">
-    <p><strong>The foggy mountain.</strong> You're standing somewhere on a hillside in thick fog. You can't see the bottom of the valley, but you <em>can</em> feel the slope under your feet. A perfectly reasonable plan: feel which way is steepest <em>downhill</em>, take a small step that way, and repeat. Step by step you descend, even though you never saw the whole mountain. Gradient descent is exactly this — the "slope under your feet" is the gradient, and your step size is the learning rate. The catch (which we'll return to): if you only ever walk downhill, you might settle in a small dip that isn't the deepest valley. That's the <em>local minimum</em> problem.</p>
-  </div>
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · from one knob to real data</div>
+  <h3>The same line, now with x's and y's</h3>
+  <p>The bowl was a warm-up. Real linear regression has two knobs and actual data. The prediction for example \( i \) is \( \hat{y}_i = w x_i + b \), and with \( n \) examples the mean squared error cost is:</p>
+  <div class="math-card"><div class="eq">\[ J(w,b) = \frac{1}{n}\sum_{i=1}^{n}\left(\hat{y}_i - y_i\right)^2 = \frac{1}{n}\sum_{i=1}^{n}\left(w x_i + b - y_i\right)^2 \]</div>
+    <p class="legend"><b>x_i</b> the input for example \( i \). <b>ŷ_i</b> the model's guess. <b>y_i</b> the truth. <b>ŷ_i − y_i</b> the <em>residual</em> (how far off you are). Squaring makes every error positive and punishes big misses harder. <b>Σ</b> "add over all n examples."</p></div>
+  <p>Differentiate that (chain rule; the factor of 2 falls out of the square) and you get the two slopes you'll actually code:</p>
+  <div class="math-card"><div class="eq">\[ \frac{\partial J}{\partial w} = \frac{2}{n}\sum_{i=1}^{n}\left(\hat{y}_i - y_i\right)x_i, \qquad \frac{\partial J}{\partial b} = \frac{2}{n}\sum_{i=1}^{n}\left(\hat{y}_i - y_i\right) \]</div>
+    <p class="legend">Read them in words. The \( b \)-slope is twice the <em>average residual</em>: predicting too low everywhere → residuals negative → slope negative → update <em>raises</em> \( b \). The \( w \)-slope is the average residual <em>weighted by \( x_i \)</em>: an example with a big \( x \) pulls harder, because changing \( w \) moves its prediction more.</p></div>
 
-  <p>A second picture that beginners find sticky: a <strong>ball rolling in a bowl</strong>. Drop a marble into a smooth bowl and it rolls toward the lowest point, slowing as it nears the bottom. For the simple cost shapes in this module the landscape really is a bowl (a single lowest point), so the ball-in-a-bowl image is not just cute — it's accurate.</p>
+  <p><strong>Now do one real step by hand.</strong> Two points: \( (x_1,y_1)=(1,2) \) and \( (x_2,y_2)=(2,3) \). Start at \( w=0, b=0 \), \( \alpha=0.1 \), \( n=2 \). Try to get all the way to the updated \( w \) and \( b \) before opening the answer.</p>
+  <details class="spoiler"><summary>Check your one full GD step</summary><div class="body">
+    <p><strong>Predict.</strong> \( \hat{y}_1 = 0\cdot 1 + 0 = 0 \), \( \hat{y}_2 = 0\cdot 2 + 0 = 0 \).</p>
+    <p><strong>Residuals</strong> \( (\hat{y}_i - y_i) \): \( 0-2 = -2 \) and \( 0-3 = -3 \). Both negative — predicting too low, as expected from an all-zero model.</p>
+    <p><strong>Slope for w:</strong> \( \frac{2}{2}\big[(-2)(1) + (-3)(2)\big] = 1\times(-2-6) = -8 \).</p>
+    <p><strong>Slope for b:</strong> \( \frac{2}{2}\big[(-2)+(-3)\big] = 1\times(-5) = -5 \).</p>
+    <p><strong>Update both at once.</strong> \( w = 0 - 0.1\times(-8) = \mathbf{0.8} \); \( b = 0 - 0.1\times(-5) = \mathbf{0.5} \).</p>
+    <p><strong>Did cost actually drop?</strong> Before: \( J = \frac{1}{2}\big[(-2)^2+(-3)^2\big] = \frac{1}{2}(4+9) = 6.5 \). After: \( \hat{y}_1 = 0.8(1)+0.5 = 1.3 \), \( \hat{y}_2 = 0.8(2)+0.5 = 2.1 \); residuals \( (-0.7,-0.9) \); \( J = \frac{1}{2}(0.49+0.81) = 0.65 \). Cost fell from <strong>6.5 to 0.65 in a single step.</strong> That's gradient descent earning its keep.</p>
+  </div></details>
 
-  <svg class="diagram" viewBox="0 0 420 240" role="img" aria-label="A cost bowl with descending steps">
-    <!-- axes -->
-    <line x1="40" y1="200" x2="400" y2="200" stroke="currentColor" stroke-width="1"/>
-    <line x1="40" y1="20" x2="40" y2="200" stroke="currentColor" stroke-width="1"/>
-    <text x="200" y="228" text-anchor="middle" font-size="12" fill="currentColor">parameter w</text>
-    <text x="14" y="115" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 14 115)">cost J(w)</text>
-    <!-- bowl (parabola) -->
-    <path d="M 60 40 Q 220 320 380 40" fill="none" stroke="#6366f1" stroke-width="2.5"/>
-    <!-- steps as dots descending toward the bottom (~x=220) -->
-    <circle cx="92" cy="74" r="5" fill="#10b981"/>
-    <circle cx="128" cy="118" r="5" fill="#10b981"/>
-    <circle cx="160" cy="150" r="5" fill="#10b981"/>
-    <circle cx="188" cy="167" r="5" fill="#10b981"/>
-    <circle cx="212" cy="174" r="5" fill="#10b981"/>
-    <!-- arrows between dots -->
-    <path d="M 96 80 L 124 112" stroke="#10b981" stroke-width="1.5" marker-end="url(#ar)"/>
-    <path d="M 132 124 L 156 144" stroke="#10b981" stroke-width="1.5" marker-end="url(#ar)"/>
-    <path d="M 164 156 L 184 163" stroke="#10b981" stroke-width="1.5" marker-end="url(#ar)"/>
-    <text x="92" y="64" text-anchor="middle" font-size="11" fill="#10b981">start</text>
-    <text x="222" y="190" text-anchor="start" font-size="11" fill="#10b981">minimum</text>
-    <defs>
-      <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-        <path d="M0,0 L6,3 L0,6 Z" fill="#10b981"/>
-      </marker>
-    </defs>
-  </svg>
-  <p class="caption">Each green dot is one update. The steeper the bowl, the bigger the step; near the bottom the slope flattens and steps shrink, so we glide gently into the minimum.</p>
-
-  <p>Notice something the picture already tells us: where the bowl is <em>steep</em>, the slope is large, so we move a lot; where it <em>flattens out</em> near the bottom, the slope is near zero, so we barely move. Gradient descent is self-braking. That's why it doesn't fly past the minimum (as long as the steps aren't too big — more on that under learning rate).</p>
-
-  <p><strong>Play with it:</strong> press <em>Step</em> to take one update on the bowl J(w) = (w − 3)², or <em>Run</em> to auto-descend. Drag the learning-rate slider: around 0.1–0.3 the ball glides to w = 3, a tiny α crawls, and α ≥ 1.0 makes it overshoot and diverge. Watch the red slope line (the gradient) flatten as it nears the bottom.</p>
-  <div class="mlviz" data-widget="gradient-descent"></div>
-
-  <h3>Making it precise</h3>
-  <p>Let's name things. We want to minimize a <em>cost function</em> \( J \) — a number measuring total error — by choosing a parameter \( w \) (a single adjustable number, the "knob"). The key quantity is the <em>derivative</em> of the cost with respect to the knob, written \( \frac{\partial J}{\partial w} \) and read "the partial derivative of \( J \) with respect to \( w \)." In plain words it answers one question:</p>
-  <p><em>"If I nudge \( w \) up by a tiny amount, does the cost go up or down, and how fast?"</em> A positive value means "increasing \( w \) increases the cost" (so we should decrease \( w \)); a negative value means "increasing \( w \) decreases the cost" (so we should increase \( w \)); a value near zero means "we're on flat ground — possibly at the bottom." The word <em>partial</em> just signals that when there are several knobs (like \( w \) and \( b \)), we measure the slope in one knob's direction at a time, holding the others fixed.</p>
-
-  <p>The collection of all the partial derivatives, one per parameter, is the <em>gradient</em>, written \( \nabla J \) (the symbol is "nabla"). The gradient is a list of slopes that, taken together, points in the direction of <em>steepest ascent</em> — the fastest way <em>uphill</em>. We want to go down, so we step in the <em>opposite</em> direction: the negative gradient. That single fact is the whole algorithm.</p>
-
-  <p>Here is the update rule. Read \( := \) as "becomes" (assignment, like in code):</p>
-  \[ w := w - \alpha \, \frac{\partial J}{\partial w} \]
-  <p>In words: <em>"the new value of \( w \) is the old value, minus the learning rate times the slope at the current point."</em> Each symbol:</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · how much data per step?</div>
+  <h3>Batch, mini-batch, stochastic</h3>
+  <p>Every gradient formula above sums over <em>all \( n \) examples</em>. With a few hundred rows, fine. With millions — or the trillions of tokens an LLM trains on — computing the full sum before <em>every</em> step is absurdly slow. The three flavours differ in exactly one thing: how much data you look at before taking each step.</p>
   <ul>
-    <li>\( w \) — the parameter we're tuning (a number).</li>
-    <li>\( \alpha \) — the <em>learning rate</em> (read "alpha"), a small positive number you choose, like \( 0.1 \) or \( 0.01 \). It controls how big a step we take. It is a <em>hyperparameter</em>: a setting you pick, not something the algorithm learns.</li>
-    <li>\( \frac{\partial J}{\partial w} \) — the slope of the cost at the current \( w \): how cost changes when \( w \) changes.</li>
-    <li>The minus sign — this is what makes us go <em>down</em>hill. If the slope is positive (cost rising as \( w \) grows), we subtract a positive number and \( w \) shrinks; if the slope is negative, subtracting a negative grows \( w \). Either way we move toward lower cost.</li>
+    <li><strong>Batch GD.</strong> Use <em>all</em> examples per step. Gradient is exact, path is smooth and stable, each step is expensive. This is what we'll code from scratch — it's the clearest.</li>
+    <li><strong>Stochastic GD (SGD).</strong> Use <em>one</em> random example per step. Dirt cheap, so you take many steps fast, and the noise can even jiggle you out of shallow dips. But each gradient is a rough estimate, so the path zig-zags.</li>
+    <li><strong>Mini-batch GD.</strong> Use a small group — typically 32 to 256 examples — per step. The sweet spot everyone actually uses: far cheaper than batch, far less noisy than pure SGD, and it maps beautifully onto GPUs. One full pass over all the mini-batches is an <em>epoch</em>.</li>
   </ul>
+  <p class="aside">Mental model: batch GD takes a few confident strides; SGD takes many tipsy little steps; mini-batch takes brisk, mostly-sober steps. All three head downhill — they just trade accuracy-per-step against steps-per-second. You'll lean on mini-batch SGD constantly once we hit neural nets in <strong>Module 10</strong> and <strong>Module 11</strong>.</p>
 
-  <p>When there are two knobs, we just apply the same rule to each, using each one's own partial derivative:</p>
-  \[ w := w - \alpha \, \frac{\partial J}{\partial w}, \qquad b := b - \alpha \, \frac{\partial J}{\partial b} \]
-  <p>We compute both slopes <em>first</em> from the current \( (w, b) \), then update both — never update \( w \) and then recompute \( b \)'s slope from the changed \( w \). They move together, one synchronized step.</p>
-
-  <h4>The exact gradients for linear regression (MSE)</h4>
-  <p>For linear regression the prediction is \( \hat{y}_i = w x_i + b \) for example \( i \), where \( x_i \) is the input and \( \hat{y}_i \) (read "y-hat") is the model's guess. With \( n \) examples and true labels \( y_i \), the mean squared error cost is:</p>
-  \[ J(w, b) = \frac{1}{n} \sum_{i=1}^{n} \left( \hat{y}_i - y_i \right)^2 = \frac{1}{n} \sum_{i=1}^{n} \left( w x_i + b - y_i \right)^2 \]
-  <p>where \( \sum_{i=1}^{n} \) means "add up over all \( n \) examples," and \( (\hat{y}_i - y_i) \) is the <em>residual</em> (how far off prediction \( i \) is). Squaring makes every error positive and punishes big misses more. The slopes work out (using the chain rule from <strong>Module 1 — Just-Enough Math Intuition</strong>; the factor of 2 falls out of differentiating the square) to:</p>
-  \[ \frac{\partial J}{\partial w} = \frac{2}{n} \sum_{i=1}^{n} \left( \hat{y}_i - y_i \right) x_i, \qquad \frac{\partial J}{\partial b} = \frac{2}{n} \sum_{i=1}^{n} \left( \hat{y}_i - y_i \right) \]
-  <p>You don't need to derive these by hand right now — but read them in words, because the words are intuitive. The slope for the bias \( b \) is just (twice) the <em>average residual</em>: if we're predicting too low on average, the residuals are negative, the slope is negative, and the update <em>raises</em> \( b \). The slope for \( w \) is (twice) the average residual <em>weighted by the input \( x_i \)</em>: an example with a large \( x \) pulls harder on the slope, because changing \( w \) affects its prediction more. Keep these two formulas nearby — you'll code them in a minute.</p>
-
-  <div class="callout worked"><h3>Worked example — by hand</h3>
-    <p><strong>Part A: a one-knob bowl.</strong> Forget data for a moment and just minimize the clean cost \( J(w) = (w - 3)^2 \). This is a bowl whose lowest point is obviously at \( w = 3 \) (where the cost is 0). Let's pretend we don't know that and let gradient descent find it. The derivative of \( (w-3)^2 \) is \( \frac{dJ}{dw} = 2(w - 3) \) (chain rule: bring the power down, multiply by the inside's derivative, which is 1). We start at \( w = 0 \) with learning rate \( \alpha = 0.1 \), and apply \( w := w - 0.1 \cdot 2(w-3) \).</p>
-    <ul>
-      <li><strong>Step 1.</strong> At \( w = 0 \): slope \( = 2(0 - 3) = -6 \). Update: \( w = 0 - 0.1 \times (-6) = 0 + 0.6 = \mathbf{0.6} \). The slope was negative (cost falls as \( w \) rises), so we moved <em>right</em>, toward 3. Good.</li>
-      <li><strong>Step 2.</strong> At \( w = 0.6 \): slope \( = 2(0.6 - 3) = -4.8 \). Update: \( w = 0.6 - 0.1 \times (-4.8) = 0.6 + 0.48 = \mathbf{1.08} \).</li>
-      <li><strong>Step 3.</strong> At \( w = 1.08 \): slope \( = 2(1.08 - 3) = -3.84 \). Update: \( w = 1.08 + 0.384 = \mathbf{1.464} \).</li>
-      <li><strong>Step 4.</strong> At \( w = 1.464 \): slope \( = 2(1.464 - 3) = -3.072 \). Update: \( w = 1.464 + 0.3072 = \mathbf{1.7712} \).</li>
-    </ul>
-    <p>The values march \( 0 \to 0.6 \to 1.08 \to 1.464 \to 1.7712 \to \dots \), each step smaller than the last (because the slope keeps shrinking as we near the bottom), homing in on \( w = 3 \). In fact there's a tidy pattern here: each step the <em>distance to the target</em> multiplies by \( (1 - 2\alpha) = 0.8 \). Check: distance starts at 3; after step 1 it's \( 3 - 0.6 = 2.4 = 0.8 \times 3 \); after step 2 it's \( 3 - 1.08 = 1.92 = 0.8 \times 2.4 \). So \( w \) never quite reaches 3, but gets exponentially close — that's why we run "enough" iterations rather than expecting a perfect landing.</p>
-
-    <p><strong>Part B: one real GD step on tiny data.</strong> Now a real (if minuscule) linear-regression fit. Two points: \( (x_1, y_1) = (1, 2) \) and \( (x_2, y_2) = (2, 3) \). Start at \( w = 0 \), \( b = 0 \), learning rate \( \alpha = 0.1 \), with \( n = 2 \).</p>
-    <ol>
-      <li><strong>Predict.</strong> \( \hat{y}_1 = 0 \cdot 1 + 0 = 0 \), \( \hat{y}_2 = 0 \cdot 2 + 0 = 0 \).</li>
-      <li><strong>Residuals</strong> \( (\hat{y}_i - y_i) \): \( 0 - 2 = -2 \) and \( 0 - 3 = -3 \). Both negative — we're predicting too low everywhere, as expected from an all-zero model.</li>
-      <li><strong>Slope for \( w \):</strong> \( \frac{\partial J}{\partial w} = \frac{2}{2}\big[(-2)(1) + (-3)(2)\big] = 1 \times (-2 - 6) = -8 \).</li>
-      <li><strong>Slope for \( b \):</strong> \( \frac{\partial J}{\partial b} = \frac{2}{2}\big[(-2) + (-3)\big] = 1 \times (-5) = -5 \).</li>
-      <li><strong>Update both at once.</strong> \( w = 0 - 0.1 \times (-8) = \mathbf{0.8} \); \( b = 0 - 0.1 \times (-5) = \mathbf{0.5} \).</li>
-    </ol>
-    <p><strong>Did cost actually drop?</strong> Before: residuals \( (-2, -3) \), so \( J = \frac{1}{2}\big[(-2)^2 + (-3)^2\big] = \frac{1}{2}(4 + 9) = 6.5 \). After: new predictions \( \hat{y}_1 = 0.8(1) + 0.5 = 1.3 \), \( \hat{y}_2 = 0.8(2) + 0.5 = 2.1 \); residuals \( (1.3 - 2,\; 2.1 - 3) = (-0.7, -0.9) \); \( J = \frac{1}{2}\big[(-0.7)^2 + (-0.9)^2\big] = \frac{1}{2}(0.49 + 0.81) = 0.65 \). The cost fell from \( 6.5 \) to \( 0.65 \) in a <em>single</em> step. That is gradient descent earning its keep.</p>
-  </div>
-
-  <h3>The learning rate: the one dial you must respect</h3>
-  <p>The learning rate \( \alpha \) decides how far you step. It is the most common thing beginners get wrong, so let's make it concrete using the same bowl \( J(w) = (w-3)^2 \) starting at \( w = 0 \).</p>
-  <ul>
-    <li><strong>Just right (\( \alpha = 0.1 \)).</strong> As we saw: \( 0 \to 0.6 \to 1.08 \to 1.464 \to \dots \to 3 \). Smooth, steady descent.</li>
-    <li><strong>Too small (\( \alpha = 0.001 \)).</strong> Step 1: \( w = 0 - 0.001 \times (-6) = 0.006 \). After step 1 you've moved \( 0.006 \) toward a target \( 3 \) units away. It <em>will</em> get there — but it might take thousands of iterations. Correct direction, painfully slow. You waste compute.</li>
-    <li><strong>Too big (\( \alpha = 1.1 \)).</strong> Step 1: slope \( = -6 \), \( w = 0 - 1.1 \times (-6) = 6.6 \). You overshot the minimum (3) and landed <em>further away on the other side</em> (distance 3.6, was 3). Step 2: slope \( = 2(6.6 - 3) = 7.2 \), \( w = 6.6 - 1.1 \times 7.2 = 6.6 - 7.92 = -1.32 \). Now you've overshot back past 3 to the other side again, even further out. The values bounce \( 0 \to 6.6 \to -1.32 \to \dots \) with the distance growing every step. This is <em>divergence</em> — the cost explodes to infinity. Recall the rule from Part A: the distance to the target multiplies by \( (1 - 2\alpha) \) each step. With \( \alpha = 1.1 \) that factor is \( 1 - 2.2 = -1.2 \), and a factor bigger than 1 in size means runaway growth.</li>
-  </ul>
-  <p>The practical lesson: when training and your cost is going <em>up</em> or printing <code>nan</code> (not-a-number, from overflow), your first suspect is "learning rate too high." Cut it by 10x and try again. When the cost barely moves, your learning rate may be too small (or your features need scaling — see pitfalls). A good habit is to try \( \alpha \in \{0.001, 0.01, 0.1\} \) and watch the cost curve.</p>
-
-  <svg class="diagram" viewBox="0 0 440 200" role="img" aria-label="Three learning rates: too small, just right, too big">
-    <!-- panel labels -->
-    <text x="73" y="18" text-anchor="middle" font-size="11" fill="currentColor">too small</text>
-    <text x="220" y="18" text-anchor="middle" font-size="11" fill="currentColor">just right</text>
-    <text x="367" y="18" text-anchor="middle" font-size="11" fill="currentColor">too big</text>
-    <!-- bowl 1 -->
-    <path d="M 20 40 Q 73 170 126 40" fill="none" stroke="#6366f1" stroke-width="2"/>
-    <circle cx="34" cy="70" r="3.5" fill="#10b981"/><circle cx="40" cy="85" r="3.5" fill="#10b981"/><circle cx="46" cy="98" r="3.5" fill="#10b981"/><circle cx="52" cy="110" r="3.5" fill="#10b981"/>
-    <!-- bowl 2 -->
-    <path d="M 167 40 Q 220 170 273 40" fill="none" stroke="#6366f1" stroke-width="2"/>
-    <circle cx="181" cy="70" r="3.5" fill="#10b981"/><circle cx="200" cy="115" r="3.5" fill="#10b981"/><circle cx="215" cy="140" r="3.5" fill="#10b981"/><circle cx="220" cy="148" r="3.5" fill="#10b981"/>
-    <!-- bowl 3 -->
-    <path d="M 314 40 Q 367 170 420 40" fill="none" stroke="#6366f1" stroke-width="2"/>
-    <circle cx="330" cy="78" r="3.5" fill="#ef4444"/><circle cx="408" cy="50" r="3.5" fill="#ef4444"/><circle cx="320" cy="62" r="3.5" fill="#ef4444"/>
-    <path d="M 332 80 Q 380 130 405 54" fill="none" stroke="#ef4444" stroke-width="1.3" marker-end="url(#ar2)"/>
-    <path d="M 405 54 Q 360 130 323 64" fill="none" stroke="#ef4444" stroke-width="1.3" marker-end="url(#ar2)"/>
-    <defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ef4444"/></marker></defs>
-  </svg>
-  <p class="caption">Left: tiny steps crawl down. Middle: well-sized steps converge cleanly. Right: oversized steps bounce up the walls and fly apart (divergence).</p>
-
-  <h3>Batch, mini-batch, and stochastic gradient descent</h3>
-  <p>Every gradient formula above sums over <em>all \( n \) examples</em>. With a few hundred rows that's fine. With millions (or the trillions of tokens an LLM trains on), computing the full sum for every single step is wastefully slow. The three flavours differ only in <em>how much data you look at before taking each step</em>:</p>
-  <ul>
-    <li><strong>Batch gradient descent.</strong> Use <em>all</em> examples to compute the gradient for each step. Pros: the gradient is exact, so the path is smooth and stable. Cons: each step is expensive; one step needs a full pass over the data. This is what we'll code from scratch — it's the clearest.</li>
-    <li><strong>Stochastic gradient descent (SGD).</strong> Use <em>one</em> randomly-chosen example per step. Pros: dirt cheap per step, so you take many steps fast; the randomness can even jiggle you out of shallow dips. Cons: each gradient is a noisy estimate of the true one, so the path zig-zags toward the minimum instead of gliding.</li>
-    <li><strong>Mini-batch gradient descent.</strong> Use a small group — a <em>mini-batch</em>, typically 32 to 256 examples — per step. This is the practical sweet spot everyone actually uses: far cheaper than batch, far less noisy than pure SGD, and it maps beautifully onto GPU hardware. One full pass through all the mini-batches is called an <em>epoch</em>.</li>
-  </ul>
-  <p>A useful mental model: batch GD takes a few confident strides; SGD takes many tipsy little steps; mini-batch takes brisk, mostly-sober steps. All three head downhill; they just trade accuracy-per-step against steps-per-second. You'll lean on mini-batch SGD constantly once we reach neural networks in <strong>Module 10</strong> and <strong>Module 11 — Training Deep Networks That Actually Work</strong>.</p>
-
-  <h3>In code: from scratch</h3>
-  <p>Let's fit a line \( \hat{y} = wx + b \) to data that secretly follows \( y \approx 2x + 1 \) (plus a little noise), using nothing but NumPy and the exact MSE gradients above. We'll print the cost every so often so you can <em>watch it fall</em>.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">09</span> · from scratch, then the library</div>
+  <h3>Predict the output, then run it</h3>
+  <p>Here's the whole loop in NumPy — the exact MSE gradients you just derived, fitting a line to data that secretly follows \( y \approx 2x + 1 \) plus noise. <strong>Before you run it, predict:</strong> after 1000 epochs, will \( w \) land closer to 2 or to 0? Will the cost keep dropping forever, or hit a floor?</p>
   <codeblock>import numpy as np
 
 # --- make some data that roughly follows y = 2x + 1 ---
@@ -180,7 +181,7 @@ for epoch in range(epochs):
         print(f"epoch {epoch:4d}  cost {cost(w, b):.4f}  w {w:.3f}  b {b:.3f}")
 
 print(f"\nlearned:  w = {w:.3f},  b = {b:.3f}   (true was w=2, b=1)")</codeblock>
-  <p>Running this prints a cost that drops every line and parameters that climb toward the truth, ending near \( w \approx 2 \), \( b \approx 1 \). Your exact decimals depend on the random noise, but the shape of the output is always the same — something like:</p>
+  <p>Now run it. The cost drops every line and the parameters climb toward the truth. Roughly:</p>
   <codeblock>epoch    0  cost 31.1602  w 0.395  b 0.121
 epoch  200  cost 0.1789   w 2.130  b 0.729
 epoch  400  cost 0.1784   w 2.121  b 0.757
@@ -188,10 +189,9 @@ epoch  600  cost 0.1784   w 2.118  b 0.768
 epoch  800  cost 0.1783   w 2.117  b 0.772
 
 learned:  w = 2.116,  b = 0.773   (true was w=2, b=1)</codeblock>
-  <p>Read the story in those numbers: the cost crashes from over 30 down to roughly 0.18 and then <em>stops improving</em> — that floor isn't a failure, it's the leftover noise we sprinkled in (we can't fit randomness). With noise standard deviation 0.5 you'd expect a floor near \( 0.5^2 = 0.25 \); we land a touch below it (about 0.18) because the fitted line also soaks up a little of the random wiggle in these 50 particular points. The learned \( w \approx 2.12 \) sits right next to the true \( 2 \), and \( b \approx 0.77 \) lands in the neighbourhood of the true \( 1 \) — it doesn't hit it exactly because the noise in this small sample pulls the best-fit line slightly off the underlying truth. The two lines you'd flag if something broke: a cost that <em>rises</em> (learning rate too high) or a cost that's still falling fast at the last epoch (run more epochs, or raise the rate). If you set a different seed in <code>default_rng</code> you'll get slightly different numbers — that's expected and fine.</p>
+  <p>Read the story in those numbers. The cost crashes from over 30 down to about 0.18 and then <em>stops</em>. That floor isn't failure — it's the leftover noise we sprinkled in (you can't fit randomness). With noise standard deviation 0.5 you'd expect a floor near \( 0.5^2 = 0.25 \); we land a touch below it (about 0.18) because the fitted line soaks up a little of the random wiggle in these particular 50 points. Learned \( w \approx 2.12 \) sits right next to the true 2; \( b \approx 0.77 \) lands near the true 1, missing slightly because noise in a small sample tugs the best-fit line off the underlying truth. Two things you'd flag as broken: a cost that <em>rises</em> (α too high) or one still falling fast at the last epoch (run more epochs, or raise α). A different seed gives slightly different numbers — expected and fine.</p>
 
-  <h3>In code: the library way</h3>
-  <p>Once you understand the loop, scikit-learn does it for you. <code>SGDRegressor</code> is linear regression trained by (mini-)stochastic gradient descent — the library version of everything above. One important real-world detail it forces on you: <em>scale your features first</em> (see pitfalls for why). We chain a scaler and the regressor with a <code>Pipeline</code> so the scaling is handled automatically.</p>
+  <p>Once you've felt the loop, scikit-learn does it for you. <code>SGDRegressor</code> is linear regression trained by (mini-)stochastic gradient descent — the library version of everything above. It forces one real-world habit on you: <em>scale your features first</em> (a skinny, lopsided cost bowl makes GD zig-zag painfully). We chain a scaler and the regressor in a <code>Pipeline</code>. <strong>Predict the printed prediction at x = 2.5 before running.</strong></p>
   <codeblock>import numpy as np
 from sklearn.linear_model import SGDRegressor
 from sklearn.preprocessing import StandardScaler
@@ -213,115 +213,61 @@ model.fit(X, y)
 pred = model.predict([[2.5]])          # predict y when x = 2.5  (truth ~ 6.0)
 print(f"prediction at x=2.5: {pred[0]:.3f}")
 print(f"R^2 on training data: {model.score(X, y):.3f}")</codeblock>
-  <p>This prints a prediction near \( 6.0 \) for \( x = 2.5 \) (since \( 2 \times 2.5 + 1 = 6 \)) and an \( R^2 \) close to \( 1.0 \), meaning the line explains almost all the variation in \( y \). Note <code>eta0</code> is scikit-learn's name for the learning rate \( \alpha \). For a closed-form, no-learning-rate fit you'd reach for <code>LinearRegression</code> (Module 3) — but <code>SGDRegressor</code> is the one that scales to huge data and shares its DNA with neural-network training.</p>
+  <p>It prints a prediction near \( 6.0 \) for \( x = 2.5 \) (since \( 2\times 2.5 + 1 = 6 \)) and an \( R^2 \) close to \( 1.0 \) — the line explains almost all the variation in \( y \). Note <code>eta0</code> is scikit-learn's name for \( \alpha \). For a closed-form, no-learning-rate fit you'd reach for <code>LinearRegression</code> (Module 3); <code>SGDRegressor</code> is the one that scales to huge data and shares its DNA with neural-network training.</p>
 
-  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
-    <p>Paste these to your Claude Code companion as you study:</p>
-    <ul>
-      <li>"Explain gradient descent to me with a brand-new analogy that isn't a mountain or a bowl, then point out where the analogy breaks down."</li>
-      <li>"Run my from-scratch NumPy code, then change <code>alpha</code> to 0.5 and to 0.0001 and show me the printed cost for each — explain what diverging and crawling look like in the numbers."</li>
-      <li>"Generate 5 by-hand practice problems where I do two gradient-descent steps on a quadratic cost, then check my arithmetic step by step."</li>
-      <li>"Pair with me to add mini-batch updates to my from-scratch loop (batch size 8) and review whether my shuffling and indexing are correct."</li>
-    </ul>
+  <div class="beat-tag"><span class="dot"></span><span class="n">10</span> · the traps that actually get people</div>
+  <h3>Where beginners lose hours</h3>
+  <ul>
+    <li><strong>"Bigger learning rate = faster learning."</strong> Up to a point — then it flips. Too big and the cost <em>grows</em> every step until it overflows to <code>nan</code>. If cost ever rises, first fix is shrink \( \alpha \) by 10x.</li>
+    <li><strong>Forgetting to scale features.</strong> One feature ranges 0–1, another 0–100000 → the cost bowl becomes a long skinny ravine, and GD zig-zags across the narrow direction forever. Standardize (subtract mean, divide by std). Deep dive in <strong>Module 7</strong>.</li>
+    <li><strong>Updating one parameter with the other's already-updated value.</strong> Compute <em>all</em> gradients from the current parameters first, <em>then</em> apply every update. Interleaving breaks the math.</li>
+    <li><strong>Thinking GD always finds the best possible answer.</strong> For convex (bowl-shaped) costs like linear and logistic regression, it does. For neural nets the landscape has many valleys; GD finds a <em>good</em> minimum, not provably <em>the</em> global one. Good-enough is what we ship.</li>
+    <li><strong>Confusing learning rate with epochs.</strong> \( \alpha \) sets <em>how far</em> each step goes; epochs set <em>how many</em>. A too-small \( \alpha \) can be partly rescued by more epochs; a too-big \( \alpha \) cannot be fixed by any number of epochs — it diverges.</li>
+    <li><strong>Dropping the factor of 2 in the gradient.</strong> Using \( \frac{1}{n} \) instead of \( \frac{2}{n} \) nothing breaks catastrophically — it's just like halving your learning rate. But know which convention you're on so \( \alpha \) means what you think.</li>
+  </ul>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">11</span> · cold recall — no scrolling back</div>
+  <h3>Pull it out of your own head</h3>
+  <p>Re-reading feels like learning but mostly isn't. <em>Retrieving</em> is. Answer each in your head <strong>first</strong>, then tap to flip. If you can't, that's the signal to scroll up — but try first.</p>
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">In \( w \leftarrow w - \alpha\frac{dJ}{dw} \), what is \( \alpha \) and what does it control?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">\( \alpha \) is the <b>learning rate</b> — the size of each step. Too small: painfully slow. Too big: overshoot and diverge.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why the minus sign?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">The gradient points <b>uphill</b> (toward higher cost). Subtracting it moves you <b>downhill</b>, toward the minimum.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Your cost stops dropping and starts <em>rising</em> fast. First thing to check?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Learning rate too high (overshooting) — or a sign error walking uphill. Lower \( \alpha \) by 10x first.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Batch vs SGD vs mini-batch — the one-line difference?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">How much data per step: <b>all</b> (batch, exact &amp; slow), <b>one</b> (SGD, cheap &amp; noisy), <b>32–256</b> (mini-batch, the practical sweet spot).</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">One sentence: what IS gradient descent?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Repeatedly nudge the knobs a little bit <b>opposite</b> the slope of the error, until you reach the bottom.</div>
+    </div></div>
   </div>
 
-  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
-    <ul>
-      <li><strong>"Bigger learning rate = faster learning."</strong> Up to a point, yes — then it flips. Too big and you overshoot the minimum and the cost <em>grows</em> every step until it overflows to <code>nan</code>. If cost ever rises, your first fix is to shrink \( \alpha \) by 10x.</li>
-      <li><strong>Forgetting to scale features.</strong> If one feature ranges 0–1 and another ranges 0–100000, the cost landscape becomes a long, skinny ravine instead of a round bowl. Gradient descent then zig-zags painfully slowly across the narrow direction. Standardizing features (subtract the mean, divide by the standard deviation) rounds out the bowl and is essential for GD-based methods. We'll go deep on this in <strong>Module 7 — Feature Engineering and Preprocessing</strong>.</li>
-      <li><strong>Updating one parameter using the other's already-updated value.</strong> Compute <em>all</em> gradients from the current parameters first, <em>then</em> apply every update. Interleaving them breaks the math.</li>
-      <li><strong>Thinking gradient descent always finds the best possible answer.</strong> For the bowl-shaped (convex) costs of linear and logistic regression it does — there's one valley. For neural networks the landscape has many valleys (local minima) and flat plateaus; GD finds a <em>good</em> minimum, not provably <em>the</em> global one. In practice good-enough is what we ship.</li>
-      <li><strong>Confusing the learning rate with the number of epochs.</strong> \( \alpha \) sets <em>how far</em> each step goes; epochs set <em>how many</em> steps. A too-small \( \alpha \) can be partly rescued by more epochs, but a too-big \( \alpha \) cannot be fixed by any number of epochs — it diverges.</li>
-      <li><strong>Dropping or mismatching the factor of 2 in the gradient.</strong> The MSE gradient has a \( \frac{2}{n} \). If you accidentally use \( \frac{1}{n} \), nothing breaks catastrophically — it's mathematically equivalent to halving your learning rate. But know which convention you're using so your \( \alpha \) means what you think.</li>
-    </ul>
+  <div class="beat-tag"><span class="dot"></span><span class="n">12</span> · boss fight</div>
+  <h3>Beat your Claude companion</h3>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — with your Claude companion</div>
+    <p>A box of "suggested prompts" is lazy. Here's a real challenge loop. Paste it to your Claude Code companion and don't move on until you beat it cold — three steps by hand, no calculator-from-Claude.</p>
+    <div class="prompt"><button class="copy">copy</button>You are quizzing me on gradient descent. Give me a cost function J(w) and its derivative, a starting w, and a learning rate. I will do 3 update steps BY HAND and tell you my final w and cost. Then grade each step, show exactly where I went wrong if I did, and hit me with a harder one — including at least one case where the learning rate makes it diverge, and ask me to PREDICT converge-or-diverge before I compute. Keep escalating until I get two in a row perfect, then ask me to explain, in plain words using the robot-in-fog picture, WHY a too-big alpha diverges.</div>
+    <p class="aside">You pass this module when you can run three steps in your head, predict converge-vs-diverge from \( \alpha \) alone, and explain the blowup with the fog picture — not a formula you memorized.</p>
   </div>
 
-  <h3>Exercises</h3>
+  <h3>Stretch: take it further</h3>
+  <p>Reading about descent isn't feeling it. Pick one and code it end to end.</p>
   <ol class="exercises">
-    <li>Using \( J(w) = (w-3)^2 \) with derivative \( 2(w-3) \), start at \( w = 5 \) with \( \alpha = 0.1 \) and compute the first two updates by hand. Is the cost decreasing?
-      <details class="solution"><summary>Show solution</summary><p>Step 1: slope \( = 2(5-3) = 4 \); \( w = 5 - 0.1 \times 4 = 4.6 \). Step 2: slope \( = 2(4.6-3) = 3.2 \); \( w = 4.6 - 0.1 \times 3.2 = 4.28 \). The values \( 5 \to 4.6 \to 4.28 \) move <em>down</em> toward 3 (this time from the right, so \( w \) decreases). Cost before: \( (5-3)^2 = 4 \); after step 1: \( (4.6-3)^2 = 2.56 \); after step 2: \( (4.28-3)^2 \approx 1.64 \). Decreasing, as expected.</p></details>
-    </li>
-    <li>For the same bowl starting at \( w = 0 \), what does \( \alpha = 1.0 \) do? Compute two steps and describe the behaviour.
-      <details class="solution"><summary>Show solution</summary><p>Step 1: slope \( = 2(0-3) = -6 \); \( w = 0 - 1.0 \times (-6) = 6 \). Step 2: slope \( = 2(6-3) = 6 \); \( w = 6 - 1.0 \times 6 = 0 \). You bounce \( 0 \to 6 \to 0 \to 6 \to \dots \) forever, mirror-imaged across the minimum at 3, never getting closer. The distance-multiplier is \( 1 - 2\alpha = 1 - 2 = -1 \): magnitude exactly 1, so it neither converges nor diverges — it oscillates. Any \( \alpha \) larger than 1 would diverge; the borderline is at \( \alpha = 1 \).</p></details>
-    </li>
-    <li>Take the 2-point dataset \( (1,2), (2,3) \) again, but start from the result of one step we computed earlier: \( w = 0.8 \), \( b = 0.5 \), with \( \alpha = 0.1 \), \( n = 2 \). Do one more full GD step (both parameters) and confirm cost drops below 0.65.
-      <details class="solution"><summary>Show solution</summary><p>Predict: \( \hat{y}_1 = 0.8(1)+0.5 = 1.3 \), \( \hat{y}_2 = 0.8(2)+0.5 = 2.1 \). Residuals: \( 1.3-2 = -0.7 \), \( 2.1-3 = -0.9 \). Slopes: \( \frac{\partial J}{\partial w} = \frac{2}{2}[(-0.7)(1) + (-0.9)(2)] = -0.7 - 1.8 = -2.5 \); \( \frac{\partial J}{\partial b} = \frac{2}{2}[(-0.7)+(-0.9)] = -1.6 \). Update: \( w = 0.8 - 0.1(-2.5) = 1.05 \); \( b = 0.5 - 0.1(-1.6) = 0.66 \). New predictions: \( \hat{y}_1 = 1.05+0.66 = 1.71 \), \( \hat{y}_2 = 2.10+0.66 = 2.76 \); residuals \( -0.29, -0.24 \); cost \( = \frac{1}{2}(0.0841 + 0.0576) = \frac{1}{2}(0.1417) \approx 0.071 \). It dropped from 0.65 to about 0.071 — still falling toward the true line \( y = x + 1 \) (where \( w=1, b=1 \)).</p></details>
-    </li>
-    <li>In the from-scratch NumPy code, why do we compute <code>dw</code> and <code>db</code> from <code>yhat</code> <em>before</em> updating <code>w</code> and <code>b</code>, rather than updating <code>w</code> and then recomputing <code>yhat</code> for <code>db</code>? What could go wrong otherwise?
-      <details class="solution"><summary>Show solution</summary><p>The gradient is defined at a single point \( (w, b) \) — both partial derivatives describe the slope of the landscape <em>at the current location</em>. If you update <code>w</code> first and then recompute <code>error</code> for <code>db</code>, you'd be measuring \( b \)'s slope at a <em>different</em> point than \( w \)'s, so the two updates no longer form one coherent downhill step. The result is a subtly wrong trajectory that can slow convergence or, in nastier landscapes, destabilize it. Always snapshot the predictions/residuals once, derive every gradient from that snapshot, then apply all updates together.</p></details>
-    </li>
-    <li>You train a model and the printed cost goes \( 12 \to 40 \to 380 \to \text{nan} \). Name the most likely cause and give two concrete things to try.
-      <details class="solution"><summary>Show solution</summary><p>The cost is exploding, the classic signature of a learning rate that is too high — steps overshoot the minimum and grow each time until the numbers overflow to <code>nan</code>. Two fixes: (1) reduce \( \alpha \) by a factor of 10 (e.g. 0.05 → 0.005) and rerun; (2) standardize your features (subtract mean, divide by standard deviation) so the cost bowl is rounder and tolerant of larger steps. If both fail, double-check you didn't drop the \( \frac{1}{n} \) normalization in the gradient, which inflates the effective step size on large datasets.</p></details>
-    </li>
+    <li><strong>Learning-rate sweep.</strong> Wrap the from-scratch loop in a function that returns the cost history. Run it for \( \alpha \in \{0.001, 0.01, 0.1, 0.3, 0.6\} \), plot all curves on one chart with a log-scaled y-axis, and write one sentence per curve. <em>Success:</em> you can point to the smallest \( \alpha \) that still converges in 1000 epochs and the one where it starts to diverge.</li>
+    <li><strong>From-scratch fitter on real data.</strong> Reuse the NumPy loop on scikit-learn's diabetes dataset using one feature (BMI, column index 2). Standardize \( x \), run GD, plot the fitted line, and beat a "predict the mean" baseline on MSE. <em>Success:</em> your MSE is clearly below the baseline and the cost curve flattens instead of rising.</li>
+    <li><strong>Batch vs mini-batch vs SGD.</strong> Generate 2000 noisy points from \( y \approx 2x+1 \). Implement all three (mini-batch size 32, shuffled each epoch) and plot cost vs. <em>examples seen</em>. <em>Success:</em> batch is smoothest, SGD noisiest, mini-batch between — all reaching a similar final cost.</li>
   </ol>
 
-  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
-    <ul>
-      <li>Explain, without notes, why we step in the <em>negative</em> gradient direction.</li>
-      <li>State the update rule \( w := w - \alpha \frac{\partial J}{\partial w} \) and say what each symbol does.</li>
-      <li>Predict the qualitative behaviour (converge / crawl / diverge) for a learning rate that's just right, too small, or too big.</li>
-      <li>Write the MSE gradients \( \frac{\partial J}{\partial w} \) and \( \frac{\partial J}{\partial b} \) from memory and explain each in words.</li>
-      <li>Describe the difference between batch, mini-batch, and stochastic gradient descent in one sentence each.</li>
-    </ul>
-  </div>
-
-  <div class="callout projects"><h3>Projects: build it yourself</h3>
-    <p>Reading about descent isn't the same as feeling it work. Pick at least one of these and code it end to end. Each lists a <em>goal</em>, a <em>dataset</em> you can grab in minutes, concrete <em>milestones</em>, a <em>success</em> bar to hit, and a <em>stretch</em> if you want more.</p>
-    <ol class="exercises">
-      <li><strong>Project 1 — Gradient descent visualizer.</strong>
-        <ul>
-          <li><strong>Goal:</strong> Build an animation that plots the bowl \( J(w) = (w-3)^2 \) and drops a dot that steps downhill, so you can <em>see</em> the self-braking behaviour.</li>
-          <li><strong>Dataset:</strong> None needed — generate \( w \) values on a grid with <code>np.linspace(-2, 8, 200)</code> and plot \( J \) against them.</li>
-          <li><strong>Milestones:</strong> (1) plot the parabola; (2) run GD from \( w = 0 \) storing every \( w \); (3) overlay the visited points as dots connected by arrows; (4) print the step number, \( w \), and cost each iteration.</li>
-          <li><strong>Success:</strong> The dots visibly bunch up near \( w = 3 \) and the printed cost decreases monotonically with \( \alpha = 0.1 \).</li>
-          <li><strong>Stretch:</strong> Add a slider (or a loop over \( \alpha \in \{0.01, 0.1, 0.9, 1.1\} \)) and capture, in one figure each, "crawl", "converge", "oscillate", and "diverge".</li>
-        </ul>
-      </li>
-      <li><strong>Project 2 — From-scratch line fitter on real data.</strong>
-        <ul>
-          <li><strong>Goal:</strong> Reuse your NumPy batch-GD loop to fit a single-feature linear model to a real dataset, and beat a naive "predict the mean" baseline.</li>
-          <li><strong>Dataset:</strong> scikit-learn's diabetes dataset, using one feature (BMI): <code>from sklearn.datasets import load_diabetes</code>, then take column index 2 as \( x \) and the target as \( y \).</li>
-          <li><strong>Milestones:</strong> (1) standardize \( x \) (subtract mean, divide by std); (2) run your GD loop; (3) plot the data and your fitted line; (4) compute MSE of your model vs. MSE of always predicting the mean of \( y \).</li>
-          <li><strong>Success:</strong> Your model's MSE is clearly lower than the mean-baseline MSE, and the cost curve flattens out instead of rising.</li>
-          <li><strong>Stretch:</strong> Add a second feature so \( \hat{y} = w_1 x_1 + w_2 x_2 + b \) and extend the gradients to both weights.</li>
-        </ul>
-      </li>
-      <li><strong>Project 3 — Learning-rate sweep report.</strong>
-        <ul>
-          <li><strong>Goal:</strong> Quantify, not just describe, how the learning rate changes convergence.</li>
-          <li><strong>Dataset:</strong> The same synthetic \( y \approx 2x + 1 \) data from the code section (seed 0).</li>
-          <li><strong>Milestones:</strong> (1) wrap your GD loop in a function returning the cost history; (2) run it for \( \alpha \in \{0.001, 0.01, 0.1, 0.3, 0.6\} \); (3) plot all cost curves on one chart with a log-scaled y-axis; (4) write one sentence per curve describing what happened.</li>
-          <li><strong>Success:</strong> You can point to the smallest \( \alpha \) that still converges within 1000 epochs and the \( \alpha \) at which it starts to diverge.</li>
-          <li><strong>Stretch:</strong> Add a simple decaying schedule \( \alpha_t = \alpha_0 / (1 + 0.001\,t) \) and compare it against the best constant rate.</li>
-        </ul>
-      </li>
-      <li><strong>Project 4 — Batch vs. mini-batch vs. stochastic.</strong>
-        <ul>
-          <li><strong>Goal:</strong> Implement all three flavours and compare their paths to the minimum.</li>
-          <li><strong>Dataset:</strong> Generate 2000 points from \( y \approx 2x + 1 \) with noise (so the difference in cost-per-step is visible).</li>
-          <li><strong>Milestones:</strong> (1) write batch GD; (2) write SGD (one random point per step); (3) write mini-batch (size 32, shuffled each epoch); (4) plot the cost vs. number of <em>examples seen</em> (not epochs) for all three on one chart.</li>
-          <li><strong>Success:</strong> Batch is the smoothest curve, SGD is the noisiest, and mini-batch sits between — and all three reach a similar final cost.</li>
-          <li><strong>Stretch:</strong> Time each method and report cost reached per second of wall-clock; explain why mini-batch usually wins in practice.</li>
-        </ul>
-      </li>
-      <li><strong>Project 5 — Reproduce SGDRegressor by hand.</strong>
-        <ul>
-          <li><strong>Goal:</strong> Convince yourself the library is doing exactly what you coded by matching its fitted coefficients.</li>
-          <li><strong>Dataset:</strong> Any single-feature regression set (the synthetic data or diabetes BMI).</li>
-          <li><strong>Milestones:</strong> (1) fit <code>SGDRegressor</code> inside a <code>StandardScaler</code> pipeline; (2) read out its learned slope and intercept; (3) standardize the data yourself and run your own GD until it converges; (4) compare your \( (w, b) \) against the library's to two decimals.</li>
-          <li><strong>Success:</strong> Your hand-rolled coefficients agree with scikit-learn's to within a small tolerance (say, 0.05) on standardized data.</li>
-          <li><strong>Stretch:</strong> Add L2 regularization (a \( \lambda w \) term in the weight gradient) and show your result tracks <code>SGDRegressor(penalty="l2")</code>.</li>
-        </ul>
-      </li>
-    </ol>
-  </div>
-
-  <div class="callout resources"><h3>Curated resources</h3>
-    <ul>
-      <li><a href="https://www.youtube.com/@statquest">StatQuest — Gradient Descent (YouTube)</a> — Josh Starmer walks the bowl-and-steps picture with friendly, slow visuals; the perfect companion to this module.</li>
-      <li><a href="https://developers.google.com/machine-learning/crash-course">Google ML Crash Course — Reducing Loss</a> — short, interactive lessons on gradients and learning rates with sliders you can play with.</li>
-      <li><a href="https://www.coursera.org/specializations/machine-learning-introduction">Andrew Ng — Machine Learning Specialization</a> — Course 1 derives and implements gradient descent for linear regression in exactly the spirit of this module.</li>
-      <li><a href="https://www.3blue1brown.com/lessons/gradient-descent">3Blue1Brown — Gradient Descent, how neural networks learn</a> — a gorgeous visual on what the gradient is and how descent works once you have many parameters.</li>
-    </ul>
-  </div>
+  <div class="callback"><b>Lock this in.</b> You will see \( w \leftarrow w - \alpha\cdot\text{gradient} \) again, unchanged: in <b>Module 5</b> (logistic regression reuses it for free), in <b>Module 10</b> (where "backpropagation" is just a clever way to <em>compute</em> the gradient this loop <em>uses</em> — that's the only difference between them, and mixing the two up is the #1 beginner error), and in <b>Module 11</b> (Adam is this same idea with a smarter, self-adjusting step size). One line. The whole field.</div>
 </section>

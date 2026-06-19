@@ -1,70 +1,104 @@
 <section class="module" id="projects" data-title="Project Track">
   <div class="module-head">
     <span class="module-kicker">Project Track</span>
-    <h2>Project Track — Five Increasing-Difficulty Projects</h2>
-    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="projects"><span>Mark project track complete</span></label>
+    <h2>Project Track — Five Quests</h2>
+    <label class="done-toggle"><input type="checkbox" class="done-box" data-id="projects"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>What this track is for</h3><p>The modules taught you the ideas. These five projects turn ideas into <em>skill</em>. Each one is a self-contained, portfolio-worthy build that uses the concepts from the modules right before it. By the end you will have shipped: a classifier with honest evaluation, a model bake-off on real tabular data, a deployed image recognizer, a pretrained-language-model app, and your own document question-answering bot. That is a genuine ML resume.</p>
-  <ul>
-    <li>Practice the <strong>full workflow</strong> — load data, split it honestly, train, evaluate, iterate — not just one isolated step.</li>
-    <li>Build <strong>five artifacts you can show people</strong>: notebooks, a Gradio web app, and a RAG bot over your own files.</li>
-    <li>Develop <strong>judgment</strong>: when to reach for a random forest vs. a linear model, when accuracy lies, when a model is just memorizing.</li>
-    <li>Learn to <strong>pair-program with your Claude Code companion</strong> the way working engineers actually use AI assistants — to scaffold, debug, and review, not to hand you finished answers.</li>
-  </ul></div>
+  <div class="beat-tag"><span class="dot"></span><span class="n">00</span> · the only test that matters</div>
+  <h3>Close every tab. Open a blank file. Now build a spam filter.</h3>
 
-  <div class="callout hook"><h3>Why projects beat tutorials (escaping "tutorial hell")</h3>
-  <p>"Tutorial hell" is the trap where you watch and copy along, everything makes sense in the moment, and then you sit in front of a blank file and freeze. It feels like learning because the code runs and the dopamine hits — but you were following turn-by-turn GPS, not building a map in your head. The cure is uncomfortable on purpose: <strong>start from a blank file and a goal, get stuck, and work your way out.</strong> The struggle <em>is</em> the learning. A tutorial hands you the answer; a project forces you to form the question.</p>
-  <p>Each project below gives you a goal, a real dataset, milestones, and measurable success criteria — but it deliberately does <em>not</em> give you a complete copy-paste solution. You write the bulk of it. When you get stuck (you will, that is the point), you debug it yourself first, then ask your companion to explain the error rather than to silently fix it. Aim to be able to rebuild each project from a blank file the second time. If you can do that, it is yours.</p></div>
+  <p class="lead">Did your stomach drop? Good. That feeling — blank file, no tutorial to copy, no "next" button — is the exact gap between watching ML and <em>doing</em> ML. Everything you've studied so far has been training wheels. This is the part where you ride.</p>
 
-  <div class="callout companion"><h3>Pair-program these with your Claude Code companion</h3>
-  <p>Your Claude Code companion lives in your terminal and can read your files, run your code, and reason about errors. Use it like a patient senior engineer sitting next to you — to <em>unblock and review</em>, not to do the project for you. Good habits:</p>
+  <p>Here's the brutal truth about tutorials: they feel like learning because the code runs and the dopamine hits. But you were following turn-by-turn GPS, not building a map in your head. Take the GPS away and you're lost in a parking lot you "drove through" ten times. That trap has a name — <strong>tutorial hell</strong> — and the only escape is to start from a goal and a blank file, get stuck, and claw your way out. The struggle <em>is</em> the learning. A tutorial hands you the answer; a project forces you to invent the question.</p>
+
+  <p>So this track isn't five lessons. It's five <strong>quests</strong>, ramping in difficulty, each one a self-contained build you could put in front of a hiring manager. Beat all five and you've shipped: an honestly-evaluated classifier, a model bake-off on real data, a deployed image recognizer, a pretrained-language-model app, and a question-answering bot over your own documents. That is a real ML portfolio — not a certificate, an <em>artifact trail</em>.</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">You watch a 6-hour "build an ML project" video, coding along the whole time, every cell green. The next day you open a blank file to do it solo. Most honest prediction?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> You breeze through it — you just did the whole thing yesterday.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> You freeze after the imports, because you recognized the steps but never had to <em>retrieve</em> them.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> You don't need to — watching the video already counts as the project.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>Recognition is not recall. Following along lights up the "yeah, that makes sense" circuit and leaves the "produce it from nothing" circuit untouched — and only the second one shows up at a blank file or a job. The fix is uncomfortable on purpose: do these quests <em>without</em> a complete solution in front of you. Get stuck. Debug it yourself first. Aim to rebuild each quest from scratch the second time. If you can do that, it's yours.</p>
+    </div>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · your party member</div>
+  <h3>Bring your Claude companion — but make it coach, not carry.</h3>
+
+  <p>You're not soloing these. Your Claude Code companion lives in your terminal, reads your files, runs your code, and reasons about your errors. The temptation is to let it just <em>do the quest</em>. Resist that — a carried player learns nothing. Use it like a patient senior engineer who refuses to write your code but will happily explain why yours is on fire.</p>
+
+  <p>The difference between leveling up and staying stuck is in <em>how you ask</em>. Watch:</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">You hit a traceback you don't understand. Which message to your companion actually makes you better?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> "Here's my error. Fix it and paste the corrected file."</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> "Rewrite this whole notebook properly so it works."</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> "Here's my traceback and the relevant code. Explain what's causing it and give me one hint — but let me write the fix."</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Exactly." data-no="Look again:"></div>
+      <p>A and B get you a working file and a brain that learned nothing — you'll hit the same bug next week. C makes <em>you</em> close the loop, which is the only part that sticks. Rule of thumb: <strong>if you couldn't re-explain a line your companion wrote, you haven't learned it</strong> — ask it to slow down and teach that line.</p>
+    </div>
+  </div>
+
+  <p>Four moves to keep in your pocket for every quest:</p>
   <ul>
-    <li><strong>Scaffold, then fill it in yourself:</strong> "Give me a commented skeleton (function names and TODOs only, no implementations) for a train/validate/test pipeline on a tabular dataset. I'll write the bodies."</li>
-    <li><strong>Explain my error, don't fix it:</strong> "Here's my traceback and the relevant code. Explain what's causing it and give me a hint, but let me write the fix."</li>
-    <li><strong>Review like a mentor:</strong> "Review this notebook for data leakage, an unfair train/test split, or metrics that could mislead me. List issues with severity; don't rewrite it."</li>
-    <li><strong>Quiz me on my own project:</strong> "Ask me 5 questions about why I made the modeling choices in this file, and push back if my answers are hand-wavy."</li>
-    <li><strong>Generate practice variations:</strong> "Suggest 3 small experiments I could run on this dataset to test whether my model is overfitting, and predict what each will show."</li>
+    <li><strong>Scaffold, don't solve:</strong> "Give me a commented skeleton — function names and TODOs only, no implementations — for a train/validate/test pipeline. I'll write the bodies."</li>
+    <li><strong>Explain, don't fix:</strong> "Here's my traceback and code. Explain the cause, give me a hint, let me write the fix."</li>
+    <li><strong>Review like a mentor:</strong> "Review this notebook for data leakage, an unfair split, or misleading metrics. List issues with severity; don't rewrite it."</li>
+    <li><strong>Quiz me cold:</strong> "Ask me 5 questions about why I made the modeling choices in this file, and push back if my answers are hand-wavy."</li>
   </ul>
-  <p>Rule of thumb: if you could not re-explain a line your companion wrote, you have not learned it yet — ask it to slow down and teach that line.</p></div>
 
-  <h3>How to set up (once)</h3>
-  <p>Everything here runs free in <a href="https://colab.research.google.com/">Google Colab</a> (no install, free GPU for the CNN project) or locally. A local environment needs just a few libraries. The deep-learning and NLP projects are far faster with a GPU, so use Colab for Projects 3–5 if you do not have one.</p>
-  <codeblock># One-time local setup (skip if you use Google Colab — these are preinstalled there).
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · gear up</div>
+  <h3>Set up once, then never think about it again.</h3>
+
+  <p>Everything here runs free in <a href="https://colab.research.google.com/">Google Colab</a> (no install, free GPU for the deep-learning quests) or locally. Local needs just a few libraries. Quests 3–5 are far faster with a GPU, so use Colab for those if you don't have one — don't burn an afternoon training a CNN on a laptop CPU out of stubbornness.</p>
+
+  <codeblock># One-time local setup (skip entirely if you use Google Colab — preinstalled there).
 # In a terminal:
 #   python -m venv ml-env && source ml-env/bin/activate   # Windows: ml-env\Scripts\activate
 #   pip install numpy pandas scikit-learn matplotlib
-#   pip install torch torchvision            # Projects 3+
-#   pip install transformers datasets gradio # Projects 3-5
-#   pip install sentence-transformers faiss-cpu  # Project 5
+#   pip install torch torchvision            # Quest 3+
+#   pip install transformers datasets gradio # Quests 3-5
+#   pip install sentence-transformers faiss-cpu  # Quest 5
 </codeblock>
 
   <hr>
 
-  <div class="callout">
-    <h3>Project 1 — Honest Classifier (do after Module 6)</h3>
-    <p>Your first end-to-end project. The whole point is not "get high accuracy" — it is to <strong>evaluate a model honestly</strong> so you can trust the number you report. You will reuse the splitting, cross-validation, and confusion-matrix ideas from <em>Module 6 — Model Evaluation</em>.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · Quest 1 of 5 · after Module 6</div>
+  <h3>Quest 1 — The Honest Classifier</h3>
 
-    <p><strong>Goal.</strong> Train a classifier on a small tabular dataset, evaluate it with a proper train/validation/test split <em>and</em> cross-validation, and report a confusion matrix plus precision/recall — not just accuracy.</p>
+  <p class="lead">A model that reports 96% accuracy and a model you can <em>trust</em> are two different things. This quest is about the second one. Anyone can call <code>.fit()</code>; your job is to evaluate so honestly that you'd stake your name on the number.</p>
 
-    <p><strong>Suggested dataset.</strong> Start with the Iris dataset (3 flower species, 150 rows, 4 features) via <code>sklearn.datasets.load_iris</code> — it is tiny and clean, perfect for getting the pipeline right. Then repeat the exact same pipeline on the messier <a href="https://www.kaggle.com/c/titanic">Kaggle Titanic dataset</a> (predict who survived), which forces you to handle missing values and categorical columns. Doing both teaches you that the <em>process</em> stays the same even when the data gets harder.</p>
+  <p><strong>The goal.</strong> Train a classifier on small tabular data and evaluate it the right way: a proper train / validation / test split <em>and</em> cross-validation, reported with a confusion matrix and per-class precision/recall — not a lonely accuracy number. Reuses the splitting, CV, and confusion-matrix ideas from <em>Module 6 — Model Evaluation</em>.</p>
 
-    <p><strong>Milestones.</strong></p>
-    <ol>
-      <li>Load the data and look at it: shapes, class balance, a few rows. Never model data you have not eyeballed.</li>
-      <li>Split into train / validation / test. A clean recipe: hold out the test set first (e.g. 20%) and do not touch it again until the very end.</li>
-      <li>Train a simple baseline (logistic regression or a decision tree) on the training set.</li>
-      <li>Use <strong>k-fold cross-validation</strong> on the training data to estimate performance without peeking at test, and to compare two model choices fairly.</li>
-      <li>Pick your final model, train it on all the training data, then evaluate <strong>once</strong> on the held-out test set.</li>
-      <li>Produce a <strong>confusion matrix</strong> and a classification report (precision, recall, F1 per class). Write 3 sentences interpreting it: which classes get confused, and would accuracy alone have hidden that?</li>
-    </ol>
+  <p><strong>The data.</strong> Start with Iris (3 flower species, 150 rows, 4 features) via <code>sklearn.datasets.load_iris</code> — tiny and clean, perfect for getting the pipeline right. Then run the <em>exact same pipeline</em> on the messier <a href="https://www.kaggle.com/c/titanic">Kaggle Titanic dataset</a> (predict who survived), which forces you to handle missing values and categorical columns. Doing both teaches the real lesson: the <em>process</em> stays the same even when the data gets ugly.</p>
 
-    <p><strong>How you know you succeeded.</strong> You can state your test accuracy <em>and</em> per-class precision/recall; your test set was never used for any decision before the final evaluation; your cross-validation scores are reported with a mean and spread (e.g. 0.96 ± 0.03); and you can explain, pointing at the confusion matrix, exactly which mistakes your model makes.</p>
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> Quest 1 milestones</div>
+    <p class="aside">Check each off as you complete it in your own notebook. No skipping milestone 2 — the entire quest hinges on it.</p>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Load and eyeball the data <small>shapes, class balance, a few rows. Never model data you haven't looked at.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Split into train / validation / test <small>hold out the test set first (~20%) and do NOT touch it again until the very end.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Train a simple baseline <small>logistic regression or a decision tree, on the training set only.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">k-fold cross-validate on the training data <small>estimate performance without peeking at test, and compare two model choices fairly.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Final evaluation, exactly once <small>retrain on all training data, then score on the untouched test set a single time.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Confusion matrix + classification report <small>then write 3 sentences: which classes get confused, and would accuracy alone have hidden it?</small></span></li>
+    </ul>
+  </div>
 
-    <p><strong>Stretch goals.</strong> Run the same pipeline on Titanic with a preprocessing step (impute missing ages, one-hot encode categoricals — preview of <em>Module 7</em>). Plot a decision boundary using just two Iris features. Compare a decision tree against logistic regression using cross-validation and decide which you would deploy.</p>
+  <p><strong>How you know you won.</strong> You can state your test accuracy <em>and</em> per-class precision/recall; your test set was never used for any decision before the final score; your CV result is reported as mean &plusmn; spread (e.g. 0.96 &plusmn; 0.03); and you can point at the confusion matrix and name exactly which mistakes your model makes.</p>
 
-    <p><strong>Starter code</strong> — a correct skeleton for the Iris half. Fill in the interpretation and then port it to Titanic yourself.</p>
-    <codeblock>import numpy as np
+  <p><strong>Stretch.</strong> Port the pipeline to Titanic with preprocessing (impute missing ages, one-hot encode categoricals — a preview of <em>Module 7</em>). Plot a decision boundary on two Iris features. Pit a decision tree against logistic regression with CV and decide which you'd deploy.</p>
+
+  <p><strong>Starter code</strong> — a correct skeleton for the Iris half. Predict the printed output before you run it, then port it to Titanic yourself.</p>
+  <codeblock>import numpy as np
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import LogisticRegression
@@ -96,56 +130,119 @@ print("\n", classification_report(y_test, y_pred, target_names=data.target_names
 # YOUR TURN: write 3 sentences interpreting the confusion matrix.
 # Which two species get confused? Would plain accuracy have hidden that?
 </codeblock>
-    <p>Expected output: 5-fold CV accuracy around 0.95–0.97, and a near-perfect test confusion matrix with the only mistakes between <em>versicolor</em> and <em>virginica</em> (the two species that genuinely overlap). That last fact is the lesson: the model's errors are not random, and the confusion matrix reveals <em>where</em> in a way a single accuracy number never could.</p>
+  <p class="aside">Expected: 5-fold CV accuracy around 0.95–0.97, and a near-perfect test confusion matrix whose only mistakes are between <em>versicolor</em> and <em>virginica</em> — the two species that genuinely overlap. That's the whole lesson in one observation: your model's errors aren't random, and the confusion matrix shows you <em>where</em> in a way a single accuracy number never can.</p>
+
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — defend your evaluation</div>
+    <p>Anyone can run the cells. The boss is whether you can defend why the pipeline is honest. Paste this to your Claude companion and don't move on until it can't poke a hole in you.</p>
+    <div class="prompt"><button class="copy">copy</button>You are a skeptical ML reviewer grilling me on my Iris/Titanic classifier. Ask me one pointed question at a time about evaluation honesty — pick from: why the test set stays untouched until the end, what data leakage is and how my split avoids it, why I report cross-validation mean AND spread, why stratify matters, and why accuracy alone could mislead on imbalanced classes. After each answer, grade it (correct / partial / wrong), tell me exactly what was missing, then ask a harder follow-up. If I'm hand-wavy, push back and make me be precise. Keep going until I get three in a row clean.</div>
+    <p class="aside">You pass Quest 1 when you can explain, unprompted, why touching the test set early quietly inflates your reported number.</p>
   </div>
 
-  <div class="callout">
-    <h3>Project 2 — Model Bake-Off on Real Tabular Data (do after Module 8)</h3>
-    <p>Now you compare model <em>families</em> and discover the workhorses of real-world tabular ML: random forests and gradient boosting. Uses <em>Module 7 — Feature Engineering</em> and <em>Module 8 — Classical Algorithms</em>.</p>
+  <hr>
 
-    <p><strong>Goal.</strong> On both a regression task and a classification task, build a fair head-to-head comparison of (a) a linear/logistic model, (b) a random forest, and (c) gradient boosting — with sensible feature engineering — and decide which wins and <em>why</em>.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · Quest 2 of 5 · after Module 8</div>
+  <h3>Quest 2 — The Model Bake-Off</h3>
 
-    <p><strong>Suggested dataset.</strong> For regression, use the California Housing dataset (predict median house value from 8 features) via <code>sklearn.datasets.fetch_california_housing</code>. For classification, reuse Titanic from Project 1, or pick any Kaggle tabular set you like. California Housing is ideal because the features (median income, house age, location) reward thoughtful engineering.</p>
+  <p class="lead">Beginners ask "which algorithm is best?" Engineers ask "best <em>on this data, by this metric, measured fairly</em>?" This quest makes you run the bake-off and discover the quiet workhorses of real-world tabular ML: random forests and gradient boosting.</p>
 
-    <p><strong>Milestones.</strong></p>
-    <ol>
-      <li>Explore: distributions, correlations, missing values, obvious outliers. Note which features look predictive.</li>
-      <li>Build a <strong>preprocessing pipeline</strong> (scaling for the linear model, imputation, encoding) using <code>sklearn.pipeline.Pipeline</code> so preprocessing is fit on training data only — this prevents data leakage.</li>
-      <li>Engineer at least two new features (e.g. rooms-per-household, or interaction terms) and check whether they help.</li>
-      <li>Train and cross-validate all three model families with the <strong>same splits</strong> and the <strong>same metric</strong> (RMSE for regression, F1 or ROC-AUC for classification).</li>
-      <li>Tune the strongest model's key hyperparameters with a small grid or randomized search.</li>
-      <li>Report a results table, inspect <strong>feature importances</strong>, and write a short conclusion: which model, which features mattered, and the cost/benefit (accuracy vs. interpretability vs. speed).</li>
-    </ol>
+  <p><strong>The goal.</strong> On a regression task, build a fair head-to-head between (a) a linear model, (b) a random forest, and (c) gradient boosting — with sensible feature engineering — and decide which wins and <em>why</em>. Uses <em>Module 7 — Feature Engineering</em> and <em>Module 8 — Classical Algorithms</em>.</p>
 
-    <p><strong>How you know you succeeded.</strong> You have one clean table comparing all three models on the same cross-validated metric; preprocessing is inside a pipeline so nothing leaks from validation into training; your tuned best model beats the linear baseline on the test set; and you can name the top 3 features driving predictions and explain why they make sense.</p>
+  <p><strong>The data.</strong> California Housing (predict median house value from 8 features) via <code>sklearn.datasets.fetch_california_housing</code>. It's ideal because the features — median income, house age, location — reward thoughtful engineering. For a classification version, reuse Titanic from Quest 1 or grab any Kaggle tabular set you like.</p>
 
-    <p><strong>Stretch goals.</strong> Add XGBoost or LightGBM and see if they edge out scikit-learn's gradient boosting. Plot predicted vs. actual values and inspect where the model is most wrong. Use permutation importance instead of built-in importances and discuss the difference. Add a learning curve to diagnose whether more data would help (callback to <em>Module 6</em>).</p>
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> Quest 2 milestones</div>
+    <p class="aside">The trap in this quest is leakage. Milestone 2 is what keeps the comparison honest — do it before you touch a model.</p>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Explore the data <small>distributions, correlations, missing values, obvious outliers. Note which features look predictive.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Build a preprocessing Pipeline <small>scaling, imputation, encoding via sklearn.pipeline.Pipeline, fit on training data only — this is what prevents leakage.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Engineer at least two new features <small>e.g. rooms-per-household or an interaction term, then check whether they actually help.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Cross-validate all three families fairly <small>same splits, same metric — RMSE for regression, F1 or ROC-AUC for classification.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Tune the strongest model <small>a small grid or randomized search on its key hyperparameters.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Results table + feature importances + conclusion <small>which model, which features mattered, and the accuracy vs. interpretability vs. speed tradeoff.</small></span></li>
+    </ul>
   </div>
 
-  <div class="callout">
-    <h3>Project 3 — Image Classifier, Deployed (do after Module 12)</h3>
-    <p>Your first deep-learning system, end to end: a convolutional network you train, then a far stronger one you get for free via <strong>transfer learning</strong>, wrapped in a web app anyone can use. Uses <em>Module 10–12</em> (neural nets, training, CNNs) and the deployment ideas from <em>Module 15</em>.</p>
+  <p><strong>How you know you won.</strong> One clean table compares all three models on the same cross-validated metric; preprocessing lives inside a pipeline so nothing leaks from validation into training; your tuned best model beats the linear baseline on the test set; and you can name the top 3 features driving predictions and explain why they make sense.</p>
 
-    <p><strong>Goal.</strong> Train a CNN to classify images, beat your from-scratch CNN using a pretrained model (transfer learning), and deploy the result as an interactive <a href="https://www.gradio.app/guides/quickstart">Gradio</a> web app where someone uploads an image and sees the prediction.</p>
+  <p><strong>Stretch.</strong> Add XGBoost or LightGBM and see if they edge out scikit-learn's gradient boosting. Plot predicted vs. actual and find where the model is most wrong. Use permutation importance instead of built-in importances and discuss the difference. Add a learning curve to diagnose whether more data would help (callback to <em>Module 6</em>).</p>
 
-    <p><strong>Suggested dataset.</strong> Start with MNIST handwritten digits (28×28 grayscale, 10 classes) via <code>torchvision.datasets.MNIST</code> — small, fast, trains in minutes even on CPU. Then level up to the <a href="https://www.robots.ox.ac.uk/~vgg/data/pets/">Oxford-IIIT Pets</a> dataset (37 cat/dog breeds, real color photos), where from-scratch training struggles and transfer learning shines — making the value of transfer learning unmistakable.</p>
+  <div class="do">
+    <div class="do-head"><span class="badge">DEBUG</span> One line leaks the test set into training. Find it before you peek.</div>
+    <p class="aside">A teammate's "fair" bake-off reports a suspiciously great score. It runs clean, no errors — and it's cheating. Read it. The bug isn't a typo; it's a <em>workflow</em> error.</p>
+    <codeblock>from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
 
-    <p><strong>Milestones.</strong></p>
-    <ol>
-      <li>Load the data with <code>DataLoader</code>s; visualize a batch so you trust your labels and normalization.</li>
-      <li>Build and train a small CNN <strong>from scratch</strong> (a couple of conv layers + pooling + a linear head). Track train and validation accuracy per epoch.</li>
-      <li>Swap in a <strong>pretrained model</strong> (e.g. ResNet-18 from <code>torchvision.models</code>), freeze the backbone, and train only a new classification head on your classes.</li>
-      <li>Compare the two: accuracy, training time, and how many epochs each needed.</li>
-      <li>Save the better model's weights and write a single <code>predict(image)</code> function.</li>
-      <li>Wrap <code>predict</code> in a Gradio interface and launch it; upload your own images and watch it work.</li>
-    </ol>
+X, y = fetch_california_housing(return_X_y=True)
 
-    <p><strong>How you know you succeeded.</strong> Your from-scratch CNN exceeds ~98% on MNIST test; on Pets, transfer learning clearly beats from-scratch with far less training; you can explain in plain words why a model pretrained on millions of images transfers to your 37 breeds; and the Gradio app correctly classifies an image you upload yourself.</p>
+# "Standardize everything up front so all models see clean features."
+scaler = StandardScaler()
+X = scaler.fit_transform(X)                 # &lt;-- something is wrong on this line
 
-    <p><strong>Stretch goals.</strong> Add data augmentation (random flips/crops) and measure the gain. Unfreeze the top layers and fine-tune at a low learning rate. Show the model's confidence (softmax probabilities) in the app. Deploy the app publicly with <code>share=True</code> or to Hugging Face Spaces and send a friend the link.</p>
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=0)
 
-    <p><strong>Starter code</strong> — a correct from-scratch CNN on MNIST plus a Gradio app stub. Run it, then add the transfer-learning model yourself.</p>
-    <codeblock>import torch
+model = LinearRegression()
+print(cross_val_score(model, X_train, y_train, cv=5, scoring="neg_root_mean_squared_error"))
+</codeblock>
+    <details class="spoiler">
+      <summary>Show the bug &amp; why</summary>
+      <div class="body"><p><code>scaler.fit_transform(X)</code> is fit on the <em>entire</em> dataset — including the test rows — <em>before</em> the split. The scaler's mean and standard deviation are computed using information from data you're pretending you haven't seen yet. That's <strong>data leakage</strong>: your test score is now optimistically biased, and the whole bake-off is rigged. Fix: put scaling <em>inside</em> a <code>Pipeline</code> (or fit the scaler on <code>X_train</code> only and merely <code>transform</code> the test set). With a pipeline, cross-validation re-fits the scaler on each fold's training portion automatically — which is exactly milestone 2. Leakage is the single most common way a beginner's "amazing" model quietly lies.</p></div>
+    </details>
+  </div>
+
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — justify your winner</div>
+    <p>A results table is not a decision. The boss is whether you can defend your pick out loud. Paste this and grind it until your reasoning holds.</p>
+    <div class="prompt"><button class="copy">copy</button>You are a hiring manager reviewing my California Housing model bake-off. Interrogate me one question at a time: why I chose RMSE, how my pipeline prevents leakage, why a random forest or boosting might beat a linear model here, what feature importances tell me and how they could mislead, and whether my tuned model's gain over baseline is real or noise. Grade each answer, name what's missing, escalate. If I justify my winner only by "it had the best number," push hard on cost/benefit — interpretability, training speed, robustness. Keep going until I can defend my choice without you finding a hole.</div>
+    <p class="aside">You pass Quest 2 when you can explain why the tree-based models often crush a linear baseline on messy tabular data — and when they wouldn't.</p>
+  </div>
+
+  <hr>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · Quest 3 of 5 · after Module 12</div>
+  <h3>Quest 3 — The Deployed Image Classifier</h3>
+
+  <p class="lead">First you'll train a convolutional net by hand. Then you'll get a far stronger one almost for free — and the gap between those two is the most important practical idea in deep learning. Then you'll ship it as a web app a stranger can use.</p>
+
+  <p><strong>The goal.</strong> Train a CNN to classify images, then beat your from-scratch CNN using a pretrained model (<strong>transfer learning</strong>), and deploy the result as an interactive <a href="https://www.gradio.app/guides/quickstart">Gradio</a> web app where someone uploads or draws an image and sees the prediction. Uses <em>Modules 10–12</em> (neural nets, training, CNNs) plus deployment from <em>Module 15</em>.</p>
+
+  <p><strong>The data.</strong> Start with MNIST handwritten digits (28&times;28 grayscale, 10 classes) via <code>torchvision.datasets.MNIST</code> — small, fast, trains in minutes even on CPU. Then level up to <a href="https://www.robots.ox.ac.uk/~vgg/data/pets/">Oxford-IIIT Pets</a> (37 cat/dog breeds, real color photos), where from-scratch training struggles and transfer learning shines — making its value impossible to miss.</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">You have ~3,700 pet photos (37 breeds, 100 each). You train a CNN from scratch vs. fine-tune a ResNet-18 pretrained on millions of generic internet images. What happens?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> The from-scratch net wins — it's trained specifically on pets, not generic images.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> The pretrained net wins big with far less training — it already learned edges, textures, and shapes that transfer.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> They tie — both end up learning the same features eventually.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Yes." data-no="Here's the intuition you need:"></div>
+      <p>3,700 photos is nowhere near enough to learn good visual features from zero — the from-scratch net overfits or flounders. The pretrained backbone already learned the universal low-level vocabulary of vision (edges, fur texture, ear shapes) from millions of images; you just teach a fresh final layer to map those features to <em>your</em> 37 breeds. That's transfer learning, and on small datasets it's not a small win — it's the difference between "barely works" and "ships." You'll feel this firsthand when MNIST-from-scratch is fine but Pets-from-scratch isn't.</p>
+    </div>
+  </div>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> Quest 3 milestones</div>
+    <p class="aside">Milestone 1 (visualize a batch) is non-optional — half of all deep-learning bugs are silently wrong labels or normalization you'd have caught by looking.</p>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Load data with DataLoaders and visualize a batch <small>so you trust your labels and normalization before training a thing.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Train a small CNN from scratch <small>a couple of conv layers + pooling + a linear head. Track train and validation accuracy per epoch.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Swap in a pretrained model <small>e.g. ResNet-18 from torchvision.models; freeze the backbone, train only a new classification head.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Compare the two head-to-head <small>accuracy, training time, epochs each needed.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Save the better weights, write a single predict(image) function <small>this is the bridge from notebook to app.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Wrap predict in a Gradio interface and launch it <small>then upload/draw your own images and watch it work.</small></span></li>
+    </ul>
+  </div>
+
+  <p><strong>How you know you won.</strong> Your from-scratch CNN exceeds ~98% on MNIST test; on Pets, transfer learning clearly beats from-scratch with far less training; you can explain in plain words why a model pretrained on millions of images transfers to your 37 breeds; and the Gradio app correctly classifies an image you provide yourself.</p>
+
+  <p><strong>Stretch.</strong> Add data augmentation (random flips/crops) and measure the gain. Unfreeze the top layers and fine-tune at a low learning rate. Show softmax confidence in the app. Deploy publicly with <code>share=True</code> or to Hugging Face Spaces and send a friend the link.</p>
+
+  <p><strong>Starter code</strong> — a correct from-scratch CNN on MNIST plus a Gradio app. Predict the per-epoch accuracy trend before running, then add the transfer-learning model yourself.</p>
+  <codeblock>import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -243,56 +340,93 @@ demo.launch()  # add share=True for a public link
 # YOUR TURN: add a ResNet-18 (torchvision.models.resnet18) transfer-learning
 # version on Oxford-IIIT Pets and compare accuracy + training time.
 </codeblock>
-    <p>After 3 epochs the from-scratch CNN should hit roughly 98–99% test accuracy on MNIST, and the Gradio window lets you draw a digit and watch the top-3 probabilities update live. The lesson lands when you redo this on Pets: a from-scratch CNN flounders, while a frozen pretrained backbone with a fresh head reaches strong accuracy in a fraction of the time.</p>
+  <p class="aside">After 3 epochs the from-scratch CNN should hit roughly 98–99% test accuracy on MNIST, and the Gradio window lets you draw a digit and watch the top-3 probabilities update live. The lesson lands when you redo this on Pets: from-scratch flounders, while a frozen pretrained backbone with a fresh head reaches strong accuracy in a fraction of the time.</p>
+
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — explain why transfer learning works</div>
+    <p>The code is the easy part. The boss is the intuition. Paste this and don't stop until you can teach it.</p>
+    <div class="prompt"><button class="copy">copy</button>Quiz me on my image-classifier quest, one question at a time, escalating. Cover: what convolution layers actually learn at low vs. high layers, why a model pretrained on millions of generic images transfers to my 37 pet breeds, what "freezing the backbone" means and why I only train a new head, why from-scratch training fails on a small dataset but works on MNIST, and what could make my Gradio predict() return garbage (normalization mismatch, wrong channel order, resize). Grade each answer, point out gaps, then go harder. If I just recite definitions, make me explain it as if to a smart friend who's never coded. Keep going until I can teach transfer learning cold.</div>
+    <p class="aside">You pass Quest 3 when a stranger uploads an image to your deployed app, it predicts correctly, and you can explain in plain words why the pretrained model didn't need your data to already understand pictures.</p>
   </div>
 
-  <div class="callout">
-    <h3>Project 4 — Text Classification with a Pretrained Language Model (do after Module 14)</h3>
-    <p>You will use a pretrained Transformer the way industry does: download it, tokenize text, run it, and (optionally) fine-tune it on your task. Uses <em>Module 13–14</em> (sequences, attention, Transformers) and the <a href="https://huggingface.co/learn/llm-course">Hugging Face LLM Course</a>.</p>
+  <hr>
 
-    <p><strong>Goal.</strong> Classify text (movie-review sentiment, or news-topic labels) using a pretrained Hugging Face model — first zero-shot/off-the-shelf via a <code>pipeline</code>, then by fine-tuning on labeled data — and measure how much fine-tuning buys you.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · Quest 4 of 5 · after Module 14</div>
+  <h3>Quest 4 — The Pretrained Language Model</h3>
 
-    <p><strong>Suggested dataset.</strong> The <a href="https://huggingface.co/datasets/stanfordnlp/imdb">IMDb</a> movie-review dataset (50,000 reviews labeled positive/negative) via the Hugging Face <code>datasets</code> library: <code>load_dataset("imdb")</code>. It is the classic sentiment benchmark and downloads in one line.</p>
+  <p class="lead">You will use a Transformer the way industry actually does: download it, feed it tokens, run it, and — if it's worth it — fine-tune it on your task. No training a language model from scratch. That ship has sailed for mortals; the skill is <em>standing on the giant's shoulders</em>.</p>
 
-    <p><strong>Milestones.</strong></p>
-    <ol>
-      <li>Load IMDb with the <code>datasets</code> library and inspect a few reviews and their labels.</li>
-      <li>Run a baseline with the off-the-shelf <code>pipeline("sentiment-analysis")</code> on a sample and record its accuracy — no training at all.</li>
-      <li>Understand <strong>tokenization</strong>: load the model's tokenizer, tokenize one sentence, and look at the input IDs and attention mask so you know what the model actually receives.</li>
-      <li>(Fine-tune) Tokenize the dataset, load a small model like <code>distilbert-base-uncased</code> with a classification head, and train a few epochs with the <code>Trainer</code> API on a subset.</li>
-      <li>Evaluate the fine-tuned model on a held-out test split and compare to the off-the-shelf baseline.</li>
-      <li>Write a short report: did fine-tuning help, by how much, and on what kinds of reviews does the model still fail?</li>
-    </ol>
+  <p><strong>The goal.</strong> Classify text (movie-review sentiment) with a pretrained Hugging Face model — first off-the-shelf via a <code>pipeline</code>, then by fine-tuning on labeled data — and measure exactly how much fine-tuning buys you. Uses <em>Modules 13–14</em> (sequences, attention, Transformers) and the <a href="https://huggingface.co/learn/llm-course">Hugging Face LLM Course</a>.</p>
 
-    <p><strong>How you know you succeeded.</strong> You can explain what a tokenizer does and read the token IDs for a sentence; your off-the-shelf baseline and fine-tuned scores are both reported on the same test split; the fine-tuned model meets or beats the baseline (typically 90%+ on IMDb); and you can show two examples the model gets wrong and reason about why (sarcasm, mixed sentiment, length truncation).</p>
+  <p><strong>The data.</strong> The <a href="https://huggingface.co/datasets/stanfordnlp/imdb">IMDb</a> movie-review dataset (50,000 reviews labeled positive/negative) via the Hugging Face <code>datasets</code> library: <code>load_dataset("imdb")</code>. The classic sentiment benchmark, one line to download.</p>
 
-    <p><strong>Stretch goals.</strong> Try a multi-class topic dataset (e.g. AG News) and adapt the head. Compare two base models (DistilBERT vs. BERT) on accuracy and speed. Push your fine-tuned model to the Hugging Face Hub. Wrap it in a Gradio app like Project 3 so anyone can paste text and get a label.</p>
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> Quest 4 milestones</div>
+    <p class="aside">Milestone 3 (actually inspect token IDs) is the one most people skip — and it's the one that makes tokenization stop being a mystery word.</p>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Load IMDb and inspect <small>read a few reviews and their labels before anything else.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Baseline with off-the-shelf pipeline <small>run pipeline("sentiment-analysis") on a sample and record accuracy — zero training.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Crack open tokenization <small>load the tokenizer, tokenize one sentence, print the input IDs and attention mask so you see what the model actually receives.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Fine-tune a small model <small>tokenize the dataset, load distilbert-base-uncased with a classification head, train a few epochs with the Trainer API on a subset.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Evaluate fine-tuned vs. baseline <small>same held-out test split for both, so the comparison is fair.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Write the report <small>did fine-tuning help, by how much, and on what kinds of reviews does it still fail?</small></span></li>
+    </ul>
   </div>
 
-  <div class="callout">
-    <h3>Project 5 — Retrieval-Augmented Question Answering Over Your Own Docs (do after Module 14)</h3>
-    <p>The capstone, and the architecture behind most real LLM products today. You will build a system that answers questions about <em>your own documents</em> by retrieving relevant chunks with embeddings and feeding them to a language model — <strong>Retrieval-Augmented Generation (RAG)</strong>. Uses everything from <em>Module 14</em> plus the embedding intuition from <em>Module 9 / 13</em>.</p>
+  <p><strong>How you know you won.</strong> You can explain what a tokenizer does and read the token IDs for a sentence; your off-the-shelf and fine-tuned scores are both reported on the same test split; the fine-tuned model meets or beats the baseline (typically 90%+ on IMDb); and you can show two examples it still gets wrong and reason about why — sarcasm, mixed sentiment, length truncation.</p>
 
-    <p><strong>Goal.</strong> Build a small RAG question-answering app: index your own documents into a vector store, retrieve the most relevant passages for a question, and have a language model answer using only those passages — deployed via Gradio.</p>
+  <p><strong>Stretch.</strong> Try a multi-class topic dataset (e.g. AG News) and adapt the head. Compare two base models (DistilBERT vs. BERT) on accuracy and speed. Push your fine-tuned model to the Hugging Face Hub. Wrap it in a Gradio app like Quest 3 so anyone can paste text and get a label.</p>
 
-    <p><strong>Suggested data.</strong> Use <em>your own</em> documents — a few PDFs, lecture notes, your notes from this course, a product manual, anything text. Real personal data makes the project unforgettable. Embeddings via <a href="https://www.sbert.net/">sentence-transformers</a>, vector search via <a href="https://github.com/facebookresearch/faiss">FAISS</a> (<code>faiss-cpu</code>).</p>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — own the tokenizer and the tradeoff</div>
+    <p>Paste this and grind until you can defend both <em>what the model receives</em> and <em>whether fine-tuning was worth it</em>.</p>
+    <div class="prompt"><button class="copy">copy</button>Quiz me on my pretrained-language-model text classifier, one question at a time, escalating. Cover: what a tokenizer does and why subword tokens exist, what the input IDs and attention mask are, what changes when I fine-tune vs. run off-the-shelf, why fine-tuning on a labeled subset can beat a general sentiment pipeline, and when fine-tuning is NOT worth the cost. Then give me a sentence and ask me to predict roughly how it tokenizes before I check. Grade each answer, name the gap, go harder. Keep going until I can read token IDs and justify the off-the-shelf-vs-fine-tuned decision without hand-waving.</div>
+    <p class="aside">You pass Quest 4 when you can read the token IDs of a sentence and explain, with a real number, what fine-tuning bought you over the off-the-shelf baseline.</p>
+  </div>
 
-    <p><strong>Milestones.</strong></p>
-    <ol>
-      <li>Load your documents and split them into overlapping <strong>chunks</strong> (a few hundred words each) so each chunk is a self-contained passage.</li>
-      <li>Embed every chunk into a vector with a sentence-transformer and store the vectors in a <strong>FAISS</strong> index.</li>
-      <li>For a user question, embed the question the same way and retrieve the top-k most similar chunks (nearest neighbors).</li>
-      <li>Build a <strong>prompt</strong> that pastes the retrieved chunks as context and asks an LLM to answer using only that context (and to say "I don't know" if the answer isn't there).</li>
-      <li>Wrap the whole flow in a Gradio chat interface.</li>
-      <li>Test with questions whose answers are and are <em>not</em> in your docs; verify it refuses to hallucinate when it shouldn't know.</li>
-    </ol>
+  <hr>
 
-    <p><strong>How you know you succeeded.</strong> Asking a question whose answer is in your docs returns a correct answer plus the source passage it used; asking something outside your docs makes it say it doesn't know rather than inventing an answer; and you can explain each stage — chunk, embed, index, retrieve, prompt — in one sentence apiece.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · Quest 5 of 5 · the capstone · after Module 14</div>
+  <h3>Quest 5 — RAG Over Your Own Docs</h3>
 
-    <p><strong>Stretch goals.</strong> Show the retrieved source chunks alongside each answer (citations). Compare chunk sizes and top-k values and observe the quality tradeoff. Swap the embedding model and measure retrieval quality. Add conversational memory so follow-up questions work. Deploy to Hugging Face Spaces.</p>
+  <p class="lead">This is the architecture behind most real LLM products shipping today — and you're going to build it over <em>your own</em> documents. Ask it a question, and it answers from your files instead of making things up. Beat this and you've built something people actually pay for.</p>
 
-    <p><strong>Starter code</strong> — the retrieval core (chunk → embed → index → retrieve). Add your document loader and the LLM answer step on top.</p>
-    <codeblock># pip install sentence-transformers faiss-cpu
+  <p><strong>The goal.</strong> A small <strong>Retrieval-Augmented Generation (RAG)</strong> Q&amp;A app: index your documents into a vector store, retrieve the most relevant passages for a question, and have a language model answer using <em>only</em> those passages — deployed via Gradio. Uses everything from <em>Module 14</em> plus the embedding intuition from <em>Modules 9 / 13</em>.</p>
+
+  <p><strong>The data.</strong> Use <em>your own</em> documents — a few PDFs, lecture notes, your notes from this course, a product manual, anything text. Real personal data makes this unforgettable. Embeddings via <a href="https://www.sbert.net/">sentence-transformers</a>, vector search via <a href="https://github.com/facebookresearch/faiss">FAISS</a> (<code>faiss-cpu</code>).</p>
+
+  <div class="predict" data-correct="a">
+    <p class="q">Your docs never use the word "energy." You ask "How do cells make energy?" Your RAG retriever — searching by embedding similarity, not keywords — returns…</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> The chunk about mitochondria producing ATP, because its <em>meaning</em> is close to the question even with zero shared words.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> Nothing — without the word "energy" in the docs, there's nothing to match.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> A random chunk, since embeddings only match exact strings.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="That's the magic." data-no="This is the whole point of RAG:"></div>
+      <p>Embeddings map text to vectors where <em>meaning</em> lives close together, regardless of exact wording. "How do cells make energy?" lands near "the mitochondrion produces ATP" even though they share no words — because the model learned they're about the same thing. That semantic matching is why RAG beats keyword search, and why it can ground an LLM in your specific documents instead of its fuzzy training memory.</p>
+    </div>
+  </div>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> Quest 5 milestones</div>
+    <p class="aside">The capstone has five stages. Milestone 6 — testing that it refuses to answer what it doesn't know — is what separates a real RAG system from a confident liar.</p>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Chunk your docs <small>split into overlapping windows of a few hundred words each, so every chunk is a self-contained passage.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Embed every chunk and store in FAISS <small>one vector per chunk, indexed for fast nearest-neighbor search.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Retrieve top-k for a question <small>embed the question the same way, pull the most similar chunks.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Build the grounded prompt <small>paste retrieved chunks as context, instruct the LLM to answer USING ONLY that context — and to say "I don't know" if it's not there.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Wrap it in a Gradio chat interface <small>question in, grounded answer out.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Test the refusal <small>ask things that ARE and ARE NOT in your docs; verify it won't hallucinate when it shouldn't know.</small></span></li>
+    </ul>
+  </div>
+
+  <p><strong>How you know you won.</strong> A question whose answer is in your docs returns a correct answer plus the source passage it used; a question outside your docs makes it say it doesn't know rather than inventing an answer; and you can explain each stage — chunk, embed, index, retrieve, generate — in one sentence apiece.</p>
+
+  <p><strong>Stretch.</strong> Show the retrieved source chunks alongside each answer (citations). Compare chunk sizes and top-k values and watch the quality tradeoff. Swap the embedding model and measure retrieval quality. Add conversational memory so follow-ups work. Deploy to Hugging Face Spaces.</p>
+
+  <p><strong>Starter code</strong> — the retrieval core (chunk → embed → index → retrieve). Predict which two chunks come back for the question before you run it, then add your document loader and the LLM answer step.</p>
+  <codeblock># pip install sentence-transformers faiss-cpu
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
@@ -335,25 +469,56 @@ for text, score in retrieve(question):
 #    and to reply "I don't know" if the answer is not present.
 #  - Wrap retrieve(...) + the LLM call in a gradio.ChatInterface.
 </codeblock>
-    <p>For the question "How do cells make energy?" the retriever should surface the mitochondrion and photosynthesis chunks with the highest similarity scores — even though the question shares no exact words with them. That is the magic of embeddings: they match on <em>meaning</em>, not keywords. Once you wire a language model on top to phrase the answer from those chunks, you have a working RAG system over your own knowledge.</p>
+  <p class="aside">For "How do cells make energy?" the retriever should surface the mitochondrion and photosynthesis chunks with the highest similarity — even though the question shares no exact words with either. That's the magic of embeddings: they match on <em>meaning</em>, not keywords. Wire a language model on top to phrase the answer from those chunks and you have a working RAG system over your own knowledge.</p>
+
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — defend the whole pipeline</div>
+    <p>This is the capstone boss. Paste it and don't stop until you can narrate all five stages and explain why RAG beats just asking a bare LLM.</p>
+    <div class="prompt"><button class="copy">copy</button>Quiz me on my RAG Q&A app, one question at a time, escalating. Make me explain each stage in one sentence — chunk, embed, index, retrieve, generate — then go deeper: why embeddings match on meaning not keywords, why I chunk with overlap, what top-k controls and its tradeoff, why I instruct the model to answer ONLY from context, and why RAG reduces hallucination compared to asking a bare LLM. Then give me a failure scenario (a question outside my docs, or chunks too small to hold the answer) and ask what goes wrong and how I'd fix it. Grade each answer, name the gap, escalate. Keep going until I can defend the entire pipeline and its failure modes cold.</div>
+    <p class="aside">You pass Quest 5 — and the whole track — when you can diagram all five RAG stages from memory and explain why your app says "I don't know" instead of making something up.</p>
   </div>
 
   <hr>
 
-  <div class="callout selfcheck"><h3>You've finished the track if you can…</h3>
-  <ul>
-    <li>Rebuild Project 1 from a blank file and explain why the test set must stay untouched until the end.</li>
-    <li>Run a fair model comparison and justify your winner with a cross-validated metric and feature importances.</li>
-    <li>Explain why transfer learning beats from-scratch training on a small image dataset.</li>
-    <li>Describe what a tokenizer does and the difference between off-the-shelf and fine-tuned model performance.</li>
-    <li>Diagram the five stages of a RAG pipeline (chunk, embed, index, retrieve, generate) and say what each does.</li>
-  </ul></div>
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · cold recall</div>
+  <h3>Pull the track out of your own head.</h3>
 
-  <div class="callout resources"><h3>Curated resources</h3>
-  <ul>
-    <li><a href="https://www.kaggle.com/learn">Kaggle Learn</a> — short hands-on micro-courses and an endless supply of real datasets and competitions to keep building after this track.</li>
-    <li><a href="https://scikit-learn.org/stable/tutorial/index.html">scikit-learn tutorials</a> — patterns for pipelines, cross-validation, and model selection you'll lean on in Projects 1–2.</li>
-    <li><a href="https://www.gradio.app/guides/quickstart">Gradio Quickstart</a> — the fastest path from a trained model to a shareable web demo, used in Projects 3 and 5.</li>
-    <li><a href="https://huggingface.co/learn/llm-course">Hugging Face LLM Course</a> — the canonical free walkthrough of tokenization, fine-tuning, and Transformers for Projects 4 and 5.</li>
-  </ul></div>
+  <p>Re-reading the quest list feels productive and mostly isn't. Answer each card in your head <em>first</em>, then flip. A blank where an answer should be is exactly the signal of what to go rebuild.</p>
+
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why must the test set stay untouched until the very end?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Any decision made using the test set leaks its information into your model, so the final number stops being an honest estimate of performance on truly unseen data.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What is data leakage, and where does it sneak in during a bake-off?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">When information from validation/test data influences training. Classic culprit: fitting a scaler or imputer on the whole dataset before splitting. Fix: put preprocessing inside a Pipeline so it re-fits per fold.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why does transfer learning beat from-scratch training on a small image set?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">The pretrained backbone already learned universal visual features (edges, textures, shapes) from millions of images; you only train a new head to map them to your classes. Too little data to learn those features from zero.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What does a tokenizer do, and what does the model actually receive?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">It splits text into subword tokens and maps them to integer IDs, plus an attention mask marking real tokens vs. padding. The model never sees raw text — only those IDs.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Name the five stages of a RAG pipeline.</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Chunk (split docs) → Embed (text to vectors) → Index (store in FAISS) → Retrieve (top-k nearest to the question) → Generate (LLM answers using only retrieved context).</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">How do embeddings find the right chunk when the question shares no words with it?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Embeddings place text with similar meaning near each other in vector space, so similarity search matches on meaning, not exact strings — "make energy" finds "mitochondria produce ATP."</div>
+    </div></div>
+  </div>
+
+  <div class="callback"><b>Lock this in.</b> Quest 5 leans on the embedding intuition from <b>Modules 9 and 13</b>, and every quest reuses the honest-evaluation discipline from <b>Module 6</b> — the untouched test set returns in your final RAG sanity check, where you test questions that are and aren't in your docs. The thread running through all five: the model's number means nothing until you've measured it fairly.</div>
+
+  <div class="boss">
+    <div class="boss-head">🤖 Final boss — the blank-file rebuild</div>
+    <p>The real test of this whole track isn't finishing the quests once. It's rebuilding one from nothing. Pick any quest you've completed, then run this.</p>
+    <div class="prompt"><button class="copy">copy</button>I just finished one of my ML quests. Now make me rebuild it from a blank file with no reference. Name the quest, then walk me through it as a strict pair-programming partner: ask me what the first step is, wait for me to write real code, review what I wrote for bugs and leakage and bad evaluation, and only give a hint if I'm truly stuck — never the full answer. At the end, quiz me on three choices I made and push back on any hand-wavy reasoning. Tell me honestly whether I've earned this quest or need another pass.</div>
+    <p class="aside">You've finished the track when you can rebuild any quest from a blank file, defend every modeling choice without flinching, and explain — pointing at real output — exactly where each model succeeds and fails. That's not a certificate. That's a skill.</p>
+  </div>
+
 </section>

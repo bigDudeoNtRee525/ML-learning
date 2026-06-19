@@ -5,150 +5,168 @@
     <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m2"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>Learning objectives</h3>
-    <p>By the end of this module you'll be able to:</p>
-    <ul>
-      <li>Name the parts of any dataset out loud — <strong>samples</strong>, <strong>features</strong>, <strong>labels</strong> — and state the <strong>prediction task</strong> in one sentence.</li>
-      <li>Load a real CSV with pandas and run a first-pass exploratory data analysis (EDA): shape, types, summary statistics, value counts, and missing values.</li>
-      <li>Explain <em>why</em> we split data into train / validation / test sets, and what "generalization to unseen data" actually means.</li>
-      <li>Perform a train/test split by hand with NumPy (shuffle with a fixed seed, then slice) and with one line of scikit-learn.</li>
-      <li>Spot and prevent <strong>data leakage</strong>, and recite the golden rule: <em>fit preprocessing on the training set only, then apply it to validation and test.</em></li>
-      <li>Recognize the classic beginner datasets (Iris, Titanic, California Housing, MNIST) and know why Boston Housing was retired.</li>
-    </ul>
+  <!-- ===================== BEAT 1: COLD OPEN ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · A model that is lying to you</div>
+  <h3>This model scores 99%. It is worthless. Find out why.</h3>
+
+  <p class="lead">A hospital builds a model to flag which patients will be readmitted within 30 days. On the test data it nails <strong>99% accuracy</strong>. The room cheers. It ships. In production it is garbage — barely better than a coin flip.</p>
+
+  <p>Nothing crashed. No error. The accuracy was real on the data they checked. So before you read another word: <strong>what could possibly make a 99%-accurate model fail the moment it meets reality?</strong> Hold a guess in your head.</p>
+
+  <p>Here is the one column that did it:</p>
+
+  <div class="math-card">
+    <div class="eq" style="font-family:var(--mono);font-size:.92rem;color:#c9d1ff;text-align:left">discharge_followup_scheduled &nbsp;&rarr;&nbsp; 1 if a follow-up was booked, else 0</div>
+    <p class="legend">A nurse only books a follow-up <b>after</b> staff have already decided a patient is high-risk. So this column is, quietly, a <b>copy of the answer</b> — written in <em>after</em> the decision the model is supposed to make.</p>
   </div>
 
-  <div class="callout hook"><h3>Why should I care?</h3>
-    <p>Imagine a hospital builds a model to predict which patients will be readmitted within 30 days. It scores 99% accuracy in testing — everyone celebrates. Then it fails in the real world. Why? Someone had accidentally included a column called <code>discharge_followup_scheduled</code>, which only gets filled in <em>after</em> staff already decided a patient was high-risk. The model wasn't predicting the future; it was peeking at an answer that wouldn't exist at prediction time. This is <strong>data leakage</strong>, and it is the single most common reason promising ML projects quietly fail. Almost everything that separates a real ML practitioner from someone who "ran a model once" is in this module: understanding what your data actually is, and being disciplined about what your model is allowed to see. The algorithms in later modules are the easy part. The data discipline you build here is what makes them trustworthy.</p>
+  <p>The model never learned medicine. It learned "follow-up booked = readmit." That column does not exist at the moment you actually need a prediction — when the patient is still in the bed. The model wasn't predicting the future. It was <strong>peeking at the answer key.</strong></p>
+
+  <p>This is <strong>data leakage</strong>, and it is the single most common reason promising ML projects quietly die. Here is the uncomfortable truth this whole module is built around: <em>the algorithms in later modules are the easy part.</em> What separates a real practitioner from someone who "ran a model once" is data discipline — knowing what your data actually is, and being ruthless about what your model is allowed to see.</p>
+
+  <!-- ===================== BEAT 2: PREDICT (tune on test) ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · Commit to a guess</div>
+  <h3>The test set is sacred. Here is why.</h3>
+
+  <p>To catch a model that memorised instead of learned, you hide some data from it during training, then test on the hidden part. That hidden part is the <strong>test set</strong> — your final exam. The rule is: you touch it <em>once</em>, at the very end.</p>
+
+  <p>"Once" sounds dramatic. Surely peeking a little is fine? Lock in an answer before the reveal.</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">You check your model on the test set, see 71%, tweak a setting, re-check, see 73%, tweak again, re-check… repeating until the test score looks good. What have you actually done?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Nothing wrong — you improved the model, and the test set proves it.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> Wasted time. The test score wobbles randomly; the tweaks did nothing.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> Slowly leaked the test set into your decisions. Your final test score is now a lie too.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>Every time you tune based on the test score, information from the test set flows into <em>your</em> choices. After ten rounds, you have effectively trained on the test set — through your own hands. The score is now optimistic, and you have no clean exam left to check whether you were fooled. That is why all tweaking happens on a separate <strong>validation set</strong>, and the test set stays in a sealed envelope until the very end. Tuning on the test set is leakage with extra steps.</p>
+    </div>
   </div>
 
-  <h3>Intuition first</h3>
-  <p>Before any math or code, let's get a mental picture. A dataset is just a <strong>table</strong>. Each row is one thing you observed — one flower, one passenger, one house, one handwritten digit. We call each row a <strong>sample</strong> (also "example", "instance", or "observation" — same idea, different words). Each column is a <strong>feature</strong>: a measurable property of that thing, like petal length, ticket price, or number of bedrooms. One special column is the <strong>label</strong> (also "target"): the thing we actually want to predict.</p>
+  <div class="callback"><b>The mental model.</b> Student A studies the concepts. Student B memorises which answer goes with which practice problem. Both score 100% on the practice set. The real exam has <em>new</em> problems — and Student B falls apart. A model that sees all its data is Student B by default: it can ace anything it has already seen. <b>Generalization</b> — doing well on new, unseen data — is the only thing that counts, and the only way to measure it is to keep a real exam hidden.</div>
 
-  <p>Here is a tiny dataset of three flowers. The first three columns are features; the last is the label we want to learn to predict.</p>
+  <!-- ===================== BEAT 3: THE THREE SETS ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · The vocabulary you'll never stop using</div>
+  <h3>A dataset is just a table. Name its parts.</h3>
 
-  <svg class="diagram" viewBox="0 0 480 170" role="img" aria-label="A small data table with rows as samples and columns as features, plus a label column">
-    <!-- header -->
-    <rect x="10" y="10" width="110" height="34" fill="none" stroke="#6366f1" stroke-width="1.5"/>
-    <rect x="120" y="10" width="110" height="34" fill="none" stroke="#6366f1" stroke-width="1.5"/>
-    <rect x="230" y="10" width="110" height="34" fill="none" stroke="#6366f1" stroke-width="1.5"/>
-    <rect x="350" y="10" width="120" height="34" fill="none" stroke="#10b981" stroke-width="2"/>
-    <text x="65" y="32" text-anchor="middle" font-size="12" fill="currentColor">petal len</text>
-    <text x="175" y="32" text-anchor="middle" font-size="12" fill="currentColor">petal wid</text>
-    <text x="285" y="32" text-anchor="middle" font-size="12" fill="currentColor">sepal len</text>
-    <text x="410" y="32" text-anchor="middle" font-size="12" fill="#10b981">species</text>
-    <!-- rows -->
-    <g font-size="12" fill="currentColor">
-      <rect x="10" y="44" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="120" y="44" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="230" y="44" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="350" y="44" width="120" height="30" fill="none" stroke="#10b981" stroke-width="0.6"/>
-      <text x="65" y="63" text-anchor="middle">1.4</text>
-      <text x="175" y="63" text-anchor="middle">0.2</text>
-      <text x="285" y="63" text-anchor="middle">5.1</text>
-      <text x="410" y="63" text-anchor="middle" fill="#10b981">setosa</text>
+  <p>Strip away the mystique: a dataset is a <strong>table</strong>. Each row is one thing you observed — one flower, one passenger, one house. Each column is a property you measured. One column is the thing you want to predict. That's the whole picture.</p>
 
-      <rect x="10" y="74" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="120" y="74" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="230" y="74" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="350" y="74" width="120" height="30" fill="none" stroke="#10b981" stroke-width="0.6"/>
-      <text x="65" y="93" text-anchor="middle">4.7</text>
-      <text x="175" y="93" text-anchor="middle">1.4</text>
-      <text x="285" y="93" text-anchor="middle">7.0</text>
-      <text x="410" y="93" text-anchor="middle" fill="#10b981">versicolor</text>
+  <table class="data-table" style="width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.9rem">
+    <thead>
+      <tr>
+        <th style="border:1px solid var(--line2);padding:.5rem;color:var(--accent)">petal len</th>
+        <th style="border:1px solid var(--line2);padding:.5rem;color:var(--accent)">petal wid</th>
+        <th style="border:1px solid var(--line2);padding:.5rem;color:var(--accent)">sepal len</th>
+        <th style="border:1px solid var(--line2);padding:.5rem;color:var(--go)">species &larr; label</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="border:1px solid var(--line);padding:.5rem;text-align:center">1.4</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center">0.2</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center">5.1</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center;color:var(--go)">setosa</td></tr>
+      <tr><td style="border:1px solid var(--line);padding:.5rem;text-align:center">4.7</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center">1.4</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center">7.0</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center;color:var(--go)">versicolor</td></tr>
+      <tr><td style="border:1px solid var(--line);padding:.5rem;text-align:center">6.0</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center">2.5</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center">6.3</td><td style="border:1px solid var(--line);padding:.5rem;text-align:center;color:var(--go)">virginica</td></tr>
+    </tbody>
+  </table>
+  <p class="aside">Three rows, four columns. The purple columns are inputs; the green column is what we want to predict.</p>
 
-      <rect x="10" y="104" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="120" y="104" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="230" y="104" width="110" height="30" fill="none" stroke="currentColor" stroke-width="0.6"/>
-      <rect x="350" y="104" width="120" height="30" fill="none" stroke="#10b981" stroke-width="0.6"/>
-      <text x="65" y="123" text-anchor="middle">6.0</text>
-      <text x="175" y="123" text-anchor="middle">2.5</text>
-      <text x="285" y="123" text-anchor="middle">6.3</text>
-      <text x="410" y="123" text-anchor="middle" fill="#10b981">virginica</text>
-    </g>
-    <text x="65" y="152" text-anchor="middle" font-size="11" fill="#6366f1">3 features (inputs)</text>
-    <text x="410" y="152" text-anchor="middle" font-size="11" fill="#10b981">1 label (output)</text>
-  </svg>
-  <p class="caption">A dataset is a table: rows are samples, feature columns (purple) are inputs, the label column (green) is what we predict.</p>
-
-  <p>The <strong>prediction task</strong> is the one-sentence statement of what you want: "Given the three flower measurements, predict the species." When the label is a category (setosa / versicolor / virginica), the task is <strong>classification</strong>. When the label is a number on a continuous scale (a house price, a temperature), the task is <strong>regression</strong>. You'll meet regression in depth in Module 3 and classification in Module 5; for now, just notice that the <em>type of label</em> decides the type of task.</p>
-
-  <p>Now the part that trips everyone up at first: <em>why can't we just train the model on all our data and call it done?</em> Because the goal is not to do well on data we already have — we already know those answers! The goal is to do well on <strong>new, unseen</strong> data. That skill is called <strong>generalization</strong>, and to measure it honestly we have to hide some data from the model during training, then test on the hidden part.</p>
-
-  <div class="callout analogy">
-    <p><strong>Studying for the exam vs. memorizing the answer key.</strong> Suppose a teacher gives you 100 practice problems <em>with</em> their answers. Student A studies the underlying concepts. Student B memorizes which answer goes with which problem. On those 100 problems, both score 100%. But the real exam has <em>new</em> problems. Student A does well because they learned to generalize; Student B falls apart because they only memorized the answer key. A machine learning model that sees all the data is Student B by default — it can score perfectly by memorizing. The <strong>test set</strong> is the real exam: data the model has never seen, used exactly once, to find out whether it learned concepts or just memorized.</p>
-  </div>
-
-  <p>So we carve our dataset into three parts:</p>
+  <p>Four words. Learn them once, use them forever:</p>
   <ul>
-    <li><strong>Training set</strong> — the practice problems with answers. The model learns from these.</li>
-    <li><strong>Validation set</strong> — a mock exam. You use it repeatedly while developing to tune choices (which model, which settings) without touching the real exam. (You'll lean on this heavily in Module 6 — Model Evaluation.)</li>
-    <li><strong>Test set</strong> — the real exam. Touched once, at the very end, to report an honest estimate of real-world performance.</li>
+    <li>A row is a <strong>sample</strong> (also "example", "instance", "observation" — same thing, different crowds).</li>
+    <li>An input column is a <strong>feature</strong>: petal length, ticket price, number of bedrooms.</li>
+    <li>The column you predict is the <strong>label</strong> (also "target").</li>
+    <li>The one-sentence statement of what you want is the <strong>prediction task</strong>: "Given the three measurements, predict the species."</li>
   </ul>
 
-  <h3>Making it precise</h3>
-  <p>Let's pin down notation you'll reuse in every later module. A dataset of \( n \) samples, each with \( d \) features, is written as a feature matrix \( X \) and a label vector \( y \):</p>
-  \[ X \in \mathbb{R}^{n \times d}, \qquad y \in \mathbb{R}^{n} \]
-  <p>Here \( X \) is a table of numbers with \( n \) rows (one per sample) and \( d \) columns (one per feature); the notation \( \mathbb{R}^{n \times d} \) just means "an \( n \)-by-\( d \) grid of real numbers". The vector \( y \) holds the \( n \) labels, one per row. We write the \( i \)-th sample's features as the row \( x^{(i)} \) and its label as \( y^{(i) } \), where the superscript \( (i) \) is an index that runs from \( 1 \) to \( n \) (it is a label, not an exponent).</p>
+  <p>When the label is a <em>category</em> (setosa / versicolor / virginica), the task is <strong>classification</strong>. When it's a <em>number on a continuous scale</em> (a house price, a temperature), it's <strong>regression</strong>. The type of label decides the type of task — that's it. You'll meet regression in depth in Module 3 and classification in Module 5.</p>
 
-  <p>A train/test split chooses a fraction \( p \) of the rows to hold out for testing (commonly \( p = 0.2 \), i.e. 20%). If we let \( n \) be the total number of samples, then the test set has</p>
-  \[ n_{\text{test}} = \lfloor p \cdot n \rfloor \quad\text{samples}, \qquad n_{\text{train}} = n - n_{\text{test}} \]
-  <p>where \( \lfloor \cdot \rfloor \) means "round down to a whole number" (you can't have a fractional row). The split must be <strong>random</strong> so the test set looks like the training set, but <strong>reproducible</strong> so you get the same split every time you run your code. We achieve both with a <strong>random seed</strong>: a fixed starting number for the shuffling, so "random" becomes "the same random every time."</p>
+  <p>Now carve the table into three parts. Keep the exam analogy running:</p>
+  <ul>
+    <li><strong>Training set</strong> — the practice problems with answers. The model learns from these.</li>
+    <li><strong>Validation set</strong> — a mock exam. You use it <em>repeatedly</em> while developing, to tune choices (which model, which settings) without touching the real exam. You'll lean on this hard in Module 6.</li>
+    <li><strong>Test set</strong> — the real exam. Touched <em>once</em>, at the very end, for an honest estimate of real-world performance.</li>
+  </ul>
 
-  <p>The golden rule of avoiding leakage, stated precisely: any quantity computed from the data — a mean for centering, a maximum for scaling, a vocabulary, a set of categories — must be estimated using <strong>only</strong> the training rows. Concretely, if you center a feature by subtracting its mean, you compute</p>
-  \[ \mu_{\text{train}} = \frac{1}{n_{\text{train}}} \sum_{i \in \text{train}} x^{(i)}_{j} \]
-  <p>where \( \mu_{\text{train}} \) (the Greek letter "mu") is the mean of feature \( j \) over the training rows only, and the sum \( \sum_{i \in \text{train}} \) adds up that feature's value across every training sample. You then subtract <em>this same</em> \( \mu_{\text{train}} \) from the validation and test rows. You never recompute the mean on the test set, because at deployment time you won't have future data to average over — you only have the statistics you learned during training.</p>
+  <!-- ===================== BEAT 4: EARNED MATH ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · Now the notation (you already feel it)</div>
+  <h3>Pin down the symbols.</h3>
 
-  <div class="callout worked"><h3>Worked example — by hand</h3>
-    <p>We have 10 samples. Feature is <code>age</code>; label is <code>bought</code> (1 = made a purchase, 0 = did not). The rows are numbered 0 through 9 (programmers count from 0):</p>
-    <p style="font-family:monospace; line-height:1.7">
-      row 0: age=22, bought=0<br>
-      row 1: age=25, bought=0<br>
-      row 2: age=47, bought=1<br>
-      row 3: age=52, bought=1<br>
-      row 4: age=46, bought=1<br>
-      row 5: age=56, bought=1<br>
-      row 6: age=23, bought=0<br>
-      row 7: age=30, bought=0<br>
-      row 8: age=40, bought=1<br>
-      row 9: age=35, bought=0
-    </p>
-    <p><strong>Step 1 — shuffle with a fixed seed.</strong> A seed makes the shuffle deterministic. Our fixed-seed shuffle produces this new ordering of the row indices (this is exactly the order NumPy's <code>default_rng(seed=42)</code> gives, which we confirm in code below):</p>
-    <p style="font-family:monospace">shuffled order = [5, 6, 0, 7, 3, 2, 4, 9, 1, 8]</p>
-    <p>Read that left to right: the first sample after shuffling is original row 5, then row 6, then row 0, and so on.</p>
-    <p><strong>Step 2 — split 80/20.</strong> We have \( n = 10 \) and \( p = 0.2 \), so \( n_{\text{test}} = \lfloor 0.2 \times 10 \rfloor = 2 \) and \( n_{\text{train}} = 8 \). We take the <em>last</em> 2 entries of the shuffled order as the test set and the first 8 as training:</p>
-    <p style="font-family:monospace">
-      train indices = [5, 6, 0, 7, 3, 2, 4, 9]<br>
-      test  indices = [1, 8]
-    </p>
-    <p>So the training samples are original rows 5, 6, 0, 7, 3, 2, 4, 9, and the test samples are original rows 1 and 8. Notice every row appears exactly once across the two sets — no sample is in both (that would be cheating).</p>
-    <p><strong>Step 3 — compute the mean of <code>age</code> on the TRAIN split only.</strong> The training ages, in train order, are the ages of rows 5, 6, 0, 7, 3, 2, 4, 9:</p>
-    <p style="font-family:monospace">56, 23, 22, 30, 52, 47, 46, 35</p>
-    <p>Add them up:</p>
-    \[ 56+23+22+30+52+47+46+35 = 311 \]
-    <p>Divide by the 8 training samples:</p>
-    \[ \mu_{\text{train}} = \frac{311}{8} = 38.875 \]
-    <p>This 38.875 is the number we would use to center the feature everywhere. <strong>Crucially</strong>, the test rows (ages 25 and 40) were <em>not</em> included in this average — even though we know their values, the model is not allowed to "see" them when computing preprocessing statistics. If we had averaged all 10 ages we'd get \( 376/10 = 37.6 \) — different from 38.875, and in real data that contamination is exactly how leakage sneaks in and inflates your scores.</p>
+  <p>You'll see these in every later module, so meet them now. A dataset of \( n \) samples, each with \( d \) features, is a feature matrix \( X \) and a label vector \( y \):</p>
+
+  <div class="math-card"><div class="eq">\[ X \in \mathbb{R}^{n \times d}, \qquad y \in \mathbb{R}^{n} \]</div>
+    <p class="legend"><b>n</b> number of samples (rows). <b>d</b> number of features (columns). <b>X</b> the table of inputs — \( n \) rows by \( d \) columns of real numbers. <b>y</b> the column of \( n \) labels, one per row.</p>
   </div>
 
-  <h3>In code: from scratch</h3>
-  <p>Let's reproduce the worked example in NumPy so you can see the shuffle-then-slice pattern. We seed the random generator with 42 so the result is identical every run, shuffle the row indices, then slice off the test portion.</p>
+  <p>We write the \( i \)-th sample's features as the row \( x^{(i)} \) and its label as \( y^{(i)} \). The superscript \( (i) \) is just an index running from \( 1 \) to \( n \) — a <em>label</em>, not an exponent. (Squaring \( x \) and "the third sample" must not look the same; the parentheses keep them apart.)</p>
+
+  <p>A train/test split holds out a fraction \( p \) of the rows for testing (commonly \( p = 0.2 \), i.e. 20%):</p>
+
+  <div class="math-card"><div class="eq">\[ n_{\text{test}} = \lfloor p \cdot n \rfloor, \qquad n_{\text{train}} = n - n_{\text{test}} \]</div>
+    <p class="legend"><b>p</b> the test fraction. <b>&lfloor; &rfloor;</b> "round down to a whole number" — you can't have a fractional row.</p>
+  </div>
+
+  <p>The split must be <strong>random</strong> (so the test set resembles the training set) but <strong>reproducible</strong> (so you get the same split every run). You get both from a <strong>random seed</strong>: a fixed starting number for the shuffle, so "random" becomes "the same random every time."</p>
+
+  <p>And the golden rule, stated precisely: any quantity computed from the data — a mean for centering, a max for scaling, a vocabulary, a set of categories — must be estimated from <strong>training rows only</strong>. If you center a feature \( j \) by subtracting its mean, you compute:</p>
+
+  <div class="math-card"><div class="eq">\[ \mu_{\text{train}} = \frac{1}{n_{\text{train}}} \sum_{i \,\in\, \text{train}} x^{(i)}_{j} \]</div>
+    <p class="legend"><b>&mu;<sub>train</sub></b> ("mu") the mean of feature \( j \) over the <em>training</em> rows only. <b>&sum;</b> add up that feature's value across every training sample.</p>
+  </div>
+
+  <p>You then subtract <em>this same</em> \( \mu_{\text{train}} \) from the validation and test rows. You never recompute the mean on the test set — because at deployment you won't have future data to average over. You only have the statistics you learned during training. Burn that in: <strong>fit preprocessing on train, apply it everywhere.</strong></p>
+
+  <!-- ===================== BEAT 5: DO IT BY HAND ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · Do the split with your own hands</div>
+  <h3>Eight ages, one split, one mean. No computer yet.</h3>
+
+  <p>Ten samples. One feature, <code>age</code>; one label, <code>bought</code> (1 = made a purchase, 0 = didn't). Rows numbered 0–9, because programmers count from zero:</p>
+
+  <div class="math-card"><div class="eq" style="font-family:var(--mono);font-size:.82rem;color:#c9d1ff;text-align:left;line-height:1.7">row 0: age=22, bought=0 &nbsp;&nbsp; row 5: age=56, bought=1<br>row 1: age=25, bought=0 &nbsp;&nbsp; row 6: age=23, bought=0<br>row 2: age=47, bought=1 &nbsp;&nbsp; row 7: age=30, bought=0<br>row 3: age=52, bought=1 &nbsp;&nbsp; row 8: age=40, bought=1<br>row 4: age=46, bought=1 &nbsp;&nbsp; row 9: age=35, bought=0</div></div>
+
+  <p><strong>Step 1 — shuffle with a fixed seed.</strong> A seed makes the shuffle deterministic. This is exactly the order NumPy's <code>default_rng(seed=42)</code> produces (we confirm it in code below):</p>
+  <p style="font-family:var(--mono)">shuffled order = [5, 6, 0, 7, 3, 2, 4, 9, 1, 8]</p>
+  <p>Read left to right: the first sample after shuffling is original row 5, then row 6, then row 0, and so on.</p>
+
+  <p><strong>Step 2 — split 80/20.</strong> Here \( n = 10 \), \( p = 0.2 \), so \( n_{\text{test}} = \lfloor 0.2 \times 10 \rfloor = 2 \) and \( n_{\text{train}} = 8 \). Take the <em>last</em> 2 of the shuffled order as test, the first 8 as train:</p>
+  <p style="font-family:var(--mono)">train indices = [5, 6, 0, 7, 3, 2, 4, 9]<br>test&nbsp; indices = [1, 8]</p>
+  <p>Every row appears exactly once across the two sets. No sample is in both — that would be cheating.</p>
+
+  <p><strong>Step 3 — your turn.</strong> The training ages, in train order (rows 5, 6, 0, 7, 3, 2, 4, 9), are:</p>
+  <p style="font-family:var(--mono)">56, 23, 22, 30, 52, 47, 46, 35</p>
+  <p>Add them up and divide by 8 <em>before</em> you open the spoiler. Then — separately — work out what you'd get if you'd (wrongly) averaged all 10 ages. Predict which is bigger.</p>
+
+  <details class="spoiler">
+    <summary>Show the worked answer</summary>
+    <div class="body">
+      <p>Sum of training ages: \( 56+23+22+30+52+47+46+35 = 311 \). Divide by 8:</p>
+      \[ \mu_{\text{train}} = \frac{311}{8} = 38.875 \]
+      <p>This 38.875 is the number you'd use to center the feature <em>everywhere</em> — including the test rows (ages 25 and 40), which were <strong>not</strong> in the average. If you had wrongly averaged all 10 ages: \( 376/10 = 37.6 \). Different number. In real data, that gap between 38.875 and 37.6 is precisely how leakage sneaks in and inflates your scores — the test rows' values bled into a statistic the model then uses.</p>
+    </div>
+  </details>
+
+  <!-- ===================== BEAT 6: FROM SCRATCH CODE ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · Predict the output, then run it</div>
+  <h3>From scratch: shuffle, slice, never mix.</h3>
+
+  <p>Same example in NumPy. Before you run it: you already know the shuffled order and the mean by hand. So <strong>predict the three printed lines</strong> — shuffled order, test indices, <code>mu_train</code> — then run it and check.</p>
+
   <codeblock>import numpy as np
 
 ages   = np.array([22, 25, 47, 52, 46, 56, 23, 30, 40, 35])
 bought = np.array([ 0,  0,  1,  1,  1,  1,  0,  0,  1,  0])
 
-n = len(ages)                      # 10 samples
+n = len(ages)                                # 10 samples
 test_fraction = 0.2
-n_test = int(np.floor(test_fraction * n))   # floor(0.2 * 10) = 2
+n_test = int(np.floor(test_fraction * n))    # floor(0.2 * 10) = 2
 
 # A seeded generator: "random" but reproducible.
 rng = np.random.default_rng(seed=42)
-indices = np.arange(n)             # [0, 1, 2, ..., 9]
-rng.shuffle(indices)              # shuffles in place, deterministically
+indices = np.arange(n)                        # [0, 1, 2, ..., 9]
+rng.shuffle(indices)                          # shuffles in place, deterministically
 print("shuffled order:", indices)
 
-train_idx = indices[:-n_test]     # all but the last n_test -> train
-test_idx  = indices[-n_test:]     # the last n_test entries  -> test
+train_idx = indices[:-n_test]                 # all but the last n_test -> train
+test_idx  = indices[-n_test:]                 # the last n_test entries  -> test
 
 X_train, y_train = ages[train_idx], bought[train_idx]
 X_test,  y_test  = ages[test_idx],  bought[test_idx]
@@ -163,126 +181,184 @@ print("mu_train      :", mu_train)
 
 # Apply the SAME training mean to both splits (centering).
 X_train_centered = X_train - mu_train
-X_test_centered  = X_test  - mu_train   # note: mu_train, NOT X_test.mean()
-print("centered test :", X_test_centered)
-</codeblock>
-  <p>Running this prints <code>shuffled order: [5 6 0 7 3 2 4 9 1 8]</code> — matching our by-hand shuffle exactly. The test indices are the last two, <code>[1 8]</code>, and the train indices are the first eight, <code>[5 6 0 7 3 2 4 9]</code>, so <code>mu_train</code> comes out to <code>38.875</code> — identical to the by-hand result. Every key discipline is visible here: the split is reproducible (same seed, same split), no row appears in both sets, and <code>mu_train</code> is computed on training rows only and then reused to center the test rows. Try changing <code>seed=42</code> to another number and watch the split change — then change it back and watch it return.</p>
+X_test_centered  = X_test  - mu_train         # note: mu_train, NOT X_test.mean()
+print("centered test :", X_test_centered)</codeblock>
 
-  <p>One subtlety worth internalizing: scikit-learn's <code>train_test_split</code> (next) shuffles a bit differently and, by convention, returns the <em>train</em> portion first. The exact indices differ between tools, but the discipline — seed it, shuffle, slice, never mix — is universal.</p>
+  <p>Output: <code>shuffled order: [5 6 0 7 3 2 4 9 1 8]</code> — matching your by-hand shuffle. Test indices are the last two, <code>[1 8]</code>; train indices the first eight, <code>[5 6 0 7 3 2 4 9]</code>; and <code>mu_train</code> comes out to <code>38.875</code> — identical to your hand calculation. Every discipline is visible: reproducible split (same seed, same split), no row in both sets, and <code>mu_train</code> computed on train rows only and then reused on the test rows. Change <code>seed=42</code> to another number and watch the split move; change it back and watch it return.</p>
 
-  <h3>In code: the library way</h3>
-  <p>In practice you'll load data with pandas and split with one scikit-learn call. Here we use the Iris dataset that ships with scikit-learn (no download needed), build a tidy <code>DataFrame</code>, do a quick EDA, and split.</p>
+  <p class="aside">One subtlety: scikit-learn's <code>train_test_split</code> shuffles differently and, by convention, returns the <em>train</em> portion first. The exact indices differ between tools — the discipline (seed, shuffle, slice, never mix) is universal.</p>
+
+  <!-- ===================== BEAT 7: DEBUG ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · Find the leak</div>
+  <h3>This preprocessing runs clean. It is cheating.</h3>
+
+  <p>A teammate wrote this to scale features before training. No error, decent-looking score. But it commits the leakage classic from Beat 1 — in code. Find the bug <strong>before</strong> you open the answer. Hint: the order of two operations is wrong.</p>
+
+  <codeblock>import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+X = np.array([[22.], [25.], [47.], [52.], [46.],
+              [56.], [23.], [30.], [40.], [35.]])
+y = np.array([0, 0, 1, 1, 1, 1, 0, 0, 1, 0])
+
+scaler = StandardScaler()
+X = scaler.fit_transform(X)              # <-- something is wrong on this line
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+# ... now train the model on X_train ...</codeblock>
+
+  <details class="spoiler">
+    <summary>Show the leak &amp; the fix</summary>
+    <div class="body">
+      <p><code>scaler.fit_transform(X)</code> computes the mean and standard deviation over <strong>all 10 rows</strong> — including the rows that are about to become the test set — and only <em>then</em> splits. The scaler now "knows" about the test rows. The test set's information leaked into the training preprocessing, so your score is optimistic. Same crime as averaging all 10 ages (37.6 instead of 38.875) — just hidden inside a library call.</p>
+      <p><strong>Fix: split first, then fit on train only.</strong></p>
+      <codeblock>X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+scaler = StandardScaler()
+scaler.fit(X_train)                      # statistics from TRAIN ONLY
+X_train = scaler.transform(X_train)
+X_test  = scaler.transform(X_test)       # reuse the SAME fitted scaler -- never fit on test</codeblock>
+      <p>Rule of thumb: any <code>.fit(...)</code> or <code>fit_transform(...)</code> touches <em>only</em> <code>X_train</code>. The test set sees <code>.transform(...)</code> and nothing else.</p>
+    </div>
+  </details>
+
+  <!-- ===================== BEAT 8: LIBRARY CODE + EDA ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · The way you'll actually do it</div>
+  <h3>Library way: pandas EDA + one-line split.</h3>
+
+  <p>In practice: load with pandas, explore, split with one scikit-learn call. We use Iris (ships with scikit-learn, no download). Before running, predict the four EDA outputs: how many rows? how many missing? how many of each species?</p>
+
   <codeblock>import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
 # Load a built-in dataset and wrap it in a pandas DataFrame.
 data = load_iris(as_frame=True)
-df = data.frame                      # features + a 'target' column
+df = data.frame                          # features + a 'target' column
 df["species"] = df["target"].map(dict(enumerate(data.target_names)))
 
 # --- Quick EDA: the four things to always check first ---
-print(df.shape)                      # (150, 6): 150 samples, 6 columns
-print(df.dtypes)                     # column data types
-print(df.isna().sum())               # missing values per column (all 0 here)
-print(df["species"].value_counts())  # class balance: 50 of each species
-print(df.describe())                 # count/mean/std/min/quartiles/max
+print(df.shape)                          # (150, 6): 150 samples, 6 columns
+print(df.dtypes)                         # column data types
+print(df.isna().sum())                   # missing values per column (all 0 here)
+print(df["species"].value_counts())      # class balance: 50 of each species
+print(df.describe())                     # count/mean/std/min/quartiles/max
 
 # --- The split: features X, label y, 20% test, fixed seed ---
-feature_cols = data.feature_names    # the four measurement columns
+feature_cols = data.feature_names        # the four measurement columns
 X = df[feature_cols]
 y = df["species"]
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y,
-    test_size=0.2,                   # 20% -> 30 test rows, 120 train rows
-    random_state=42,                 # the seed: reproducible split
-    stratify=y,                      # keep class proportions in both splits
+    test_size=0.2,                       # 20% -> 30 test rows, 120 train rows
+    random_state=42,                     # the seed: reproducible split
+    stratify=y,                          # keep class proportions in both splits
 )
 
-print(X_train.shape, X_test.shape)   # (120, 4) (30, 4)
-print(y_train.value_counts())        # 40 of each species in train
-</codeblock>
-  <p>The EDA calls answer the questions you should ask of <em>any</em> new dataset: How big is it (<code>df.shape</code>)? What types are the columns (<code>df.dtypes</code>)? Is anything missing (<code>df.isna().sum()</code>)? Are the categories balanced (<code>value_counts()</code>)? And what do the numbers look like (<code>df.describe()</code> gives count, mean, standard deviation, min, the 25/50/75% quartiles, and max). The split itself is a single line. The <code>stratify=y</code> argument is a beginner-saver: it forces each split to keep the same class proportions, so you don't accidentally get a test set missing an entire species. With <code>random_state=42</code> the split is identical for you, your teammates, and your Claude Code companion — essential for comparing results fairly.</p>
+print(X_train.shape, X_test.shape)       # (120, 4) (30, 4)
+print(y_train.value_counts())            # 40 of each species in train</codeblock>
 
-  <h4>A quick tour of beginner datasets</h4>
+  <p>The EDA calls answer the questions you should ask of <em>any</em> new dataset. How big (<code>df.shape</code>)? What types (<code>df.dtypes</code>)? Anything missing (<code>df.isna().sum()</code>)? Are categories balanced (<code>value_counts()</code>)? What do the numbers look like (<code>df.describe()</code> gives count, mean, std, min, the 25/50/75% quartiles, and max)? The split is a single line. <code>stratify=y</code> is a beginner-saver: it forces each split to keep the same class proportions, so you don't accidentally get a test set missing an entire species. With <code>random_state=42</code>, the split is identical for you, your teammates, and your Claude companion — essential for comparing results fairly.</p>
+
+  <h4>A quick tour of the datasets you'll keep meeting</h4>
   <ul>
     <li><strong>Iris</strong> — 150 flowers, 4 numeric features, 3 species. Tiny, clean, perfectly balanced. The "hello world" of classification.</li>
-    <li><strong>Titanic</strong> — ~890 passengers; predict survival from age, sex, ticket class, fare, etc. Has missing values and mixed types, so it's the classic dataset for practicing cleaning and feature engineering (Module 7).</li>
-    <li><strong>California Housing</strong> — ~20,000 districts; predict median house value from income, location, rooms, etc. A real-sized <em>regression</em> dataset.</li>
-    <li><strong>MNIST</strong> — 70,000 images of handwritten digits (28×28 pixels), labeled 0–9. The standard first dataset for neural networks (Modules 10–12).</li>
-    <li><strong>Boston Housing — retired.</strong> An old housing dataset that scikit-learn removed because it contained a feature engineered around the proportion of Black residents in a neighborhood, baking racial bias into the data. It's a permanent reminder that <em>datasets carry the values and harms of whoever built them</em> — a theme we return to in Module 15 — Ethics. If a tutorial still uses it, treat that as a sign the tutorial is out of date.</li>
+    <li><strong>Titanic</strong> — ~890 passengers; predict survival from age, sex, ticket class, fare. Has missing values and mixed types, so it's the classic dataset for practicing cleaning and feature engineering (Module 7).</li>
+    <li><strong>California Housing</strong> — ~20,000 districts; predict median house value from income, location, rooms. A real-sized <em>regression</em> dataset.</li>
+    <li><strong>MNIST</strong> — 70,000 images of handwritten digits (28&times;28 pixels), labeled 0–9. The standard first dataset for neural networks (Modules 10–12).</li>
+    <li><strong>Boston Housing — retired.</strong> An old housing dataset scikit-learn <em>removed</em> because it contained a feature engineered around the proportion of Black residents in a neighborhood, baking racial bias into the data. A permanent reminder that <em>datasets carry the values and harms of whoever built them</em> — a theme we return to in Module 15 (Ethics). If a tutorial still uses it, treat that as a sign the tutorial is out of date.</li>
   </ul>
 
-  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
-    <p>Paste these to your Claude Code companion as you study:</p>
-    <ul>
-      <li>"Load the Titanic dataset with pandas and walk me through an EDA: show me shape, dtypes, missing values per column, and <code>value_counts()</code> for survival and sex. Explain what each result tells us."</li>
-      <li>"Explain the train/validation/test split to me with a brand-new analogy that isn't the exam one, then quiz me on which set is used when."</li>
-      <li>"Here is my preprocessing code. Check it for data leakage — am I computing any statistic (mean, scaler, encoder) before splitting, or fitting it on the test set? Show me the fix."</li>
-      <li>"Generate 5 practice problems where I have to decide whether a given column causes target leakage, and check my answers with explanations."</li>
-    </ul>
+  <!-- ===================== BEAT 9: RECALL ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">09</span> · Cold recall — answer before you flip</div>
+  <h3>Pull it out of your own head.</h3>
+
+  <p>Re-reading feels like learning but mostly isn't. <em>Retrieving</em> is. Say each answer out loud first, <strong>then</strong> flip.</p>
+
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Sample, feature, label — what's each, in one phrase?</div><div class="hint">tap to flip</div></div>
+      <div class="face back"><b>Sample</b> = one row (one observed thing). <b>Feature</b> = an input column. <b>Label / target</b> = the column you predict.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Train, validation, test — which one do you touch once, and why?</div><div class="hint">tap to flip</div></div>
+      <div class="face back"><b>Test.</b> It's the real exam — touched once at the very end. Train teaches the model; validation is the mock exam you tune on repeatedly.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">State the golden rule of preprocessing in one sentence.</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Fit every preprocessing statistic (mean, scaler, encoder, vocabulary) on the <b>training set only</b>, then apply those same values to validation and test.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">The one-line test for whether a feature is target leakage?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">"At the exact moment I make the prediction, is this value already known?" If no — drop it. (e.g. recovery_amount, follow-up-scheduled.)</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What does a random seed buy you in a split, and why care?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Reproducibility: "random" becomes "the same random every time," so you, teammates, and Claude get the identical split and can compare results fairly.</div>
+    </div></div>
   </div>
 
-  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
-    <ul>
-      <li><strong>"More data seen in training is always better, so train on everything."</strong> No — if the model sees the test set, your reported score is the memorized answer key, not real performance. Always hold out a test set you never train on.</li>
-      <li><strong>Peeking at the test set.</strong> Looking at test results, then tweaking your model, then re-checking, and repeating, slowly leaks the test set into your decisions. The test set is a one-shot final exam. Use the <em>validation</em> set for all the tweaking.</li>
-      <li><strong>Preprocessing before splitting (the leakage classic).</strong> If you scale or impute on the full dataset and <em>then</em> split, the training stats already "know" about the test rows. Always split first, fit preprocessing on train, then transform val/test with those same fitted values.</li>
-      <li><strong>Target leakage from a sneaky feature.</strong> A column that is a stand-in for the answer (like a "follow-up scheduled" flag that only exists for high-risk patients, or "total amount paid" when predicting whether someone paid) gives unrealistically high scores. Ask of every feature: "Would this value actually be available <em>before</em> the moment I make the prediction?"</li>
-      <li><strong>Ignoring imbalanced classes.</strong> If 99% of emails are "not spam," a model that always says "not spam" is 99% accurate and useless. Check <code>value_counts()</code> early, and use <code>stratify</code> when splitting so rare classes appear in every split. (We'll cover proper metrics for this in Module 6.)</li>
-      <li><strong>Random splits for time-ordered data.</strong> If samples have a time order (stock prices, user events), a random split lets the model train on the future to predict the past — leakage again. For time series, split by time: train on older rows, test on newer ones.</li>
-    </ul>
+  <!-- ===================== BEAT 10: PITFALLS ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">10</span> · Traps that have burned everyone</div>
+  <h3>The greatest hits of leakage.</h3>
+  <ul>
+    <li><strong>"More data in training is always better — train on everything."</strong> No. If the model sees the test set, your score is the memorized answer key, not real performance.</li>
+    <li><strong>Peeking at the test set repeatedly.</strong> Tweak, re-check, tweak, re-check — you slowly leak the test set into your decisions (Beat 2). It's a one-shot final exam. Tune on validation.</li>
+    <li><strong>Preprocessing before splitting.</strong> Scale or impute on the full dataset, then split, and the training stats already "know" the test rows (Beat 7). Split first, fit on train, transform the rest.</li>
+    <li><strong>A sneaky feature that's a disguised answer.</strong> "Follow-up scheduled," "total amount paid" when predicting whether someone paid. Ask the availability question of every column.</li>
+    <li><strong>Ignoring imbalanced classes.</strong> If 99% of emails are "not spam," a model that always says "not spam" is 99% accurate and useless. Check <code>value_counts()</code> early; use <code>stratify</code>. (Proper metrics: Module 6.)</li>
+    <li><strong>Random splits for time-ordered data.</strong> Stock prices, user events — a random split trains on the future to predict the past. Split by time: train on older rows, test on newer.</li>
+  </ul>
+
+  <!-- ===================== BEAT 11: BOSS ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">11</span> · Boss fight</div>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — with your Claude companion</div>
+    <p>A list of suggested prompts is lazy. Here's a real challenge loop. Paste this to your Claude Code companion and don't move on until you can spot the leak cold, every time.</p>
+    <div class="prompt"><button class="copy">copy</button>You are running a leakage-detection drill for me. Invent a realistic ML scenario: a prediction task, the label, and a list of 5-8 candidate feature columns with one-line descriptions. Exactly one or two columns are target leakage (available only AFTER the prediction moment), OR there is a preprocessing-order leak. Show me the scenario and WAIT. I will name which columns leak (or describe the leak) and justify each with the availability test: "at prediction time, is this value known?" Then grade me, reveal every leak I missed and explain why, and escalate: add subtler traps like a leaked aggregate computed over the whole dataset, a future timestamp, or fitting a scaler before the split. Keep going until I catch two scenarios in a row with zero misses and zero false alarms.</div>
+    <p class="aside">You pass this module when you can split a dataset by hand, recite the golden rule, and look at any feature and decide — out loud, using the availability test — whether it would exist at prediction time. Beat the boss twice clean and you're there.</p>
   </div>
 
-  <h3>Exercises</h3>
+  <!-- ===================== BEAT 12: EXERCISES ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">12</span> · Warm-up reps before the boss</div>
+  <h3>Five quick ones. Answer before opening.</h3>
   <ol class="exercises">
-    <li>For a dataset of emails where you want to predict spam vs. not-spam, identify the samples, give two example features, and state the label. Is this classification or regression?
-      <details class="solution"><summary>Show solution</summary>
-        <p><strong>Samples:</strong> individual emails (one row per email). <strong>Features (examples):</strong> number of links in the body, whether the subject contains "free", sender domain, message length — any measurable property of the email. <strong>Label:</strong> spam or not-spam. Because the label is a category (two classes), this is <strong>classification</strong> — specifically binary classification.</p>
+    <li>For a dataset of emails where you predict spam vs. not-spam: identify the samples, give two example features, state the label. Classification or regression?
+      <details class="spoiler"><summary>Show solution</summary>
+        <div class="body"><p><b>Samples:</b> individual emails (one row each). <b>Features:</b> number of links, whether the subject says "free", sender domain, message length. <b>Label:</b> spam or not-spam. The label is a category (two classes), so it's <b>classification</b> — specifically binary classification.</p></div>
       </details>
     </li>
-    <li>You have 50 samples and want a 20% test set with a fixed seed. How many rows go to test and how many to train? Write the two NumPy lines that produce the test and train index arrays from a shuffled <code>indices</code> array.
-      <details class="solution"><summary>Show solution</summary>
-        <p>\( n_{\text{test}} = \lfloor 0.2 \times 50 \rfloor = 10 \), so 10 rows to test and 40 to train. After shuffling:</p>
+    <li>You have 50 samples, want a 20% test set with a fixed seed. How many rows to test vs. train? Write the two NumPy lines that produce the test and train index arrays from a shuffled <code>indices</code> array.
+      <details class="spoiler"><summary>Show solution</summary>
+        <div class="body"><p>\( n_{\text{test}} = \lfloor 0.2 \times 50 \rfloor = 10 \): 10 to test, 40 to train.</p>
         <codeblock>test_idx  = indices[:10]   # first 10 -> test
 train_idx = indices[10:]   # remaining 40 -> train</codeblock>
-        <p>The shuffle must use a seed (e.g. <code>np.random.default_rng(seed=0).shuffle(indices)</code>) so the split is reproducible.</p>
+        <p>The shuffle must be seeded (e.g. <code>np.random.default_rng(seed=0).shuffle(indices)</code>) for reproducibility.</p></div>
       </details>
     </li>
-    <li>A teammate writes: "I scaled every feature to mean 0 and standard deviation 1, then split into train and test." What's wrong, and what's the corrected order of operations?
-      <details class="solution"><summary>Show solution</summary>
-        <p>The scaling statistics (each feature's mean and standard deviation) were computed over the <em>whole</em> dataset, including the test rows — that's data leakage. The test set's information bled into the training preprocessing, so the reported score will be optimistic. <strong>Correct order:</strong> (1) split into train/test; (2) compute the mean and standard deviation on the <em>training</em> set only; (3) use those exact training values to transform both train and test. In scikit-learn this is <code>scaler.fit(X_train)</code> followed by <code>scaler.transform(X_train)</code> and <code>scaler.transform(X_test)</code> — never <code>fit</code> on the test set.</p>
+    <li>A teammate says: "I scaled every feature to mean 0, std 1, then split into train and test." What's wrong, and what's the corrected order?
+      <details class="spoiler"><summary>Show solution</summary>
+        <div class="body"><p>The scaling stats were computed over the whole dataset, including test rows — leakage. <b>Correct order:</b> (1) split; (2) compute mean/std on <em>train only</em>; (3) use those exact training values to transform both. In scikit-learn: <code>scaler.fit(X_train)</code>, then <code>scaler.transform(X_train)</code> and <code>scaler.transform(X_test)</code> — never <code>fit</code> on test.</p></div>
       </details>
     </li>
-    <li>By hand: given the 10-row purchase dataset from the worked example, suppose instead the shuffled order is <code>[2, 9, 4, 7, 0, 5, 1, 8, 3, 6]</code> and you take the <em>last</em> 30% as test. Which original rows are in the test set, and what is the mean of <code>age</code> on the training set?
-      <details class="solution"><summary>Show solution</summary>
-        <p>\( n_{\text{test}} = \lfloor 0.3 \times 10 \rfloor = 3 \). The last 3 of the shuffled order are <code>[8, 3, 6]</code> → test rows 8, 3, 6. Train is the first 7: rows <code>[2, 9, 4, 7, 0, 5, 1]</code>. Their ages are 47, 35, 46, 30, 22, 56, 25. Sum \( = 47+35+46+30+22+56+25 = 261 \). Mean \( = 261 / 7 \approx 37.29 \). (The test ages 40, 52, 23 are excluded from the mean.)</p>
+    <li>By hand: same 10-row purchase dataset, but now the shuffled order is <code>[2, 9, 4, 7, 0, 5, 1, 8, 3, 6]</code> and you take the <em>last</em> 30% as test. Which original rows are test, and what's the mean of <code>age</code> on train?
+      <details class="spoiler"><summary>Show solution</summary>
+        <div class="body"><p>\( n_{\text{test}} = \lfloor 0.3 \times 10 \rfloor = 3 \). Last 3: <code>[8, 3, 6]</code> &rarr; test rows 8, 3, 6. Train is the first 7: rows <code>[2, 9, 4, 7, 0, 5, 1]</code>, ages 47, 35, 46, 30, 22, 56, 25. Sum \( = 261 \). Mean \( = 261/7 \approx 37.29 \). (Test ages 40, 52, 23 are excluded.)</p></div>
       </details>
     </li>
-    <li>You're predicting whether a loan will default. Your dataset includes a column <code>recovery_amount</code> (money recovered from defaulters after the fact). Should it be a feature? Explain using the idea of target leakage, and describe the test that decides it.
-      <details class="solution"><summary>Show solution</summary>
-        <p>No. <code>recovery_amount</code> is only nonzero <em>after</em> a loan has already defaulted, so it didn't exist at the moment you'd make the prediction. Using it is <strong>target leakage</strong>: the column is essentially a disguised copy of the answer, and it would give a spectacular validation score that collapses in production (where the column is always empty at decision time). The deciding test is the availability question: <em>"At the exact moment I need to predict, is this value already known?"</em> If the answer is no, the feature must be dropped.</p>
+    <li>You're predicting loan default. Your data has a column <code>recovery_amount</code> (money recovered from defaulters after the fact). Use it as a feature? Explain via target leakage, and name the deciding test.
+      <details class="spoiler"><summary>Show solution</summary>
+        <div class="body"><p>No. <code>recovery_amount</code> is only nonzero <em>after</em> a loan has defaulted — it didn't exist when you'd make the prediction. It's <b>target leakage</b>: a disguised copy of the answer. It would give a spectacular validation score that collapses in production (where the column is empty at decision time). Deciding test: <em>"At the exact moment I predict, is this value already known?"</em> No &rarr; drop it.</p></div>
       </details>
     </li>
   </ol>
 
-  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
-    <ul>
-      <li>Point at any table and label its samples, features, label, and prediction task.</li>
-      <li>Explain in plain words why a test set must stay unseen, using the exam analogy.</li>
-      <li>Split data into train/test by hand with NumPy <em>and</em> with <code>train_test_split</code>, using a fixed seed.</li>
-      <li>State the golden rule of preprocessing and catch a leakage bug in someone's code.</li>
-      <li>Decide, for a given feature, whether it would be available at prediction time.</li>
-    </ul>
-  </div>
+  <div class="callback"><b>Lock this in.</b> The golden rule — fit on train, apply everywhere — returns the instant you do real preprocessing in <b>Module 7</b> (feature engineering), drives every honest number you report in <b>Module 6</b> (evaluation), and the bias-in-data lesson from Boston Housing comes back in full in <b>Module 15</b> (ethics). Get the data discipline right here and the rest of the course is just choosing algorithms.</div>
 
-  <div class="callout resources"><h3>Curated resources</h3>
-    <ul>
-      <li><a href="https://pandas.pydata.org/docs/getting_started/index.html">pandas Getting Started</a> — the official, beginner-friendly path to loading and exploring tabular data.</li>
-      <li><a href="https://www.kaggle.com/learn">Kaggle Learn</a> — short hands-on courses on pandas and intro ML using real datasets like Titanic in your browser.</li>
-      <li><a href="https://developers.google.com/machine-learning/crash-course">Google ML Crash Course</a> — clear sections on data splits and generalization with interactive visualizations.</li>
-      <li><a href="https://scikit-learn.org/stable/tutorial/index.html">scikit-learn tutorials</a> — the canonical reference for <code>train_test_split</code> and the fit/transform discipline.</li>
-    </ul>
-  </div>
 </section>

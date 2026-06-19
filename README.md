@@ -13,8 +13,19 @@ Just open **[`ml-curriculum.html`](ml-curriculum.html)** in any modern browser.
 - Tick **"Mark module complete"** as you go — progress is saved in your browser (`localStorage`) and survives refreshes.
 - Toggle **dark / light** mode in the top-right; it's remembered too.
 
+### This is an *active* course — you do it, you don't read it
+
+It's built on how people actually learn fast, not the usual lecture-you-skim:
+
+- **Struggle first** — each idea opens with a problem or a "try this," *before* any theory.
+- **Predict, then reveal** — you commit to a guess and the page only then shows the answer (the gap is what makes it stick).
+- **Labs with missions** — the interactive animations are framed as concrete challenges ("make gradient descent diverge," "find the kernel that detects edges"), not toys to poke at.
+- **Debug the broken code** — find the one wrong line, then reveal the fix.
+- **Cold recall** — flip-cards that quiz you instead of letting you re-read.
+- **Boss fights with your Claude companion** — real adaptive challenge loops (Claude generates problems, grades your by-hand work, escalates).
+
 ### Study it with a Claude Code companion
-The course is designed to be worked through alongside an AI coding assistant. **Module 0** has a setup guide, and **every module** ends with a green 🤖 *"Work this with your Claude Code companion"* box of copy-paste prompts (explain-it-differently, quiz-me, run-and-tweak-this-code, pair-on-the-project).
+The course is designed to be worked through alongside an AI coding assistant. **Module 0** has a setup guide, and **every module** has a 🤖 *"Boss fight"* — a copy-paste prompt that turns your Claude Code companion into a live tutor that quizzes you, grades your by-hand answers, and ramps the difficulty until you've got it.
 
 ## 🗺️ What's inside
 
@@ -40,7 +51,7 @@ A welcome page, **16 modules**, and a **5-project track**:
 | 15 | Practical Workflow, Deployment, Ethics & Next Steps |
 | ★ | **Project Track** — Iris → tabular/XGBoost → CNN+Gradio → HF text model → RAG app |
 
-Every module follows the same confidence-building rhythm: **objectives → why care? → intuition + analogy → gentle math (every symbol defined) → worked example by hand → from-scratch Python → the library version → pitfalls → exercises (with full solutions) → self-check → curated free resources.**
+Every module mixes the active mechanics above — a struggle-first hook, predict-then-reveal moments, an interactive lab with missions, math you earn *after* the intuition (every symbol defined), a by-hand worked example, from-scratch *and* library Python, a debug challenge, cold-recall flip-cards, and a Claude boss fight — varied per concept so no two modules feel like the same template.
 
 ## 🛠️ Editing / rebuilding
 
@@ -70,7 +81,7 @@ In the `build/` fragments, Python lives inside `<codeblock>…</codeblock>` with
 
 ## ✅ Quality
 
-The content was generated and then **independently audited and fixed** section-by-section, and the assembled page was verified with a real headless-browser render: **1,429 math expressions render with 0 KaTeX errors**, 57 highlighted/copyable code blocks, 80 exercises with worked solutions, 30 inline SVG diagrams.
+Every section was generated and then **independently audited and fixed** for both craft and correctness, and the assembled page is verified with a real headless-browser render (with every widget force-mounted via `?mlviz=eager`): **~1,080 math expressions render with 0 KaTeX errors**, all **13 interactive widgets** mount and draw, 79 highlighted/copyable code blocks, and the active layer checks out — **54 predict cards, 17 recall decks, 22 mission labs, 22 boss fights, 34 forward callbacks**.
 
 ---
 

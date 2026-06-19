@@ -408,6 +408,99 @@ body.nav-open #overlay{opacity:1;pointer-events:auto;}
 .mlviz-tag{font-family:var(--font-ui);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
   color:var(--accent);background:var(--accent-soft);padding:.15rem .5rem;border-radius:99px;}
 @media (max-width:560px){ .mlviz-body{padding:.6rem;} }
+
+/* ============================================================
+   ACTIVE-LEARNING COMPONENTS (beats, predict, missions, recall,
+   debug, boss, callback) — the course is something you DO.
+   ============================================================ */
+/* beat = a numbered learning move; gives each module rhythm & variety */
+.beat{margin:2.4rem 0;}
+.beat-tag{display:flex;align-items:center;gap:.55rem;font-family:var(--font-mono);font-size:.72rem;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--text-faint);margin:0 0 .7rem;}
+.beat-tag .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);}
+.beat-tag .n{font-weight:800;color:var(--accent);}
+
+/* DO-THIS / try-it card */
+.do{border:1px solid var(--border-strong);border-radius:14px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 5%,var(--bg-elev)),var(--bg-elev));
+  padding:1.05rem 1.2rem;margin:1.3rem 0;box-shadow:var(--shadow);}
+.do-head{display:flex;align-items:center;gap:.5rem;font-family:var(--font-ui);font-size:.72rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;}
+.do-head .badge{background:var(--accent);color:#fff;border-radius:6px;padding:.08rem .45rem;font-size:.68rem;}
+.do .readout{display:flex;flex-wrap:wrap;gap:.4rem 1.3rem;justify-content:center;font-family:var(--font-mono);
+  font-size:.82rem;color:var(--text-soft);margin-top:.7rem;}
+.do .readout b{color:var(--text);}
+
+/* PREDICT — must commit to an answer before the reveal unlocks */
+.predict{border:1px solid var(--border-strong);border-radius:14px;background:var(--bg-elev);padding:1.05rem 1.2rem;margin:1.4rem 0;}
+.predict .q{font-family:var(--font-ui);font-weight:600;font-size:1.06rem;margin:.1rem 0 .85rem;}
+.predict .opts{display:grid;gap:.5rem;}
+.predict .opt{text-align:left;font-family:var(--font-ui);font-size:.96rem;padding:.65rem .9rem;border-radius:10px;cursor:pointer;
+  background:color-mix(in srgb,var(--text) 3%,var(--bg-elev));border:1px solid var(--border-strong);color:var(--text);transition:all var(--speed);}
+.predict .opt:hover{border-color:var(--accent);}
+.predict .opt .lab{font-family:var(--font-mono);font-weight:700;color:var(--accent);margin-right:.5rem;}
+.predict .opt.correct{border-color:#10b981;background:color-mix(in srgb,#10b981 14%,var(--bg-elev));}
+.predict .opt.wrong{border-color:#e11d48;background:color-mix(in srgb,#e11d48 12%,var(--bg-elev));}
+.predict .opt.dim{opacity:.5;}
+.predict .reveal{display:none;margin-top:1rem;padding-top:.85rem;border-top:1px dashed var(--border-strong);}
+.predict.answered .reveal{display:block;animation:beatfade .4s ease;}
+.predict .verdict{font-family:var(--font-mono);font-weight:700;font-size:.85rem;margin-bottom:.4rem;}
+.predict .verdict.ok{color:#10b981;} .predict .verdict.no{color:var(--warn,#d97706);}
+@keyframes beatfade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+/* MISSIONS — concrete tasks a lab checks (or you check) */
+ul.missions{list-style:none;padding:0;margin:1rem 0 0;display:grid;gap:.5rem;}
+ul.missions > li{display:flex;gap:.7rem;align-items:flex-start;padding:.6rem .8rem;border:1px solid var(--border);
+  border-radius:10px;background:var(--bg-elev);font-size:.93rem;transition:all .2s;margin:0;}
+ul.missions > li .chk{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;border:2px solid var(--border-strong);
+  display:grid;place-items:center;font-size:.85rem;color:var(--text-faint);}
+ul.missions > li.done{border-color:#10b981;background:color-mix(in srgb,#10b981 9%,var(--bg-elev));}
+ul.missions > li.done .chk{background:#10b981;border-color:#10b981;color:#fff;}
+ul.missions > li.done .chk::after{content:"✓";}
+ul.missions > li.done .mtext{color:#10b981;}
+.mtext small{display:block;color:var(--text-faint);font-size:.79rem;margin-top:.1rem;}
+
+/* DEBUG highlight + spoiler */
+pre .hl{background:color-mix(in srgb,#e11d48 22%,transparent);border-radius:4px;padding:0 .15rem;}
+details.spoiler{margin:.8rem 0;border:1px solid var(--border-strong);border-radius:10px;background:var(--bg-elev);padding:.1rem .95rem;}
+details.spoiler > summary{cursor:pointer;font-family:var(--font-ui);font-weight:600;font-size:.9rem;padding:.6rem 0;color:var(--accent);list-style:none;}
+details.spoiler > summary::-webkit-details-marker{display:none;}
+details.spoiler > summary::before{content:"▸ ";}
+details.spoiler[open] > summary::before{content:"▾ ";}
+details.spoiler > *:not(summary){font-size:.95rem;color:var(--text-soft);padding-bottom:.7rem;}
+
+/* RECALL flip cards */
+.recall{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem;margin:1rem 0;}
+.recall .card{perspective:1000px;cursor:pointer;min-height:120px;}
+.recall .card-inner{position:relative;width:100%;height:100%;min-height:120px;transition:transform .5s;transform-style:preserve-3d;}
+.recall .card.flipped .card-inner{transform:rotateY(180deg);}
+.recall .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;
+  padding:.9rem;display:flex;flex-direction:column;justify-content:center;border:1px solid var(--border-strong);font-size:.92rem;}
+.recall .face.front{background:color-mix(in srgb,var(--text) 3%,var(--bg-elev));}
+.recall .face.front .q{font-family:var(--font-ui);font-weight:600;}
+.recall .face.front .hint{margin-top:auto;font-family:var(--font-mono);font-size:.68rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;}
+.recall .face.back{transform:rotateY(180deg);border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 12%,var(--bg-elev));color:var(--text);}
+
+/* BOSS — live challenge loop with the Claude companion */
+.boss{border:1px solid color-mix(in srgb,#10b981 45%,var(--border));border-radius:14px;
+  background:linear-gradient(180deg,color-mix(in srgb,#10b981 10%,var(--bg-elev)),var(--bg-elev));padding:1.15rem 1.25rem;margin:1.6rem 0;}
+.boss-head{display:flex;align-items:center;gap:.55rem;font-family:var(--font-ui);font-weight:800;font-size:1.04rem;color:#10b981;margin-bottom:.45rem;}
+.boss .prompt{position:relative;font-family:var(--font-mono);font-size:.82rem;line-height:1.55;
+  background:var(--code-bg);border:1px solid var(--border-strong);border-radius:10px;padding:.85rem 1rem;margin:.7rem 0;color:var(--text);white-space:pre-wrap;}
+.boss .prompt .copy{position:absolute;top:.5rem;right:.5rem;font-family:var(--font-ui);font-size:.7rem;font-weight:600;
+  background:var(--bg-elev);border:1px solid var(--border-strong);color:var(--text-soft);border-radius:6px;padding:.25rem .5rem;cursor:pointer;}
+.boss .prompt .copy:hover{color:#10b981;border-color:#10b981;}
+
+/* CALLBACK — spaced connection to other modules */
+.callback{border-left:3px solid var(--accent-2);background:color-mix(in srgb,var(--accent-2) 8%,var(--bg-elev));
+  border-radius:0 12px 12px 0;padding:.9rem 1.1rem;margin:1.6rem 0;font-size:.96rem;}
+.callback b{color:var(--accent-2);}
+
+/* math-card for an earned formula */
+.math-card{border:1px solid var(--border);border-radius:12px;background:var(--bg-elev);padding:.9rem 1.2rem;margin:1.2rem 0;}
+.math-card .legend{font-size:.92rem;color:var(--text-soft);}
+.math-card .legend b{color:var(--text);font-family:var(--font-mono);}
 </style>
 <script>
 /* Set theme before first paint to avoid a flash of the wrong colours */

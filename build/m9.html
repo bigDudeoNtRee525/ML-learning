@@ -5,122 +5,163 @@
     <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m9"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
-  <ul>
-    <li>Explain what <strong>unsupervised learning</strong> is and how it differs from the supervised learning of Modules 3–8 (there are no labels to predict).</li>
-    <li>Run the <strong>k-means</strong> clustering loop in your head — assign every point to its nearest centroid, then move each centroid to the average of its points — and implement it from scratch in NumPy.</li>
-    <li>Choose a sensible number of clusters <em>k</em> with the <strong>elbow method</strong> using the within-cluster sum of squares (<code>inertia</code>).</li>
-    <li>Describe <strong>anomaly detection</strong> and decide when it beats a supervised classifier.</li>
-    <li>Explain <strong>PCA</strong> in plain words — it finds the directions of maximum variance — and read <code>explained_variance_ratio_</code> from scikit-learn.</li>
-    <li>Connect all of this to <strong>embeddings</strong>: learned low-dimensional representations you'll meet again in Modules 13–14.</li>
-  </ul></div>
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · No labels, no teacher</div>
+  <h3>Here is a pile of dots. Nobody told you what they are.</h3>
+  <p class="lead">Every model you've built so far had a teacher. Module 3 had house prices. Module 5 had spam/not-spam. Each training row came with the right answer stapled to it, and the model just learned to copy the mapping. That's <strong>supervised</strong> learning.</p>
+  <p>Now I'm taking the answer column away. I hand you 150 points scattered on a table — no colors, no labels, no key — and I ask: <strong>are there groups in here?</strong> How many? Where? You have no teacher. Just the raw positions.</p>
+  <p>This is the situation for 99% of the data anyone actually has. Nobody annotated it. So before we name a single algorithm, sit with the real question: <em>can a machine find structure with nobody telling it the answer?</em> Look at a scatter of dots and decide, in your head, how many groups you see and roughly where their centers are. Commit to a number. Then we'll see if a machine agrees.</p>
 
-  <div class="callout hook"><h3>Why should I care?</h3>
-  <p>A music streaming service has 100 million listeners and no idea who they "really" are — nobody labelled them. Yet to build a useful "Discover Weekly" playlist, the company wants to group listeners who behave alike: the late-night lo-fi crowd, the gym EDM crowd, the parents-of-toddlers nursery-rhyme crowd. Nobody handed the algorithm those groups; it has to <em>find</em> them in the raw listening data. That's clustering. The same company also wants to flag a credit card charge that looks nothing like your normal spending — without ever having seen that exact fraud before. That's anomaly detection. And to even store each listener's taste, it compresses thousands of "did they play this song" columns down to a handful of meaningful numbers — a learned embedding. Every one of these tasks works <em>without labels</em>. That is unsupervised learning, and it's how you make sense of the 99% of real-world data that nobody has ever annotated.</p></div>
-
-  <h3>Intuition first</h3>
-  <p>Everything you've done so far has been <strong>supervised</strong>: each training row came with a correct answer — a house price (Module 3), a spam/not-spam label (Module 5). The model's job was to copy that mapping from inputs to known outputs. <strong>Unsupervised learning throws away the answer column.</strong> You hand the algorithm only the inputs and ask it to find structure on its own: which rows resemble each other, which rows are weird, and which directions in the data actually carry information.</p>
-
-  <p>There are three big questions in this module, and each has a classic tool:</p>
-  <ul>
-    <li><strong>"Which rows group together?"</strong> &rarr; <em>clustering</em> (we use k-means).</li>
-    <li><strong>"Which rows are abnormal?"</strong> &rarr; <em>anomaly detection</em>.</li>
-    <li><strong>"Can I describe each row with fewer numbers?"</strong> &rarr; <em>dimensionality reduction</em> (we use PCA), which leads to the idea of <em>embeddings</em>.</li>
-  </ul>
-
-  <h4>Clustering: the assign-then-update dance</h4>
-  <p>Imagine a scatter of points on a table and you want to split them into, say, 3 groups. K-means does something almost embarrassingly simple, and it works. It keeps 3 "team flags" (called <strong>centroids</strong>) and repeats two steps until nothing moves:</p>
-  <ol>
-    <li><strong>Assign.</strong> Every point joins the nearest flag's team. (Closest centroid wins.)</li>
-    <li><strong>Update.</strong> Each flag walks to the centre — the average position — of its current team.</li>
-  </ol>
-  <p>Then you re-assign (some points are now closer to a different, moved flag), re-average, and so on. Each round, points and flags settle a little more, until a round changes nothing. That's convergence.</p>
-
-  <div class="callout analogy"><p><strong>The party analogy.</strong> Three friends — Ana, Ben, Cleo — host a party and stand in different corners of a big room. Every guest walks to the <em>nearest</em> host (assign step). Now each host looks at their little crowd and shuffles to stand right in the middle of it (update step). Because a host moved, a few guests near the boundary realise another host is now closer, and they switch crowds. The hosts re-centre again. After a few rounds, everyone has settled into three stable clusters and nobody wants to move. The hosts' final positions are the centroids; the crowds are the clusters. K-means is exactly this dance, done with arithmetic instead of feet.</p></div>
-
-  <svg class="diagram" viewBox="0 0 460 180" width="100%" role="img" aria-label="Three clusters of points with a star centroid in each">
-    <text x="230" y="16" text-anchor="middle" fill="currentColor" font-size="12">Three clusters, one centroid (star) each</text>
-    <g fill="#6366f1"><circle cx="70" cy="120" r="4"/><circle cx="55" cy="100" r="4"/><circle cx="90" cy="110" r="4"/><circle cx="75" cy="95" r="4"/><circle cx="60" cy="130" r="4"/></g>
-    <path d="M72 96 l3 8 8 0 -6 5 2 8 -7 -5 -7 5 2 -8 -6 -5 8 0 z" fill="#f59e0b"/>
-    <g fill="#10b981"><circle cx="230" cy="55" r="4"/><circle cx="215" cy="45" r="4"/><circle cx="248" cy="60" r="4"/><circle cx="235" cy="40" r="4"/><circle cx="220" cy="65" r="4"/></g>
-    <path d="M230 40 l3 8 8 0 -6 5 2 8 -7 -5 -7 5 2 -8 -6 -5 8 0 z" fill="#f59e0b"/>
-    <g fill="#ef4444"><circle cx="380" cy="125" r="4"/><circle cx="395" cy="110" r="4"/><circle cx="365" cy="115" r="4"/><circle cx="400" cy="130" r="4"/><circle cx="378" cy="105" r="4"/></g>
-    <path d="M382 108 l3 8 8 0 -6 5 2 8 -7 -5 -7 5 2 -8 -6 -5 8 0 z" fill="#f59e0b"/>
-  </svg>
-  <p class="caption">Each colour is a cluster; the orange star is its centroid — the average location of its members.</p>
-
-  <p><strong>Play with it:</strong> press <em>Step</em> to watch one phase at a time — first points recolour to their nearest centroid (✕), then each centroid glides to the mean of its members. <em>Run</em> repeats until a round changes nothing (convergence). Try different <em>k</em>, and hit <em>Reset / new centroids</em> a few times to see how the starting positions can lead to better or worse clusterings.</p>
-  <div class="mlviz" data-widget="kmeans"></div>
-
-  <h4>Anomaly detection: learn "normal", flag the rest</h4>
-  <p>Sometimes you don't want groups — you want the one weird row. Anomaly detection builds a picture of what "normal" looks like (most of your data) and then flags points that don't fit. The crucial reason this is often unsupervised: with fraud, machine faults, or network intrusions, you have mountains of normal examples and almost no examples of the rare bad thing — and tomorrow's fraud won't look like yesterday's. A supervised classifier (Module 5) needs many labelled examples of <em>both</em> classes; anomaly detection only needs to know what normal looks like, so it can catch <em>new</em> kinds of weirdness it has never seen.</p>
-
-  <h4>Dimensionality reduction: fewer numbers, same story</h4>
-  <p>A dataset with 50 columns lives in 50 dimensions — impossible to picture and slow to compute on. But the columns are usually redundant: height in centimetres and height in inches carry the <em>same</em> information twice. PCA asks: along which direction do the points spread out the most? That direction (the first <strong>principal component</strong>) captures the most "story". The next direction, at right angles, captures the most of what's left, and so on. Keep the first two or three and you can often plot 50-dimensional data on a flat page while losing very little.</p>
-
-  <h3>Making it precise</h3>
-  <h4>K-means, exactly</h4>
-  <p>You have \( n \) data points \( x_1, x_2, \dots, x_n \) (each \( x_i \) is a point, possibly with several coordinates). You pick \( k \), the number of clusters. K-means keeps \( k \) centroids \( \mu_1, \dots, \mu_k \) (the symbol \( \mu \), "mu", is just a name for a centroid — itself a point in the same space). It also gives every point a label \( c_i \in \{1, \dots, k\} \) saying which cluster point \( i \) belongs to.</p>
-
-  <p><strong>Assign step.</strong> Each point goes to the nearest centroid:</p>
-  \[ c_i = \arg\min_{j \in \{1,\dots,k\}} \; \lVert x_i - \mu_j \rVert^2 \]
-  <p>In words: for point \( i \), try every centroid \( \mu_j \), measure how far the point is from it, and keep the index \( j \) of the closest one. The notation \( \lVert x_i - \mu_j \rVert^2 \) is the <strong>squared distance</strong> between the point and the centroid — subtract coordinate by coordinate, square, and add up. The \( \arg\min \) means "the argument (here, the cluster index \( j \)) that makes this smallest".</p>
-
-  <p><strong>Update step.</strong> Each centroid moves to the mean of its assigned points:</p>
-  \[ \mu_j = \frac{1}{|S_j|} \sum_{i \in S_j} x_i \]
-  <p>where \( S_j \) is the set of points currently labelled \( j \), and \( |S_j| \) is how many points are in it. So you add up all the points in cluster \( j \) and divide by the count — the ordinary average, done separately for each coordinate.</p>
-
-  <p>K-means is secretly minimising one quantity, the <strong>within-cluster sum of squares</strong>, also called <strong>inertia</strong>:</p>
-  \[ J = \sum_{i=1}^{n} \lVert x_i - \mu_{c_i} \rVert^2 \]
-  <p>This reads: for every point, take the squared distance to <em>its own</em> centroid \( \mu_{c_i} \), and sum over all points. Lower \( J \) means tighter, more compact clusters. The assign step lowers \( J \) (each point picks its closest centroid); the update step lowers \( J \) too (the mean is the single point that minimises summed squared distance). Because both steps only ever decrease \( J \), the algorithm is guaranteed to stop — though possibly at a not-quite-best arrangement, which is why initialization matters.</p>
-
-  <h4>Choosing k with the elbow</h4>
-  <p>If you increase \( k \), inertia \( J \) always drops (more centroids can hug points more tightly; with \( k = n \), every point is its own centroid and \( J = 0 \)). So you can't just minimise \( J \). Instead you plot \( J \) against \( k \) and look for the <strong>elbow</strong> — the value of \( k \) after which adding more clusters barely helps. Before the elbow, each new cluster buys a big drop in \( J \); after it, you're just splitting already-tight groups.</p>
-
-  <h4>PCA, gently</h4>
-  <p>PCA finds the direction \( v \) (a unit-length arrow) along which the data, once centred, has the largest <strong>variance</strong> — variance being the average squared spread (you saw it in Module 1). Project every point onto \( v \) and you get one number per point; PCA chooses \( v \) so those numbers are as spread out as possible, because spread = information. The first principal component is that best direction; the second is the best direction <em>perpendicular</em> to the first; and so on. Scikit-learn reports <code>explained_variance_ratio_</code>: the fraction of the total variance each component captures. If the first two ratios add to 0.95, two numbers preserve 95% of the spread of the whole dataset. We won't grind through the linear algebra (eigenvectors of the covariance matrix) — the intuition "find the directions of maximum variance" is what you need, and you'll see the algebra properly if you take Module 1's resources further.</p>
-
-  <svg class="diagram" viewBox="0 0 460 200" width="100%" role="img" aria-label="A tilted oval cloud of points with its long principal axis drawn through it">
-    <text x="230" y="16" text-anchor="middle" fill="currentColor" font-size="12">PCA: the first component points along the widest spread</text>
-    <g fill="#6366f1" opacity="0.85">
-      <circle cx="120" cy="150" r="3"/><circle cx="150" cy="142" r="3"/><circle cx="170" cy="130" r="3"/>
-      <circle cx="195" cy="125" r="3"/><circle cx="210" cy="115" r="3"/><circle cx="235" cy="108" r="3"/>
-      <circle cx="255" cy="98" r="3"/><circle cx="280" cy="90" r="3"/><circle cx="300" cy="78" r="3"/>
-      <circle cx="325" cy="70" r="3"/><circle cx="160" cy="120" r="3"/><circle cx="220" cy="100" r="3"/>
-      <circle cx="265" cy="115" r="3"/><circle cx="290" cy="100" r="3"/><circle cx="200" cy="138" r="3"/>
-    </g>
-    <line x1="110" y1="160" x2="340" y2="60" stroke="#10b981" stroke-width="2.5"/>
-    <text x="345" y="58" fill="#10b981" font-size="11">PC1</text>
-    <line x1="205" y1="80" x2="245" y2="140" stroke="#ef4444" stroke-width="2"/>
-    <text x="250" y="150" fill="#ef4444" font-size="11">PC2</text>
-  </svg>
-  <p class="caption">PC1 (green) runs along the direction the cloud is widest; PC2 (red) is perpendicular and captures the leftover spread.</p>
-
-  <div class="callout worked"><h3>Worked example — by hand</h3>
-  <p>Let's run <strong>one full k-means iteration</strong> on six points along a line (1D, so a point is just a number). The points are:</p>
-  \[ 1,\quad 2,\quad 4,\quad 7,\quad 8,\quad 12 \]
-  <p>We pick \( k = 2 \) and start with centroids \( \mu_1 = 2 \) and \( \mu_2 = 8 \). In 1D the distance is just the absolute difference \( |x - \mu| \).</p>
-
-  <p><strong>Step 1 — Assign.</strong> For each point, compare its distance to each centroid and pick the smaller:</p>
-  <ul>
-    <li>Point 1: to \( \mu_1 \) is \( |1-2| = 1 \); to \( \mu_2 \) is \( |1-8| = 7 \). Nearer 2 &rarr; cluster 1.</li>
-    <li>Point 2: \( |2-2| = 0 \) vs \( |2-8| = 6 \). &rarr; cluster 1.</li>
-    <li>Point 4: \( |4-2| = 2 \) vs \( |4-8| = 4 \). &rarr; cluster 1.</li>
-    <li>Point 7: \( |7-2| = 5 \) vs \( |7-8| = 1 \). &rarr; cluster 2.</li>
-    <li>Point 8: \( |8-2| = 6 \) vs \( |8-8| = 0 \). &rarr; cluster 2.</li>
-    <li>Point 12: \( |12-2| = 10 \) vs \( |12-8| = 4 \). &rarr; cluster 2.</li>
-  </ul>
-  <p>So cluster 1 = {1, 2, 4} and cluster 2 = {7, 8, 12}.</p>
-
-  <p><strong>Step 2 — Update.</strong> Move each centroid to the mean of its members:</p>
-  \[ \mu_1 = \frac{1 + 2 + 4}{3} = \frac{7}{3} \approx 2.33, \qquad \mu_2 = \frac{7 + 8 + 12}{3} = \frac{27}{3} = 9 \]
-  <p>The new centroids are \( \mu_1 \approx 2.33 \) and \( \mu_2 = 9 \). That's one complete iteration.</p>
-
-  <p><strong>What happens next?</strong> Re-assign with the new centroids: every point's nearest centroid is unchanged (1, 2, 4 are still nearer 2.33; 7, 8, 12 still nearer 9), so the means won't move either. Nothing changes — the algorithm has <em>converged</em> after a single update. Let's also note the inertia at the end: \( (1-2.33)^2 + (2-2.33)^2 + (4-2.33)^2 + (7-9)^2 + (8-9)^2 + (12-9)^2 \approx 1.77 + 0.11 + 2.79 + 4 + 1 + 9 = 18.67 \). Smaller centroid moves in future rounds would only lower this further — but here we're already at the minimum for this assignment.</p>
+  <div class="predict" data-correct="b">
+    <p class="q">You have unlabeled customer data and want to "find the natural groups." A teammate says "let's just train a classifier." What's wrong with that?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Nothing — a classifier finds groups, that's its job.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> A classifier needs labeled examples of each group to learn from. You don't have labels — that's the whole problem. There's nothing to train against.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> Classifiers are too slow; you should use a neural network instead.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>A classifier is supervised — it learns a mapping from inputs to <em>known answers</em>. No answers, no classifier. When the answer column is missing, you need a method that invents the structure itself. That's unsupervised learning, and clustering is its flagship move.</p>
+    </div>
   </div>
 
-  <h3>In code: from scratch</h3>
-  <p>Here is k-means in plain NumPy: random initialization, the assign step (distances then <code>argmin</code>), the update step (mean of each cluster), repeated until the centroids stop moving. We test it on three clearly separated blobs.</p>
+  <p>Three questions show up over and over when you have unlabeled data, and each has a classic tool. Keep these straight — they're the map for the whole module:</p>
+  <div class="math-card">
+    <p class="legend" style="margin:.2rem 0"><b>which rows group together?</b> &rarr; clustering (we use <strong>k-means</strong>). &nbsp; <b>which rows are abnormal?</b> &rarr; anomaly detection. &nbsp; <b>can I describe each row with fewer numbers?</b> &rarr; dimensionality reduction (we use <strong>PCA</strong>) &rarr; embeddings.</p>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · The trick is dumber than you think</div>
+  <h3>K-means is two steps, on repeat, forever.</h3>
+  <p>Here's the whole algorithm before any math. Drop <em>k</em> flags on the table at random — call them <strong>centroids</strong>. Then loop two steps until nothing moves:</p>
+  <p style="margin:.3rem 0"><strong>1. Assign.</strong> Every point joins the nearest flag's team. Closest centroid wins.</p>
+  <p style="margin:.3rem 0 1rem"><strong>2. Update.</strong> Each flag walks to the center — the average position — of its current team.</p>
+  <p>That's it. After the flags move, some points near a boundary suddenly have a <em>different</em> nearest flag, so they switch teams. Re-average. Re-assign. Each round everything settles a bit more, until a round changes nothing. That last part has a name: <strong>convergence</strong>.</p>
+
+  <p>The party version, because it makes the loop physical: three friends — Ana, Ben, Cleo — stand in random corners of a room. Every guest walks to the <em>nearest</em> host (assign). Each host then shuffles to the middle of their little crowd (update). A host moving means a few guests near the edge realize someone else is now closer, so they switch crowds. Hosts re-center. After a few rounds nobody wants to move. Final host positions are the centroids; the crowds are the clusters. K-means is this dance done with arithmetic instead of feet.</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">A centroid currently sits to the LEFT of its team's true middle. You run one <strong>update</strong> step. Where does it move?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> It stays put — update only moves the points, not the centroid.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> It moves a little further left, drifting away from the crowd.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> It jumps right, to the average position of its assigned points — the exact center of its current team.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>Update sets each centroid to the mean of its members — full stop. If it's sitting left of the crowd, the mean is to its right, so it hops right. It doesn't take a cautious half-step; it teleports straight to the average. (No learning rate here — unlike Module 4's gradient descent, k-means moves all the way each time.) You're about to watch this exact move in the lab.</p>
+    </div>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · The lab</div>
+  <h3>Run the dance yourself. Then break it on purpose.</h3>
+  <p>Now do it, don't watch it. <em>Step</em> runs one phase at a time — first points recolor to their nearest centroid (✕), then each centroid glides to the mean of its members. <em>Run</em> loops until a round changes nothing. <em>Reset / new centroids</em> reseeds the starting flags. Don't just poke at it — finish the three missions. Each one teaches a different way k-means can surprise you.</p>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> K-means, with missions</div>
+    <p class="aside" style="margin-top:0">Predict each outcome <em>before</em> you click. The gap between your guess and what happens is the part that sticks.</p>
+    <div class="mlviz" data-widget="kmeans"></div>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Count the iterations to convergence <small>Set the right k, then hit Step (assign &rarr; update) over and over until a round changes nothing. How many full rounds did it take? On clean blobs it's usually fewer than you'd guess — often under 10.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Set k WRONG and watch it shred a real cluster <small>Pick a k bigger than the true number of groups. Run to convergence. Notice how k-means happily slices one genuine blob in half — it will <em>always</em> return exactly k clusters, real or not.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Reseed until you get a BAD answer <small>Keep the right k, but hit Reset / new centroids and run, several times. Eventually two flags start inside the same blob and converge to a lopsided, wrong split. That's initialization sensitivity, live.</small></span></li>
+    </ul>
+    <details class="spoiler">
+      <summary>What you should have seen</summary>
+      <div class="body"><p style="margin-top:.6rem">Mission 1: convergence is fast and obvious — the centroids stop twitching and the colors freeze. Mission 2: too-big k carves a clean blob into pieces because the algorithm has no concept of "this group is already done"; it just minimizes distance with the budget of centroids you gave it. Mission 3: most reseeds find the good answer, but some don't — the same algorithm on the same data lands in a worse arrangement purely because of where the flags started. That's not a bug. It's why real k-means restarts several times and keeps the best run.</p></div>
+    </details>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · Earn the notation</div>
+  <h3>You already invented it. Here's the math.</h3>
+  <p>You have \( n \) data points \( x_1, x_2, \dots, x_n \) (each \( x_i \) is a point, maybe with several coordinates). You pick \( k \), the number of clusters. K-means keeps \( k \) centroids \( \mu_1, \dots, \mu_k \) (the symbol \( \mu \), "mu", is just a name for a centroid — a point in the same space). Every data point gets a label \( c_i \) saying which cluster it's in. Your two-step dance becomes two formulas.</p>
+
+  <div class="math-card">
+    <div class="eq">\[ c_i = \arg\min_{j \in \{1,\dots,k\}} \; \lVert x_i - \mu_j \rVert^2 \]</div>
+    <p class="legend"><b>assign step.</b> For point \( i \), try every centroid \( \mu_j \), measure how far the point is, keep the index \( j \) of the closest. <b>‖x − μ‖²</b> is the <strong>squared distance</strong>: subtract coordinate by coordinate, square, add up. <b>arg min</b> means "the argument \( j \) that makes this smallest."</p>
+  </div>
+
+  <div class="math-card">
+    <div class="eq">\[ \mu_j = \frac{1}{|S_j|} \sum_{i \in S_j} x_i \]</div>
+    <p class="legend"><b>update step.</b> Each centroid becomes the mean of its members. <b>S_j</b> is the set of points currently labeled \( j \). <b>|S_j|</b> is how many there are. Add up the points in cluster \( j \), divide by the count — the ordinary average, per coordinate.</p>
+  </div>
+
+  <p>And here's the quantity k-means is secretly minimizing the whole time — the <strong>within-cluster sum of squares</strong>, also called <strong>inertia</strong>:</p>
+  <div class="math-card">
+    <div class="eq">\[ J = \sum_{i=1}^{n} \lVert x_i - \mu_{c_i} \rVert^2 \]</div>
+    <p class="legend"><b>inertia J.</b> For every point, take the squared distance to <em>its own</em> centroid \( \mu_{c_i} \), and sum over all points. Lower \( J \) means tighter, more compact clusters.</p>
+  </div>
+  <p class="aside">Here's the elegant bit: the assign step lowers \( J \) (each point picks its closest centroid), and the update step lowers \( J \) too (the mean is the single point that minimizes summed squared distance to a group). Both steps only ever <em>decrease</em> \( J \), so the algorithm is guaranteed to stop — though possibly at a not-quite-best arrangement. That's exactly the bad answer you reseeded into in Mission 3.</p>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · Do it by hand</div>
+  <h3>One full iteration, just you and arithmetic.</h3>
+  <p>Six points on a line (1D, so each point is just a number): <strong>1, 2, 4, 7, 8, 12</strong>. We pick \( k = 2 \) and start with centroids \( \mu_1 = 2 \) and \( \mu_2 = 8 \). In 1D the distance is just \( |x - \mu| \). Before you read the worked solution, do the assign step yourself — for each point, which centroid is closer?</p>
+
+  <div class="predict" data-correct="a">
+    <p class="q">After assigning all six points to the nearer of \( \mu_1 = 2 \) and \( \mu_2 = 8 \), which split do you get?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Cluster 1 = {1, 2, 4}, &nbsp; Cluster 2 = {7, 8, 12}</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> Cluster 1 = {1, 2}, &nbsp; Cluster 2 = {4, 7, 8, 12}</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> Cluster 1 = {1, 2, 4, 7}, &nbsp; Cluster 2 = {8, 12}</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — recheck point 4 and point 7:"></div>
+      <p>Point 4 is distance 2 from \( \mu_1=2 \) but distance 4 from \( \mu_2=8 \) &rarr; cluster 1. Point 7 is distance 5 from \( \mu_1 \) but only 1 from \( \mu_2 \) &rarr; cluster 2. So {1, 2, 4} and {7, 8, 12}.</p>
+    </div>
+  </div>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">BY HAND</span> the full iteration</div>
+    <p style="margin-top:0"><strong>Step 1 — Assign.</strong> For each point, compare distance to each centroid and pick the smaller:</p>
+    <ul>
+      <li>Point 1: \( |1-2| = 1 \) vs \( |1-8| = 7 \). Nearer 2 &rarr; cluster 1.</li>
+      <li>Point 2: \( |2-2| = 0 \) vs \( |2-8| = 6 \) &rarr; cluster 1.</li>
+      <li>Point 4: \( |4-2| = 2 \) vs \( |4-8| = 4 \) &rarr; cluster 1.</li>
+      <li>Point 7: \( |7-2| = 5 \) vs \( |7-8| = 1 \) &rarr; cluster 2.</li>
+      <li>Point 8: \( |8-2| = 6 \) vs \( |8-8| = 0 \) &rarr; cluster 2.</li>
+      <li>Point 12: \( |12-2| = 10 \) vs \( |12-8| = 4 \) &rarr; cluster 2.</li>
+    </ul>
+    <p>So cluster 1 = {1, 2, 4} and cluster 2 = {7, 8, 12}.</p>
+    <p><strong>Step 2 — Update.</strong> Move each centroid to the mean of its members:</p>
+    <div class="math-card"><div class="eq">\[ \mu_1 = \frac{1 + 2 + 4}{3} = \frac{7}{3} \approx 2.33, \qquad \mu_2 = \frac{7 + 8 + 12}{3} = \frac{27}{3} = 9 \]</div></div>
+    <p>New centroids: \( \mu_1 \approx 2.33 \) and \( \mu_2 = 9 \). That's one complete iteration.</p>
+    <p><strong>What happens on round two?</strong> Re-assign with the new centroids: 1, 2, 4 are still nearest 2.33; 7, 8, 12 are still nearest 9. No point switches, so the means don't move. <em>Converged after a single update.</em> The final inertia: \( (1-2.33)^2 + (2-2.33)^2 + (4-2.33)^2 + (7-9)^2 + (8-9)^2 + (12-9)^2 \approx 1.78 + 0.11 + 2.78 + 4 + 1 + 9 = 18.67 \).</p>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · Find the bug</div>
+  <h3>This from-scratch k-means looks right. One line is wrong.</h3>
+  <p>Below is k-means in plain NumPy. It runs without errors — but the clusters come out nonsensical and the reported inertia is garbage. The update logic is correct, the stop logic is correct. Read it, find the broken line <strong>before</strong> you open the spoiler.</p>
+  <codeblock>import numpy as np
+
+def kmeans(X, k, n_iters=100, seed=0):
+    rng = np.random.default_rng(seed)
+    # 1) Initialize: pick k distinct data points as starting centroids.
+    centroids = X[rng.choice(len(X), size=k, replace=False)]
+
+    for _ in range(n_iters):
+        # 2) ASSIGN: distance from every point to every centroid.
+        dists = np.linalg.norm(X[:, None, :] - centroids[None, :, :], axis=2)
+        labels = dists.argmax(axis=1)            # <-- something is wrong on this line
+
+        # 3) UPDATE: each centroid becomes the mean of its assigned points.
+        new_centroids = np.array([
+            X[labels == j].mean(axis=0) if np.any(labels == j) else centroids[j]
+            for j in range(k)
+        ])
+
+        # 4) STOP if nothing moved (converged).
+        if np.allclose(new_centroids, centroids):
+            break
+        centroids = new_centroids
+
+    inertia = ((X - centroids[labels]) ** 2).sum()  # within-cluster sum of squares
+    return labels, centroids, inertia</codeblock>
+  <details class="spoiler">
+    <summary>Show the bug &amp; why</summary>
+    <div class="body"><p style="margin-top:.6rem"><code>labels = dists.argmax(axis=1)</code> assigns every point to its <em>farthest</em> centroid. The assign step is supposed to pick the <strong>nearest</strong> one, so it must be <code>argmin</code>, not <code>argmax</code>:</p>
+    <p><code>labels = dists.argmin(axis=1)</code></p>
+    <p>One letter. With <code>argmax</code>, points flee to the opposite side of the room every round, the centroids chase phantom crowds, and inertia (which still measures distance to your <em>own</em> centroid) stays huge. This is the unsupervised cousin of Module 4's flipped sign — a tiny direction error that quietly breaks the whole loop while the code runs perfectly happily.</p></div>
+  </details>
+
+  <p style="margin-top:1.4rem">Here's the corrected version, with the broadcasting trick spelled out. Predict the output first: three blobs centered at (0,0), (4,5), (5,0) — what should the recovered centroids and inertia look like?</p>
   <codeblock>import numpy as np
 
 def kmeans(X, k, n_iters=100, seed=0):
@@ -160,12 +201,12 @@ X = np.vstack([
 labels, centroids, inertia = kmeans(X, k=3, seed=1)
 print("centroids:\n", np.round(centroids, 2))
 print("inertia:", round(inertia, 1))
-print("cluster sizes:", np.bincount(labels))
-</codeblock>
-  <p>Running this prints centroids very close to the three true centres — <code>[[-0.02 -0.04], [4.01 4.98], [4.98 -0.06]]</code> — an <code>inertia</code> of about <strong>93.0</strong>, and <code>cluster sizes: [50 50 50]</code>: a perfect recovery of the three groups. Try changing <code>seed=1</code> to <code>seed=0</code> and you'll get a worse <code>inertia</code> of roughly 707 with sizes like <code>[24 26 100]</code> — two starting centroids landed in the same blob and never recovered. That single change is the whole "initialization matters" pitfall, live.</p>
+print("cluster sizes:", np.bincount(labels))</codeblock>
+  <p>This prints centroids hugging the three true centers — <code>[[-0.02 -0.04], [4.01 4.98], [4.98 -0.06]]</code> — an <code>inertia</code> of about <strong>93.0</strong>, and <code>cluster sizes: [50 50 50]</code>: a perfect recovery. Now change <code>seed=1</code> to <code>seed=0</code> and you get a <em>worse</em> <code>inertia</code> of roughly <strong>707</strong> with sizes like <code>[24 26 100]</code> — two starting centroids landed in the same blob and never escaped. That one-character change is the "initialization matters" pitfall from Mission 3, live in code.</p>
 
-  <h3>In code: the library way</h3>
-  <p>scikit-learn gives you the same algorithm — but smarter (it uses <strong>k-means++</strong> initialization and restarts several times to dodge bad starts), tested, and fast. It also exposes <code>inertia_</code> so you can run an elbow plot, and <code>PCA</code> for dimensionality reduction. Remember to standardize before PCA (and usually before k-means too).</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · The library way + choosing k</div>
+  <h3>scikit-learn does the same thing, but smarter.</h3>
+  <p>scikit-learn runs the same algorithm — but with <strong>k-means++</strong> initialization and several restarts to dodge bad starts (so you stop losing to the seed lottery), tested and fast. It exposes <code>inertia_</code> so you can build an elbow plot, and ships <code>PCA</code> for dimensionality reduction. Standardize before PCA, and usually before k-means too. Predict the elbow output before you read on: the data is genuinely 3 blobs — at which k should inertia stop dropping sharply?</p>
   <codeblock>import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -192,69 +233,103 @@ for k in range(1, 7):
 # --- PCA (standardize first!) ---
 Xs = StandardScaler().fit_transform(X)
 pca = PCA(n_components=2).fit(Xs)
-print("explained_variance_ratio_:", np.round(pca.explained_variance_ratio_, 3))
-</codeblock>
-  <p>The k-means part reports the same <code>inertia_</code> of about 93.0 we got from scratch — reassuring. The elbow loop prints inertias of roughly <code>1641, 720, 93, 80, 69, 59</code> for k = 1 to 6: a huge drop down to k = 3 and then a near-flat tail — a textbook elbow at <strong>k = 3</strong>, exactly the number of blobs we built. The PCA part prints <code>explained_variance_ratio_: [0.657 0.343]</code>, meaning the first principal component already captures about 66% of the spread and the two together capture 100% (this data is genuinely 2D, so nothing is lost).</p>
+print("explained_variance_ratio_:", np.round(pca.explained_variance_ratio_, 3))</codeblock>
+  <p>The k-means part reports the same <code>inertia_</code> of about <strong>93.0</strong> we got from scratch — reassuring. The elbow loop prints inertias of roughly <code>1641, 720, 93, 80, 69, 59</code> for k = 1 to 6: a huge drop down to k = 3, then a near-flat tail. That sudden bend is the <strong>elbow</strong> — the textbook signal that <strong>k = 3</strong>, exactly the number of blobs we built. The PCA part prints <code>explained_variance_ratio_: [0.657 0.343]</code>: the first principal component captures about 66% of the spread, and the two together capture 100% (this data is genuinely 2D, so nothing is lost).</p>
 
-  <h3>Embeddings: a peek ahead</h3>
-  <p>PCA hands you a few numbers per row by finding directions of maximum variance — a <em>hand-computed</em> low-dimensional representation. An <strong>embedding</strong> is the same idea taken further: a low-dimensional vector that a model <em>learns</em> so that "similar things sit close together". A word embedding might place <em>king</em>, <em>queen</em>, and <em>monarch</em> near each other in, say, 300 numbers; a song embedding places similar songs nearby; a face embedding places photos of the same person nearby. The streaming service from our hook stores each listener as a short embedding, then clusters those — clustering on embeddings is a standard combo. The difference from PCA is that embeddings are learned from a task (predict the next word, tell faces apart) rather than computed from variance, so they capture meaning, not just spread. You'll build real learned embeddings in <strong>Module 13 — Sequences, NLP, and the Road to Attention</strong> and see them power <strong>Module 14 — Transformers and LLMs</strong>.</p>
+  <div class="math-card">
+    <p class="legend" style="margin:.2rem 0"><b>why the elbow, not the minimum?</b> Inertia <em>always</em> falls as k rises — with k equal to the number of points, every point is its own centroid and \( J = 0 \). So "pick the k with lowest inertia" is a trap that screams "use one cluster per row." Plot \( J \) vs \( k \) and find the bend: before it, each new cluster buys a big drop; after it, you're just splitting already-tight groups for nothing.</p>
+  </div>
 
-  <div class="callout companion"><h3>Work this with your Claude Code companion</h3><p>Paste these to your Claude Code companion as you study:</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · The other two questions</div>
+  <h3>Anomalies and PCA, in plain words.</h3>
+  <p><strong>Anomaly detection — learn "normal," flag the rest.</strong> Sometimes you don't want groups, you want the one weird row. The method: build a picture of what "normal" looks like from your mountain of ordinary data, then flag whatever doesn't fit. Why unsupervised? With fraud, machine faults, or network intrusions you have tons of normal examples and almost no examples of the rare bad thing — and tomorrow's fraud won't look like yesterday's. A supervised classifier (Module 5) needs many labeled examples of <em>both</em> classes. Anomaly detection only needs to know what normal looks like, so it can catch <em>new</em> kinds of weird it has never seen.</p>
+
+  <p><strong>PCA — fewer numbers, same story.</strong> A dataset with 50 columns lives in 50 dimensions: impossible to picture, slow to compute on, and usually redundant (height in cm and height in inches carry the same information twice). PCA asks: along which direction do the points spread out the most? That direction — the first <strong>principal component</strong> — captures the most "story." Project every point onto it and you get one number per point, chosen so those numbers are as spread out as possible, because spread = information. The second component is the best direction <em>perpendicular</em> to the first, and so on. Keep the first two or three and you can plot 50-dimensional data on a flat page while losing very little.</p>
+  <p class="aside">scikit-learn reports <code>explained_variance_ratio_</code>: the fraction of total variance each component captures. If the first two ratios add to 0.95, two numbers preserve 95% of the spread of the whole dataset. The intuition — "find the directions of maximum variance" — is all you need; the underlying machinery (eigenvectors of the covariance matrix) is a Module 1 deep-dive.</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">You run PCA on raw data where one column is salary (range 0–200,000) and another is age (range 0–100), <strong>without standardizing</strong>. What dominates the first principal component?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Age, because people care about age more.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> Salary, purely because its raw numbers are thousands of times bigger — so it has thousands of times more variance just from its units.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> They contribute equally; PCA balances columns automatically.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>PCA chases variance, and variance is measured in the raw units. A column ranging over 200,000 swamps one ranging over 100 for no real reason — it's an artifact of scale, not meaning. Standardize first (subtract the mean, divide by the standard deviation, as in Module 7) so each feature gets a fair say. Same scaling trap bites k-means too, since it judges everything by distance.</p>
+    </div>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">09</span> · Where this goes next</div>
+  <h3>From PCA to embeddings — the bridge to the rest of the course.</h3>
+  <p>PCA hands you a few numbers per row by finding directions of maximum variance — a <em>computed</em> low-dimensional representation. An <strong>embedding</strong> is the same idea taken further: a low-dimensional vector that a model <em>learns</em> so that "similar things sit close together." A word embedding might place <em>king</em>, <em>queen</em>, and <em>monarch</em> near each other in, say, 300 numbers; a song embedding places similar songs nearby; a face embedding places photos of the same person nearby. A streaming service stores each listener as a short embedding, then clusters those — clustering on embeddings is a standard combo. The difference from PCA: embeddings are learned from a task (predict the next word, tell faces apart), so they capture <em>meaning</em>, not just spread.</p>
+
+  <div class="callback"><b>Lock this in.</b> The "similar things sit close together in a low-dimensional space" idea you just met in PCA is the seed of <b>embeddings</b>, which you'll build for real in <b>Module 13 (Sequences, NLP, and the Road to Attention)</b> and see power <b>Module 14 (Transformers and LLMs)</b>. And the k-means trap "feature scale distorts distance" is the exact fairness issue from <b>Module 7</b> — standardize, every time.</div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">10</span> · The traps that actually bite</div>
+  <h3>Read these once now; you'll hit every one.</h3>
+  <p>None of these are exotic. They are the mistakes everyone makes on their first real clustering job.</p>
   <ul>
-    <li>"Explain the k-means assign-then-update loop to me with a brand-new analogy that isn't about a party, then quiz me on which step lowers inertia."</li>
-    <li>"Run my from-scratch k-means with seeds 0 through 5 and make a table of the final inertia for each — show me how often a bad initialization happens, and explain how k-means++ fixes it."</li>
-    <li>"Generate a 2D dataset of two long, thin, diagonal clusters and show me where plain k-means fails on it — then suggest what to do instead."</li>
-    <li>"Pair with me to add an elbow plot to the library code using matplotlib, and help me read where the elbow is."</li>
-  </ul></div>
+    <li><strong>"K-means works on any cluster shape."</strong> It assumes <em>round, roughly equal-sized</em> blobs, because it judges everything by distance to a single center. It mangles long thin shapes, rings, and clusters of very different sizes. For those, reach for DBSCAN or Gaussian mixtures.</li>
+    <li><strong>Forgetting to scale.</strong> Raw distance means a feature in the thousands (salary) drowns one in the tens (age). Standardize first unless features already share units.</li>
+    <li><strong>Trusting a single run.</strong> Random init can land two centroids in one blob (you saw <code>seed=0</code> do exactly this — inertia 707 vs 93). Always use <code>n_init</code> &gt; 1 and keep the lowest-inertia result.</li>
+    <li><strong>Picking k by minimum inertia.</strong> Inertia hits zero when k equals the number of points, so "lowest inertia" says "one cluster per row." Use the elbow, a silhouette score, and domain knowledge.</li>
+    <li><strong>Treating PCA components as features.</strong> A component is a blend of <em>all</em> your columns (e.g. "0.3 × height + 0.5 × weight − 0.2 × age"). It maximizes variance, not interpretability — don't expect "PC1 = income."</li>
+    <li><strong>Confusing clusters with truth.</strong> K-means <em>always</em> returns k clusters, even on data with none. The groups are a hypothesis to investigate, not a fact.</li>
+  </ul>
 
-  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
-  <ul>
-    <li><strong>"K-means works on any cluster shape."</strong> It assumes <em>round, roughly equal-sized</em> blobs, because it judges everything by distance to a single centre. It mangles long thin shapes, rings, or clusters of very different sizes. For those, look at DBSCAN or Gaussian mixtures.</li>
-    <li><strong>Forgetting to scale.</strong> K-means uses raw distance, so a feature measured in the thousands (salary) drowns out one measured in tens (age) — the same fairness problem from Module 7. Standardize features first unless they already share units.</li>
-    <li><strong>Trusting a single run.</strong> Random initialization can land two centroids in one blob and converge to a bad answer (you saw <code>seed=0</code> do exactly this). Always use <code>n_init</code> &gt; 1 (scikit-learn's default uses k-means++ and several restarts) and keep the lowest-inertia result.</li>
-    <li><strong>Picking k by minimum inertia.</strong> Inertia <em>always</em> falls as k rises and hits zero when k equals the number of points — so "lowest inertia" wrongly says "use as many clusters as you have rows". Use the elbow, or a silhouette score, and your domain knowledge.</li>
-    <li><strong>Treating PCA components as meaningful features.</strong> A principal component is a blend of <em>all</em> your original columns (e.g. "0.3 × height + 0.5 × weight − 0.2 × age"). It maximises variance, not interpretability, so don't expect "PC1 = income". It's great for visualization and speed, not for explaining to a stakeholder.</li>
-    <li><strong>Running PCA on unstandardized data.</strong> PCA chases variance, so a column with large raw numbers dominates the components purely because of its units. Standardize before PCA so each feature gets a fair say.</li>
-    <li><strong>Confusing clusters with truth.</strong> K-means will <em>always</em> return k clusters, even if the data has none. The groups are a hypothesis to investigate, not a fact.</li>
-  </ul></div>
+  <div class="beat-tag"><span class="dot"></span><span class="n">11</span> · Cold recall — no scrolling back</div>
+  <h3>Pull it out of your own head.</h3>
+  <p>Re-reading feels like learning but mostly isn't. Retrieving is. Answer each one in your head first, <strong>then</strong> flip. Can't? That's your signal to scroll up — but try first.</p>
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What are the two repeating steps of k-means, and which quantity does each lower?</div><div class="hint">tap to flip</div></div>
+      <div class="face back"><b>Assign</b> each point to its nearest centroid, then <b>update</b> each centroid to the mean of its members. Both steps only ever lower <b>inertia</b> (within-cluster sum of squares), so it always converges.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why can't you choose k by picking the lowest inertia?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Inertia always falls as k rises and hits 0 when k = number of points. "Lowest inertia" means "one cluster per row." Use the <b>elbow</b> instead — the k after which extra clusters barely help.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Same data, same k, two different answers. What's the cause and the fix?</div><div class="hint">tap to flip</div></div>
+      <div class="face back"><b>Initialization sensitivity.</b> Where the centroids start changes where they converge. Fix: k-means++ init plus several restarts (<code>n_init</code> &gt; 1), keep the lowest-inertia run.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">One sentence: what does PCA do, and why standardize first?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">PCA finds the directions of <b>maximum variance</b> to describe each row with fewer numbers. Standardize first so a column doesn't dominate just because its raw units are bigger.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">When does anomaly detection beat a supervised classifier?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">When you have lots of "normal" data, very few labeled bad examples, and the bad thing keeps changing (fraud, faults, intrusions). Model normal, flag deviations — catches <b>novel</b> weirdness a classifier never saw.</div>
+    </div></div>
+  </div>
 
-  <h3>Exercises</h3>
+  <div class="beat-tag"><span class="dot"></span><span class="n">12</span> · Boss fight</div>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — with your Claude companion</div>
+    <p>A list of suggestions is lazy. Here's a real challenge loop. Paste it to your Claude Code companion and don't move on until you can run a full k-means iteration in your head, cold.</p>
+    <div class="prompt"><button class="copy">copy</button>You are drilling me on k-means until I have it cold. Give me 5 or 6 points in 1D, a value of k=2, and two starting centroids. I will do ONE full iteration BY HAND — the assign step (which point goes to which centroid) and the update step (the new centroid positions) — and tell you my answer plus whether it has converged. Grade each part, show exactly where I slipped if I did, then escalate: move to 2D points, then ask me to predict whether a given initialization will converge to a good or bad clustering and why, then quiz me on why increasing k always lowers inertia and why that breaks "minimize inertia." Keep going until I get two rounds in a row perfect.</div>
+    <p class="aside">You pass when you can run an assign-then-update iteration by hand, explain which step lowers inertia and why both must, and say out loud why a too-big k or a bad seed wrecks the result — using the party picture, not a memorized formula.</p>
+  </div>
+
+  <h3>Stretch exercises</h3>
   <ol class="exercises">
     <li>One k-means iteration by hand. Points (1D): 0, 1, 6, 10, 11. Start with centroids \( \mu_1 = 1 \) and \( \mu_2 = 10 \). Do one assign step and one update step. What are the new centroids?
-      <details class="solution"><summary>Show solution</summary>
-      <p>Assign: point 0 &rarr; |0−1|=1 vs |0−10|=10 &rarr; cluster 1. Point 1 &rarr; 0 vs 9 &rarr; cluster 1. Point 6 &rarr; |6−1|=5 vs |6−10|=4 &rarr; cluster 2. Point 10 &rarr; cluster 2. Point 11 &rarr; cluster 2. So cluster 1 = {0, 1}, cluster 2 = {6, 10, 11}. Update: \( \mu_1 = (0+1)/2 = 0.5 \); \( \mu_2 = (6+10+11)/3 = 27/3 = 9 \). New centroids: <strong>0.5 and 9</strong>.</p></details></li>
+      <details class="spoiler"><summary>Show solution</summary>
+      <div class="body"><p>Assign: 0 &rarr; |0−1|=1 vs |0−10|=10 &rarr; cluster 1. 1 &rarr; 0 vs 9 &rarr; cluster 1. 6 &rarr; |6−1|=5 vs |6−10|=4 &rarr; cluster 2. 10 &rarr; cluster 2. 11 &rarr; cluster 2. So cluster 1 = {0, 1}, cluster 2 = {6, 10, 11}. Update: \( \mu_1 = (0+1)/2 = 0.5 \); \( \mu_2 = (6+10+11)/3 = 27/3 = 9 \). New centroids: <strong>0.5 and 9</strong>.</p></div></details></li>
 
-    <li>Why does increasing k never increase inertia? And why does that make "choose k to minimise inertia" a bad rule?
-      <details class="solution"><summary>Show solution</summary>
-      <p>With more centroids, every point can be at least as close to its nearest centroid as before (an extra centroid can only help or be ignored), so the within-cluster sum of squared distances — inertia — can only stay the same or drop. In the extreme, with k equal to the number of points, each point is its own centroid and inertia is exactly 0. Because inertia is minimised by making k as large as possible, "minimise inertia" always says "use one cluster per point", which is useless. That's why we look for the <em>elbow</em>: the k after which extra clusters stop buying meaningful reductions.</p></details></li>
+    <li>You cluster customers using two raw features: annual spend (range 500–50,000) and number of visits (range 1–40). Without scaling, which feature dominates, and what do you do?
+      <details class="spoiler"><summary>Show solution</summary>
+      <div class="body"><p>Spend ranges over tens of thousands while visits range over tens, so a difference of "1000 in spend" swamps "10 in visits." Distance — and therefore the clusters — are driven almost entirely by spend; visits barely matter. Fix it by standardizing both features (subtract the mean, divide by the standard deviation) so each contributes on a comparable scale before running k-means.</p></div></details></li>
 
-    <li>You cluster customers using two raw features: annual spend (range 500–50,000) and number of visits (range 1–40). Without scaling, which feature dominates the clustering, and what should you do?
-      <details class="solution"><summary>Show solution</summary>
-      <p>K-means measures distance, and spend ranges over tens of thousands while visits range over tens — so a difference of "1000 in spend" swamps a difference of "10 in visits". Distance, and therefore the clusters, are driven almost entirely by spend; visits barely matter. Fix it by standardizing both features (subtract the mean, divide by the standard deviation, as in Module 7) so each contributes on a comparable scale before running k-means.</p></details></li>
+    <li>For fraud detection you have 2,000,000 normal transactions and only 30 known fraud cases, and fraudsters keep inventing new tricks. Supervised classifier or anomaly detection?
+      <details class="spoiler"><summary>Show solution</summary>
+      <div class="body"><p>Anomaly detection is the stronger start. A classifier needs many examples of <em>both</em> classes; with 30 fraud cases it has almost nothing to learn "fraud" from, and it would predict "normal" for everything to score high accuracy (the imbalance trap from Module 6). It's also blind to genuinely new fraud styles. Anomaly detection models the abundant normal behavior and flags deviations, so it can catch novel fraud it has never seen. Once you accumulate enough confirmed fraud labels, add a supervised model (or a hybrid).</p></div></details></li>
 
-    <li>For a fraud-detection problem you have 2,000,000 normal transactions and only 30 known fraud cases, and fraudsters constantly invent new tricks. Argue whether a supervised classifier or anomaly detection is the better starting point.
-      <details class="solution"><summary>Show solution</summary>
-      <p>Anomaly detection is the stronger starting point. A supervised classifier needs many examples of <em>both</em> classes; with only 30 fraud cases it has almost nothing to learn the "fraud" pattern from, and it would tend to predict "normal" for everything to score high accuracy (the imbalance trap from Module 6). It would also be blind to genuinely new fraud styles, since it only learns the 30 it saw. Anomaly detection instead models the abundant "normal" behaviour and flags anything that deviates — so it can catch novel fraud it has never seen. Once you accumulate enough confirmed fraud labels, a supervised model (or a hybrid) becomes worth adding.</p></details></li>
-
-    <li>PCA on a standardized 10-feature dataset gives <code>explained_variance_ratio_ = [0.52, 0.23, 0.11, 0.06, 0.04, 0.02, 0.01, 0.005, 0.003, 0.002]</code>. How many components keep at least 90% of the variance, and what does that tell you about the data?
-      <details class="solution"><summary>Show solution</summary>
-      <p>Add the ratios until you cross 0.90: 0.52, then 0.75 (two), then 0.86 (three), then 0.92 (four). So <strong>4 components keep about 92%</strong> of the variance — just under with 3 (86%), comfortably over with 4. This tells you the 10 original features are highly redundant: four learned directions carry almost all the spread, so you can compress to 4 numbers per row (great for plotting in pairs, speeding up later models, or de-noising) while losing under 10% of the information.</p></details></li>
+    <li>PCA on a standardized 10-feature dataset gives <code>explained_variance_ratio_ = [0.52, 0.23, 0.11, 0.06, 0.04, 0.02, 0.01, 0.005, 0.003, 0.002]</code>. How many components keep at least 90% of the variance, and what does that tell you?
+      <details class="spoiler"><summary>Show solution</summary>
+      <div class="body"><p>Add until you cross 0.90: 0.52, then 0.75 (two), then 0.86 (three), then 0.92 (four). So <strong>4 components keep about 92%</strong> — just under with 3 (86%), comfortably over with 4. The 10 original features are highly redundant: four learned directions carry almost all the spread, so you can compress to 4 numbers per row (great for plotting in pairs, speeding up later models, or de-noising) while losing under 10% of the information.</p></div></details></li>
   </ol>
 
-  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
-  <ul>
-    <li>State the two repeating steps of k-means and say which quantity (inertia) each one lowers.</li>
-    <li>Run one k-means iteration on a handful of 1D points without a computer.</li>
-    <li>Explain the elbow method and why you can't just minimise inertia over k.</li>
-    <li>Decide, for a given problem, whether to use clustering, anomaly detection, or a supervised model.</li>
-    <li>Say in one sentence what PCA does and why you must standardize first — and how an embedding differs from a PCA projection.</li>
-  </ul></div>
-
-  <div class="callout resources"><h3>Curated resources</h3>
-  <ul>
-    <li><a href="https://www.youtube.com/@statquest">StatQuest (Josh Starmer)</a> — his k-means and PCA "step-by-step" videos are the clearest visual walkthroughs for beginners.</li>
-    <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn User Guide</a> — the Clustering and Decomposition (PCA) sections, with runnable examples and clear notes on initialization and scaling.</li>
-    <li><a href="https://www.statlearning.com/">An Introduction to Statistical Learning (free PDF)</a> — Chapter 12 (Unsupervised Learning) covers PCA and k-means rigorously yet gently.</li>
-    <li><a href="https://www.3blue1brown.com/topics/linear-algebra">3Blue1Brown — Essence of Linear Algebra</a> — for the "change of direction / variance" geometry that makes PCA click.</li>
-  </ul></div>
+  <div class="callback"><b>You beat this module when</b> you can run an assign-then-update iteration by hand, explain why increasing k always lowers inertia (and why that makes the elbow necessary), decide between clustering / anomaly detection / a supervised model for a given problem, and say in one sentence what PCA does, why you must standardize first, and how an embedding differs from a PCA projection.</div>
 </section>

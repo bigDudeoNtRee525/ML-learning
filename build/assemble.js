@@ -40,7 +40,7 @@ const top = fs.readFileSync(path.join(DIR,'_shell_top.html'),'utf8');
 const bottom = fs.readFileSync(path.join(DIR,'_shell_bottom.html'),'utf8');
 
 let body = '';
-const required = ['done-box','callout objectives','callout companion','callout pitfalls','exercises','callout selfcheck','callout resources','worked'];
+const required = ['done-box','class="boss"','class="recall"','class="predict"'];
 for(const id of ORDER){
   const fp = path.join(DIR, id + '.html');
   if(!fs.existsSync(fp)){ issues.push('MISSING FILE: ' + id + '.html'); continue; }
@@ -108,6 +108,12 @@ const svgCount = (finalHtml.match(/<svg/g)||[]).length;
 console.log('Inline SVG diagrams: ' + svgCount);
 console.log('Companion callouts: ' + (finalHtml.match(/callout companion/g)||[]).length);
 console.log('Interactive widgets: ' + widgetNames.length + ' defined, ' + mountNames.length + ' mounted' + (widgetNames.length ? ' [' + widgetNames.sort().join(', ') + ']' : ''));
+console.log('Active mechanics: ' + (finalHtml.match(/class="predict"/g)||[]).length + ' predict cards, ' +
+  (finalHtml.match(/class="recall"/g)||[]).length + ' recall decks, ' +
+  (finalHtml.match(/<li/g)&&(finalHtml.match(/ul class="missions"/g)||[]).length) + ' mission lists, ' +
+  (finalHtml.match(/class="boss"/g)||[]).length + ' boss fights, ' +
+  (finalHtml.match(/class="callback"/g)||[]).length + ' callbacks, ' +
+  (finalHtml.match(/details class="spoiler"/g)||[]).length + ' debug/spoilers');
 if(issues.length){
   console.log('\n*** ' + issues.length + ' ISSUE(S) ***');
   issues.forEach(x=>console.log('  - ' + x));

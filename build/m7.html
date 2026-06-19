@@ -1,102 +1,201 @@
 <section class="module" id="m7" data-title="Feature Engineering">
   <div class="module-head">
     <span class="module-kicker">Module 7</span>
-    <h2>Feature Engineering and Preprocessing</h2>
+    <h2>Feature Engineering &amp; Preprocessing</h2>
     <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m7"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
-  <ul>
-    <li>Scale numbers so a model treats them fairly — using <strong>standardization</strong> (z-scores) and <strong>min-max</strong> normalization — and explain exactly why this speeds up gradient descent.</li>
-    <li>Turn raw columns into more useful ones with <strong>numerical transforms</strong>, <strong>polynomial</strong> features, and <strong>interaction</strong> features.</li>
-    <li>Convert text categories into numbers correctly with <strong>one-hot</strong> and <strong>ordinal</strong> encoding, and recognize when <strong>target encoding</strong> causes data leakage.</li>
-    <li>Handle <strong>missing values</strong> with imputation and deal sensibly with <strong>outliers</strong>.</li>
-    <li>Engineer real features on a messy dataset (the Titanic passenger list) by hand and with scikit-learn.</li>
-    <li>Build a leak-free scikit-learn <code>Pipeline</code> with a <code>ColumnTransformer</code> that fits on training data only.</li>
-  </ul></div>
+  <!-- ===================== BEAT 1: COLD OPEN ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · same data, two destinies</div>
+  <h3>Same rows. Two feature sets. One model wins by a mile.</h3>
 
-  <div class="callout hook"><h3>Why should I care?</h3>
-  <p>Imagine you're predicting whether a loan will be repaid. Your spreadsheet has an <em>income</em> column in dollars (values like 45000) and an <em>age</em> column in years (values like 27). To a learning algorithm that only sees raw numbers, income looks roughly 1,600 times "bigger" than age — so it will obsess over income and barely notice age, purely because of the units someone happened to type in. Worse, the table has blanks where applicants skipped a field, a "home ownership" column full of words like <em>"rent"</em> and <em>"own"</em> that no equation can multiply, and a few suspicious entries claiming an income of 99,999,999. None of the beautiful models from Modules 3–6 can touch this data as-is. Feature engineering is the unglamorous, high-leverage work of turning a raw, messy table into clean numbers that let a model actually learn. Practitioners routinely find that better features beat a fancier algorithm — and this is the module where you learn to make them.</p></div>
+  <p class="lead">Here is the exact same loan dataset, fed to the exact same algorithm, twice. The only difference is what the columns <em>look like</em> when the model sees them.</p>
 
-  <h3>Intuition first</h3>
-  <p>A model never sees your data the way you do. It sees a grid of numbers and tries to find weights to multiply them by. "Feature engineering" is everything you do to that grid <em>before</em> the model touches it, so that the patterns you care about become easy to find. There are four jobs in this module, and they all serve that one goal.</p>
+  <div class="do">
+    <div class="do-head"><span class="badge">LOOK</span> two ways to hand over the same eight rows</div>
+    <p class="aside" style="margin-top:0">Same applicants. Same labels. Same logistic regression. Read both versions before you scroll.</p>
+<codeblock># VERSION A — raw, "just throw the spreadsheet at it"
+   income   age  home      ->  repaid?
+    45000    27  "rent"          ?
+   120000    41  "own"           ?
+    ...
 
-  <p><strong>Job 1: Put numbers on a common scale.</strong> Suppose two features are "age in years" (around 20–60) and "salary in dollars" (around 30,000–100,000). In Module 4 you learned that gradient descent walks downhill on a cost surface. When one feature is thousands of times larger than another, that surface becomes a long, skinny valley instead of a round bowl. Gradient descent then zig-zags down the narrow valley, taking tiny careful steps — slow and frustrating. Rescale both features to a comparable range and the valley becomes a nice round bowl: gradient descent walks straight to the bottom.</p>
-
-  <div class="callout analogy"><p><strong>The recipe analogy.</strong> Picture a recipe written half in <em>grams</em> and half in <em>truckloads</em>. "Add 200 grams of flour and 0.0001 truckloads of salt." Technically correct, but your brain (and a model) struggles to weigh ingredients measured in wildly different units. Convert everything to grams first and suddenly the relative amounts are obvious. Scaling does exactly this: it rewrites every feature in comparable "units" so the model can judge their importance on the merits, not on the accident of measurement.</p></div>
-
-  <svg class="diagram" viewBox="0 0 440 180" width="100%" role="img" aria-label="Two cost surfaces: a skewed elongated bowl versus a round bowl">
-    <text x="110" y="16" text-anchor="middle" fill="currentColor" font-size="12">Unscaled: skinny valley</text>
-    <ellipse cx="110" cy="100" rx="95" ry="22" fill="none" stroke="#6366f1"/>
-    <ellipse cx="110" cy="100" rx="62" ry="14" fill="none" stroke="#6366f1"/>
-    <ellipse cx="110" cy="100" rx="30" ry="7" fill="none" stroke="#6366f1"/>
-    <path d="M30 78 L70 118 L95 90 L120 116 L150 92 L185 112" fill="none" stroke="#10b981" stroke-width="2"/>
-    <circle cx="110" cy="100" r="3" fill="#10b981"/>
-    <text x="330" y="16" text-anchor="middle" fill="currentColor" font-size="12">Scaled: round bowl</text>
-    <circle cx="330" cy="100" r="46" fill="none" stroke="#6366f1"/>
-    <circle cx="330" cy="100" r="30" fill="none" stroke="#6366f1"/>
-    <circle cx="330" cy="100" r="14" fill="none" stroke="#6366f1"/>
-    <path d="M285 70 L330 100" fill="none" stroke="#10b981" stroke-width="2"/>
-    <circle cx="330" cy="100" r="3" fill="#10b981"/>
-  </svg>
-  <p class="caption">Left: with unscaled features the contours are stretched, so gradient descent (green) zig-zags. Right: after scaling the contours are circular and the path is a straight shot to the minimum.</p>
-
-  <p><strong>Job 2: Create features the model can't invent on its own.</strong> A linear model can only add up weighted inputs; it cannot, by itself, multiply two columns together or square one. If the true pattern is "risk is high only when someone is both young <em>and</em> has high debt," you can hand the model that idea by building a new column equal to <code>age × debt</code>. That's an <em>interaction feature</em>. Squaring a column (a <em>polynomial feature</em>) lets a straight-line model bend into a curve. You're doing some of the model's thinking for it.</p>
-
-  <p><strong>Job 3: Turn words into numbers.</strong> A column like <em>color</em> with values "red", "blue", "green" means nothing to arithmetic. If you naively map them to 1, 2, 3 you've secretly told the model that green (3) is "three times" red (1) and that blue (2) sits exactly between them — a false ordering. <em>One-hot encoding</em> avoids this by giving each category its own yes/no column.</p>
-
-  <p><strong>Job 4: Patch holes and tame extremes.</strong> Real data has blanks (missing values) and freak values (outliers). You'll fill the blanks sensibly (<em>imputation</em>) and decide what to do about the freaks, because both can quietly wreck a model.</p>
-
-  <p>One last framing that will pay off later: feature engineering is the classical machine-learning ancestor of <em>prompt engineering</em>. In both, you can't change the model's internal machinery much, so you change its <em>input</em> to make the right answer easy to produce. Crafting an <code>age × debt</code> column for linear regression and crafting a careful instruction for a large language model are the same instinct — shape the input so the model succeeds. You'll meet the LLM side in Module 14 — Transformers and LLMs.</p>
-
-  <h3>Making it precise</h3>
-
-  <h4>Standardization (z-scores)</h4>
-  <p>Standardization rescales a feature so it has mean 0 and standard deviation 1. For a single feature with values \( x \), we compute</p>
-  \[ z = \frac{x - \mu}{\sigma} \]
-  <p>where \( x \) is one raw value, \( \mu \) (mu) is the <em>mean</em> of that feature (the average of all its values), and \( \sigma \) (sigma) is the <em>standard deviation</em> (a measure of how spread out the values are). In plain words: subtract the average to recenter the data around zero, then divide by the spread so the typical distance from zero becomes about 1. The result \( z \) is the "z-score" — how many standard deviations a value sits above (positive) or below (negative) the mean.</p>
-  <p>The standard deviation itself is \( \sigma = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i-\mu)^2} \), where \( n \) is the number of values, \( x_i \) is the \( i \)-th value, and the big \( \sum \) (sigma sum) just means "add up over all values." Inside: take each value's distance from the mean, square it (so negatives don't cancel positives), average those squared distances, then take the square root to get back to the original units. This is the same population standard deviation that scikit-learn's <code>StandardScaler</code> uses.</p>
-
-  <h4>Min-max normalization</h4>
-  <p>Min-max squeezes every value into the range from 0 to 1:</p>
-  \[ x' = \frac{x - x_{\min}}{x_{\max} - x_{\min}} \]
-  <p>where \( x_{\min} \) and \( x_{\max} \) are the smallest and largest values of the feature. The smallest value maps to 0, the largest to 1, and everything else lands proportionally in between. Use min-max when you need a bounded range (some neural-network inputs, image pixels); use standardization when the data has outliers or you don't need a hard 0–1 box, because one extreme value can crush all the others toward 0 under min-max but only shifts the mean and spread under standardization.</p>
-
-  <h4>One-hot encoding</h4>
-  <p>For a categorical feature with \( k \) distinct categories, one-hot encoding replaces it with \( k \) new columns (one per category). Each row gets a 1 in the column for its category and 0 everywhere else. The category "red" with categories {red, blue, green} becomes the row \( (1, 0, 0) \). No false ordering is introduced because no category is numerically larger than another.</p>
-
-  <h4>The golden rule: fit on train only</h4>
-  <p>Every transform above has parameters it must <em>learn</em> from data: standardization needs \( \mu \) and \( \sigma \); min-max needs \( x_{\min} \) and \( x_{\max} \); imputation needs the fill value; one-hot needs the list of categories. You must compute these from the <strong>training set only</strong>, then apply the exact same numbers to the test set. If you compute \( \mu \) over the whole dataset, information from the test set leaks into training — exactly the data leakage you met in Module 2 — The ML Mindset, and your reported accuracy becomes a lie. We call this "fit on train, transform on both."</p>
-
-  <div class="callout worked"><h3>Worked example — by hand</h3>
-  <p><strong>Part A — standardize the list \( [10, 20, 30] \).</strong></p>
-  <p>Step 1, the mean: \( \mu = \frac{10 + 20 + 30}{3} = \frac{60}{3} = 20 \).</p>
-  <p>Step 2, the squared distances from the mean: \( (10-20)^2 = 100 \), \( (20-20)^2 = 0 \), \( (30-20)^2 = 100 \).</p>
-  <p>Step 3, the variance (average of those): \( \frac{100 + 0 + 100}{3} = \frac{200}{3} \approx 66.67 \).</p>
-  <p>Step 4, the standard deviation: \( \sigma = \sqrt{66.67} \approx 8.165 \).</p>
-  <p>Step 5, the z-scores \( z = \frac{x-20}{8.165} \):</p>
-  <ul>
-    <li>\( z_{10} = \frac{10-20}{8.165} = \frac{-10}{8.165} \approx -1.22 \)</li>
-    <li>\( z_{20} = \frac{20-20}{8.165} = 0 \)</li>
-    <li>\( z_{30} = \frac{30-20}{8.165} = \frac{10}{8.165} \approx +1.22 \)</li>
-  </ul>
-  <p>So \( [10, 20, 30] \) becomes \( [-1.22,\ 0,\ 1.22] \). Notice the shape is preserved (evenly spaced, symmetric around the middle) but the units are gone — these are now "standard deviations from the mean."</p>
-  <p><strong>Part B — one-hot encode the colors \( [\text{red}, \text{blue}, \text{red}] \).</strong></p>
-  <p>The distinct categories are {blue, red} (two of them). We make one column per category, in alphabetical order, and place a 1 where the row matches:</p>
-  <table>
-    <thead><tr><th>row</th><th>color</th><th>is_blue</th><th>is_red</th></tr></thead>
-    <tbody>
-      <tr><td>1</td><td>red</td><td>0</td><td>1</td></tr>
-      <tr><td>2</td><td>blue</td><td>1</td><td>0</td></tr>
-      <tr><td>3</td><td>red</td><td>0</td><td>1</td></tr>
-    </tbody>
-  </table>
-  <p>One word column became two numeric columns the model can multiply by weights. (If a third color "green" had appeared, you'd have an <code>is_green</code> column too — three columns for three categories.)</p>
+# VERSION B — same rows, engineered
+   income_z  age_z  home_own  home_rent  debt_to_income  ->  repaid?
+     -0.81   -0.92      0          1           0.34            ?
+      1.40    0.55      1          0           0.11            ?
+     ...
+</codeblock>
+    <p>Version A trains slowly, fixates on <code>income</code> because the raw number is huge, chokes on the word <code>"rent"</code> (you can't multiply a weight by "rent"), and silently breaks on the blank cells. Version B converges fast and actually uses age. <strong>Nothing about the data changed.</strong> Only the features did.</p>
   </div>
 
-  <h3>In code: from scratch</h3>
-  <p>Let's implement standardization and one-hot encoding ourselves with NumPy and pandas, so nothing is hidden. We deliberately compute the mean and std on a "train" array and reuse them on a "test" array, to make the fit-on-train rule concrete.</p>
-  <codeblock>import numpy as np
+  <p>That gap — same rows, wildly different model — is where amateurs lose and pros win. There is a folk theorem in applied ML: <em>better features beat a fancier algorithm, almost every time.</em> Most beginners spend weeks tuning models. The pros spend that time on the columns. This module is how you join the second group.</p>
+
+  <p>By the end you will scale numbers so a model treats them fairly, build features a linear model can't invent on its own, turn words into numbers without lying to the model, and wire it all into a leak-free scikit-learn <code>Pipeline</code>. But first, a question almost everyone gets wrong.</p>
+
+  <!-- ===================== BEAT 2: PREDICT — scaling & trees vs GD ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · commit before you read</div>
+  <h3>Does scaling even matter? Depends who's asking.</h3>
+
+  <p>"Scale your features" gets repeated like gospel. But <em>when</em> it helps depends entirely on the model. Lock in a guess for each.</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">You're training <strong>gradient descent</strong> (linear / logistic regression, a neural net) on <code>income</code> (~45,000) and <code>age</code> (~27). You DON'T scale. What happens?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Nothing — gradient descent figures out the scales on its own.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> The cost surface becomes a long skinny valley; descent zig-zags and crawls, and may need a tiny learning rate to not blow up.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> It crashes — gradient descent can't handle big numbers.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>When one feature is thousands of times bigger than another, the bowl from Module 4 stretches into a long skinny ravine. Gradient descent zig-zags across the narrow direction instead of walking straight down — slow, fragile, learning-rate-sensitive. Scale both features to a comparable range and the ravine rounds back into a bowl. Straight shot to the bottom. <strong>Scaling is the single highest-leverage one-liner for gradient-descent models.</strong></p>
+    </div>
+  </div>
+
+  <div class="predict" data-correct="c">
+    <p class="q">Now you train a <strong>decision tree</strong> on the same unscaled <code>income</code> and <code>age</code>. Does scaling help?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Yes — scaling always helps, it's universal good hygiene.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> Yes — trees secretly run gradient descent too.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> No — a tree splits on thresholds like "income &gt; 50000," and that decision is identical whether the number is 50000 or a scaled 0.7.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>A tree (and a random forest, Module 8) asks yes/no threshold questions: <em>is this value above some cut point?</em> Rescaling moves the cut point by the exact same amount, so the split — and the whole tree — comes out identical. Scaling a tree is wasted effort that can also confuse you about what actually helped. <strong>Rule of thumb: scale for gradient-descent and distance-based models; skip it for trees.</strong> "Always scale everything" is a beginner reflex, not a rule.</p>
+    </div>
+  </div>
+
+  <div class="callout analogy" style="border-left:3px solid var(--accent2);background:rgba(179,136,255,.07);border-radius:0 12px 12px 0;padding:.9rem 1.1rem;margin:1.4rem 0;">
+    <p style="margin:0"><strong>The recipe analogy.</strong> A recipe written half in grams and half in truckloads — "200 grams of flour, 0.0001 truckloads of salt" — is technically correct but impossible to reason about. Convert everything to grams and the relative amounts jump out. Scaling rewrites every feature in comparable units so a gradient-descent model judges importance on the merits, not on the accident of what units someone typed in.</p>
+  </div>
+
+  <!-- ===================== BEAT 3: EARNED MATH — standardization ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · now the notation</div>
+  <h3>You felt it. Here's how to actually do it.</h3>
+
+  <p>The most common scaler is <strong>standardization</strong>: rewrite each feature so it has mean 0 and standard deviation 1. The rewritten value is a "z-score" — how many standard deviations a value sits above (+) or below (−) the mean.</p>
+
+  <div class="math-card"><div class="eq">\[ z = \frac{x - \mu}{\sigma} \]</div>
+  <p class="legend"><b>x</b> one raw value. <b>&mu;</b> (mu) the mean of the feature — its average. <b>&sigma;</b> (sigma) the standard deviation — how spread out the values are. <b>z</b> the result: distance from the mean, measured in standard deviations.</p></div>
+
+  <p class="aside">In words: subtract the average to recenter on zero, then divide by the spread so the typical distance from zero becomes about 1. Units vanish; shape stays.</p>
+
+  <div class="math-card"><div class="eq">\[ \sigma = \sqrt{\tfrac{1}{n}\sum_{i=1}^{n}(x_i-\mu)^2} \]</div>
+  <p class="legend"><b>n</b> how many values. <b>x<sub>i</sub></b> the i-th value. <b>&sum;</b> "add up over all values." Inside: each value's distance from the mean, squared (so negatives don't cancel), averaged, then square-rooted back into the original units. This is the population std — exactly what scikit-learn's <code>StandardScaler</code> uses.</p></div>
+
+  <p>The other scaler you'll meet is <strong>min-max normalization</strong>, which squeezes every value into [0, 1]:</p>
+
+  <div class="math-card"><div class="eq">\[ x' = \frac{x - x_{\min}}{x_{\max} - x_{\min}} \]</div>
+  <p class="legend"><b>x<sub>min</sub>, x<sub>max</sub></b> the smallest and largest values of the feature. Smallest maps to 0, largest to 1, everything else lands proportionally between.</p></div>
+
+  <p><strong>Which one?</strong> Use min-max when you need a hard bounded range (image pixels, some neural-net inputs). Use standardization when there are outliers or you don't need a 0–1 box — one freak value crushes everything else toward 0 under min-max, but only nudges the mean and spread under standardization.</p>
+
+  <!-- ===================== BEAT 4: DO IT BY HAND — standardize [10,20,30] ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · you do it first</div>
+  <h3>Standardize [10, 20, 30] — by hand, before the answer.</h3>
+
+  <p>Grab paper. Compute the mean, then the standard deviation, then the three z-scores. Predict all three z-scores before you reveal. (Hint: the list is symmetric — what should the middle z-score be?)</p>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">DO</span> the full standardization, step by step</div>
+    <p class="aside" style="margin-top:0">Don't peek. Even a wrong number you committed to teaches more than a right one you read.</p>
+    <details class="spoiler"><summary>Reveal the worked steps</summary>
+    <div class="body">
+      <p style="margin-top:.6rem"><b>Step 1 — mean:</b> \( \mu = \frac{10+20+30}{3} = \frac{60}{3} = 20 \).</p>
+      <p><b>Step 2 — squared distances:</b> \( (10-20)^2=100 \), \( (20-20)^2=0 \), \( (30-20)^2=100 \).</p>
+      <p><b>Step 3 — variance (average them):</b> \( \frac{100+0+100}{3} = \frac{200}{3} \approx 66.67 \).</p>
+      <p><b>Step 4 — std:</b> \( \sigma = \sqrt{66.67} \approx 8.165 \).</p>
+      <p><b>Step 5 — z-scores</b> \( z = \frac{x-20}{8.165} \):</p>
+      <ul>
+        <li>\( z_{10} = \frac{-10}{8.165} \approx -1.22 \)</li>
+        <li>\( z_{20} = \frac{0}{8.165} = 0 \)</li>
+        <li>\( z_{30} = \frac{10}{8.165} \approx +1.22 \)</li>
+      </ul>
+      <p>So \( [10, 20, 30] \rightarrow [-1.22,\ 0,\ 1.22] \). The shape is preserved — evenly spaced, symmetric — but the units are gone. These are now "standard deviations from the mean."</p>
+    </div>
+    </details>
+  </div>
+
+  <div class="predict" data-correct="b">
+    <p class="q">You standardized your <strong>training</strong> set: <code>income</code> got &mu;=20, &sigma;=8.165. Now a <strong>test</strong> value of 40 arrives. What z-score do you give it?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Recompute &mu; and &sigma; including the test value, then standardize.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> Reuse the <em>training</em> &mu;=20 and &sigma;=8.165: \( (40-20)/8.165 \approx 2.45 \).</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> Standardize the test set on its own, separately from train.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>You learn &mu; and &sigma; from <strong>train only</strong>, then freeze them and apply the same numbers to test. The test value 40 becomes ≈ 2.45 — "far above the training average." Recomputing on test (A) or per-set (C) lets test information bleed into your pipeline. That's <em>data leakage</em> (Module 2 — The ML Mindset), and it turns your reported accuracy into a comforting lie. The mantra: <strong>fit on train, transform on both.</strong></p>
+    </div>
+  </div>
+
+  <!-- ===================== BEAT 5: ONE-HOT by hand ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · words into numbers</div>
+  <h3>The trap that quietly poisons half of beginner models.</h3>
+
+  <p>A column <code>color</code> with values "red", "blue", "green" means nothing to arithmetic. The tempting fix is to map them to 1, 2, 3. Do not.</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">You map {red, blue, green} → {1, 2, 3} and feed it to a linear model. What did you just secretly tell the model?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Nothing — they're just labels, the model knows that.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> That there are exactly three colors.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> That green (3) is "three times" red (1) and blue (2) sits exactly halfway between — a totally fake ordering and spacing.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>The model multiplies that number by a weight, so 1/2/3 becomes a real magnitude. You invented an order (green &gt; blue &gt; red) and a spacing that don't exist. The fix is <strong>one-hot encoding</strong>: give each category its own yes/no column. No category is numerically bigger than another, so no false order leaks in.</p>
+    </div>
+  </div>
+
+  <p>For a categorical feature with \( k \) distinct categories, one-hot makes \( k \) new columns. Each row gets a 1 in its category's column and 0 everywhere else. Your turn — do it on paper first.</p>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">DO</span> one-hot encode [red, blue, red]</div>
+    <p class="aside" style="margin-top:0">How many columns? What does row 2 look like? Write it before revealing.</p>
+    <details class="spoiler"><summary>Reveal the encoding</summary>
+    <div class="body">
+      <p style="margin-top:.6rem">Distinct categories: {blue, red} — two of them, so two columns, alphabetical:</p>
+      <table>
+        <thead><tr><th>row</th><th>color</th><th>is_blue</th><th>is_red</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>red</td><td>0</td><td>1</td></tr>
+          <tr><td>2</td><td>blue</td><td>1</td><td>0</td></tr>
+          <tr><td>3</td><td>red</td><td>0</td><td>1</td></tr>
+        </tbody>
+      </table>
+      <p>One word column became two numeric columns a model can multiply by weights. Add a "green" and you'd get an <code>is_green</code> column too — three columns for three categories.</p>
+    </div>
+    </details>
+  </div>
+
+  <div class="callout" style="border:1px solid var(--line2);border-radius:14px;background:var(--panel);padding:1rem 1.2rem;margin:1.2rem 0;">
+    <p style="margin:0"><strong>Two cousins, used rarely and carefully.</strong> <em>Ordinal encoding</em> maps categories to ordered integers — correct <em>only</em> when a real order exists, like shirt size {S, M, L} → {0, 1, 2}. Never for city or color. <em>Target (mean) encoding</em> replaces each category with the average target for that category (e.g. "city = SF" → SF's repayment rate). Powerful for high-cardinality columns, but a <strong>leakage magnet</strong>: if a row is encoded using its own label, the model peeks at the answer — accuracy looks great until it collapses on new data. If you must, compute the averages with cross-validation folds so a row is never encoded with its own label. As a beginner: prefer one-hot until you know exactly why you'd switch.</p>
+  </div>
+
+  <!-- ===================== BEAT 6: FEATURES THE MODEL CAN'T INVENT ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · do the model's thinking for it</div>
+  <h3>A linear model can only add. Hand it the rest.</h3>
+
+  <p>A linear model adds up weighted inputs. That's all. It cannot, on its own, multiply two columns or square one. So if the real pattern needs that, you build the column yourself:</p>
+
+  <ul>
+    <li><strong>Interaction feature:</strong> if risk is high only when someone is <em>both</em> young <em>and</em> deep in debt, hand the model <code>age × debt</code> as a new column. It could never have formed that product itself.</li>
+    <li><strong>Polynomial feature:</strong> squaring a column (<code>age²</code>) lets a straight-line model bend into a curve.</li>
+    <li><strong>Bucketing &amp; combining:</strong> turn a messy continuous column into ordered bins, or fold two raw counts into one meaningful count.</li>
+  </ul>
+
+  <p>You're doing part of the model's thinking for it. Which is the whole game.</p>
+
+  <div class="callback"><b>The same instinct, later.</b> Feature engineering is the classical ancestor of <em>prompt engineering</em>. In both, you can't easily change the model's internals — so you reshape its <strong>input</strong> to make the right answer easy to produce. Crafting an <code>age × debt</code> column for linear regression and crafting a careful instruction for an LLM are the same move. You'll meet the LLM side in <b>Module 14 — Transformers &amp; LLMs</b>. When you get there, remember: you already know how to do this.</div>
+
+  <!-- ===================== BEAT 7: CODE FROM SCRATCH ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · from scratch, predict the output</div>
+  <h3>No magic: standardize and one-hot in raw NumPy/pandas.</h3>
+
+  <p>Read this. Before you run it, predict the printed numbers. You did the hand math in Beats 4 and 5 — does the code agree with you?</p>
+
+<codeblock>import numpy as np
 import pandas as pd
 
 # --- Standardization from scratch ---
@@ -117,11 +216,58 @@ colors = pd.Series(["red", "blue", "red"], name="color")
 onehot = pd.get_dummies(colors, prefix="color").astype(int)
 print(onehot)
 </codeblock>
-  <p>This prints <code>mu = 20.0  sigma = 8.165</code>, then <code>train standardized: [-1.22  0.    1.22]</code> — exactly our hand calculation. The test values become <code>[ 0.61  2.45]</code>: 25 is a little above the training mean, and 40 is far above it (about 2.45 training-standard-deviations up). Critically, we never recomputed the mean on the test set. The one-hot block prints two columns, <code>color_blue</code> and <code>color_red</code>, matching the worked example.</p>
 
-  <h3>In code: the library way</h3>
-  <p>scikit-learn gives every transform a <code>.fit()</code> method (learn the parameters) and a <code>.transform()</code> method (apply them). <code>fit_transform</code> does both at once and belongs on the <em>training</em> data; on test data you call <code>transform</code> only. Below we build a realistic end-to-end preprocessor with a <code>ColumnTransformer</code> (different handling per column) wrapped in a <code>Pipeline</code> (chain steps so they fit together and never leak).</p>
-  <codeblock>import pandas as pd
+  <details class="spoiler"><summary>Reveal the output &amp; check yourself</summary>
+  <div class="body">
+    <p style="margin-top:.6rem">Prints <code>mu = 20.0  sigma = 8.165</code>, then <code>train standardized: [-1.22  0.    1.22]</code> — exactly your hand calc. The test values become <code>[ 0.61  2.45]</code>: 25 is a little above the training mean, 40 is ~2.45 training-std above it. We never recomputed the mean on test. The one-hot block prints two columns, <code>color_blue</code> and <code>color_red</code>, matching your table.</p>
+  </div>
+  </details>
+
+  <!-- ===================== BEAT 8: DEBUG — leakage ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · find the bug</div>
+  <h3>This code runs clean, reports great accuracy, and is lying to you.</h3>
+
+  <p>No error. No crash. The test score looks fantastic — and it's worthless. Find the bug <strong>before</strong> the reveal. (Hint: ask who computed the scaler's mean and std, and from which rows.)</p>
+
+<codeblock>from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)        # something is wrong on THIS line
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.25, random_state=0)
+
+model = LogisticRegression().fit(X_train, y_train)
+print("test accuracy:", model.score(X_test, y_test))   # looks amazing... and is fake
+</codeblock>
+
+  <details class="spoiler"><summary>Show the bug &amp; the fix</summary>
+  <div class="body">
+    <p style="margin-top:.6rem"><code>scaler.fit_transform(X)</code> computes the mean and std over the <strong>whole dataset — including the test rows — before the split</strong>. The test set's statistics leak into the numbers applied to training. The model has, in a quiet way, already seen the test distribution, so its reported accuracy is optimistic and won't survive real unseen data. This is the exact "data leakage" from Module 2, hiding inside one innocent line.</p>
+    <p><b>The fix — split first, fit the scaler on train only, transform both:</b></p>
+<codeblock>X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=0)
+
+scaler = StandardScaler()
+X_train_s = scaler.fit_transform(X_train)   # learn mu, sigma from TRAIN
+X_test_s  = scaler.transform(X_test)        # apply the SAME numbers to test
+
+model = LogisticRegression().fit(X_train_s, y_train)
+print("test accuracy:", model.score(X_test_s, y_test))
+</codeblock>
+    <p>Better still: put the scaler in a <code>Pipeline</code> so it is structurally impossible to leak. That's Beat 9.</p>
+  </div>
+  </details>
+
+  <!-- ===================== BEAT 9: THE LIBRARY WAY ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">09</span> · the leak-proof way</div>
+  <h3>ColumnTransformer + Pipeline: leakage becomes impossible.</h3>
+
+  <p>Every scikit-learn transform has <code>.fit()</code> (learn the parameters) and <code>.transform()</code> (apply them). <code>fit_transform</code> does both — and belongs on <em>training</em> data only; on test you call <code>transform</code> alone. A <code>ColumnTransformer</code> applies different handling per column; a <code>Pipeline</code> chains steps so they fit together and never leak. Wrap the model inside it and the golden rule enforces itself.</p>
+
+<codeblock>import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -167,11 +313,13 @@ model = Pipeline([("pre", pre), ("clf", LogisticRegression())])
 model.fit(X_train, y_train)               # fits imputers/scaler/encoder on TRAIN only
 print("test accuracy:", model.score(X_test, y_test))
 </codeblock>
-  <p>Because everything lives inside one <code>Pipeline</code>, calling <code>model.fit(X_train, y_train)</code> learns the medians, the mean/std, and the category list <em>from the training rows alone</em>; <code>model.score(X_test, y_test)</code> then applies those frozen numbers to the test rows. There is no way to accidentally leak, which is the whole point of pipelines. (This toy set is tiny, so don't read into the exact accuracy — the structure is the lesson.)</p>
 
-  <h3>Hands-on: feature engineering on messy data (Titanic)</h3>
-  <p>The Titanic passenger list is the classic playground for this skill. Three engineered features reliably help predict survival, and each shows a different technique.</p>
-  <codeblock>import pandas as pd
+  <p>Because everything lives inside one <code>Pipeline</code>, <code>model.fit(X_train, y_train)</code> learns the medians, the mean/std, and the category list <em>from the training rows alone</em>; <code>model.score(X_test, y_test)</code> applies those frozen numbers to the test rows. There is no way to accidentally leak — that is the entire point of pipelines. (This toy set is tiny; don't read into the exact accuracy. The structure is the lesson.)</p>
+
+  <h3>Hands-on: engineer features on messy data (Titanic)</h3>
+  <p>The Titanic passenger list is the classic playground. Three engineered features reliably help predict survival, each showing a different technique. Predict what <code>Title</code> will hold for "Cumings, Mrs. John" before running.</p>
+
+<codeblock>import pandas as pd
 
 # Pretend we've loaded the Titanic CSV into a DataFrame `df` with columns like:
 # Name, Sex, Age, SibSp (siblings/spouses), Parch (parents/children), Fare.
@@ -198,74 +346,66 @@ df["FareBin"] = pd.qcut(df["Fare"], q=2, labels=["low", "high"])
 
 print(df[["Title", "FamilySize", "IsAlone", "FareBin"]])
 </codeblock>
-  <p>You've created four new columns from raw text and counts: <code>Title</code> (a category extracted with a regular expression, then trimmed so rare titles collapse into "Rare"), <code>FamilySize</code> and <code>IsAlone</code> (interaction-style features combining two raw columns), and <code>FareBin</code> (a continuous number bucketed into ordered groups with <code>pd.qcut</code>, which splits at quantiles so each bin holds roughly equal counts). None of these existed in the raw data; each encodes a human hunch about what matters, handed to the model as a ready-made column. That is feature engineering.</p>
 
-  <h3>A note on encoding choices and leakage</h3>
-  <p><strong>Ordinal encoding</strong> maps categories to ordered integers and is correct <em>only</em> when a real order exists — e.g. shirt size {S, M, L} → {0, 1, 2}. Use it for genuinely ordered categories; never for unordered ones like city or color.</p>
-  <p><strong>Target (mean) encoding</strong> replaces each category with the average target value for that category — e.g. replace "city = SF" with the survival rate of SF passengers. It can be powerful for high-cardinality columns (thousands of categories), but it is a <em>leakage magnet</em>: if you compute those averages using the row's own target, the model effectively peeks at the answer, and accuracy looks great until it collapses on new data. If you ever reach for it, compute the averages with cross-validation folds so a row is never encoded using its own label. As a beginner, prefer one-hot until you understand exactly why you'd switch.</p>
+  <p>Four new columns from raw text and counts: <code>Title</code> (a category pulled out with a regular expression, then trimmed so rare titles collapse into "Rare"), <code>FamilySize</code> and <code>IsAlone</code> (interaction-style features combining two raw columns), and <code>FareBin</code> (a continuous number bucketed into ordered groups with <code>pd.qcut</code>, which splits at quantiles so each bin holds roughly equal counts). None existed in the raw data. Each encodes a human hunch about what matters, handed to the model as a ready-made column. <strong>That is feature engineering.</strong></p>
 
-  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
-  <p>Paste these to your Claude Code companion as you study:</p>
+  <!-- ===================== BEAT 10: RECALL ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">10</span> · pull it from your own head</div>
+  <h3>Cold recall — answer before you flip.</h3>
+
+  <p>Re-reading feels productive and mostly isn't. Retrieving is. Say each answer out loud first, then flip. Can't? That's your signal to scroll up — but try first.</p>
+
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Scaling helps gradient descent but not decision trees. Why the difference?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">GD walks a cost surface that scaling rounds from a skinny ravine into a bowl. A tree splits on thresholds ("x &gt; cut"), and rescaling moves the cut by the same amount — same split either way.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">The z-score formula, and what &mu; and &sigma; mean?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">\(z=(x-\mu)/\sigma\). &mu; = the feature's mean (average). &sigma; = its standard deviation (spread). z = how many std-devs above (+) or below (−) the mean a value sits.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why never map {red, blue, green} → {1, 2, 3}?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">It invents a fake order and spacing (green = 3× red, blue halfway). The model multiplies those by weights. Use one-hot: one yes/no column per category, no false ordering.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">The golden rule of every transform, in five words?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Fit on train, transform on both. Learn &mu;/&sigma;/medians/category-list from training rows only; freeze them; apply to test. Otherwise: leakage.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What does wrapping everything in a Pipeline buy you?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">It fits all transforms on train only and applies them to test automatically — leakage becomes structurally impossible, not just a thing you remembered to avoid.</div>
+    </div></div>
+  </div>
+
+  <!-- ===================== BEAT 11: BOSS FIGHT ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">11</span> · boss fight</div>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — with your Claude companion</div>
+    <p>A list of "suggested prompts" is lazy. Here is a real challenge loop. Your companion hands you a messy column; you propose features. It pushes back and escalates until you can think like a feature engineer cold.</p>
+    <div class="prompt"><button class="copy">copy</button>You are running a feature-engineering drill with me. Round 1: invent ONE realistic messy column from a tabular dataset (a free-text name, a raw timestamp/date, a high-cardinality category like zip code, a skewed money amount, or a column with blanks). Show me 5 sample values and tell me which model we're training (a tree OR gradient descent). I will reply with: (a) how to clean/transform it, (b) what new feature(s) to engineer from it, (c) the right encoding/scaling, and (d) whether scaling even matters for the model you named. Grade my answer, point out any leakage risk or false-ordering trap I missed, then escalate — make the next column messier (mix a date plus missing values, or a category with thousands of levels). Keep going until I handle two messy columns in a row with no leakage and no false-ordering mistakes. Finish by asking me to explain, in one sentence, why feature engineering and prompt engineering are the same instinct.</div>
+    <p class="aside">You pass this module when you can take a raw column you've never seen, propose leak-free features for it, say whether scaling matters for the model in play, and explain the prompt-engineering connection — without scrolling back.</p>
+  </div>
+
+  <!-- ===================== BEAT 12: PITFALLS + extra exercises ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">12</span> · the traps, named</div>
+  <h3>The mistakes that look fine until they don't.</h3>
   <ul>
-    <li>"Explain to me with a fresh analogy why feature scaling makes gradient descent converge faster, then show me a plot of the cost contours before and after scaling."</li>
-    <li>"Generate 5 practice problems on choosing between standardization, min-max, one-hot, and ordinal encoding for given columns, then check my answers and explain any I get wrong."</li>
-    <li>"Run the Titanic feature-engineering code on the real dataset from seaborn (<code>seaborn.load_dataset('titanic')</code>), then show me what happens to test accuracy if I scale features before the train/test split instead of inside a Pipeline."</li>
-    <li>"Pair with me to implement min-max normalization from scratch in NumPy with a fit-on-train, transform-on-both interface, then review my code for leakage bugs."</li>
-  </ul></div>
+    <li><strong>Scaling before the split.</strong> The bug you just debugged. <code>fit_transform</code> on the whole set leaks test statistics. Split first; a <code>Pipeline</code> enforces it.</li>
+    <li><strong>Scaling a tree for no reason.</strong> Trees and forests (Module 8 — Classical Algorithms) split on thresholds — rescaling changes nothing and just muddies what actually helped.</li>
+    <li><strong>One-hot dummy explosion.</strong> A zip-code column becomes thousands of near-empty columns — slow, memory-hungry, overfit-prone. Group rare levels into "Other," or use cross-validated target encoding.</li>
+    <li><strong>Unseen categories at test time.</strong> A category that appears only in test crashes a naive encoder. Set <code>handle_unknown="ignore"</code> so it becomes all-zeros.</li>
+    <li><strong>Ordinal-encoding unordered categories.</strong> {red, blue, green} → {0,1,2} smuggles in a fake order. One-hot for unordered; ordinal only for true orders.</li>
+    <li><strong>Imputing with the test set's median.</strong> Same leak, different transform. Learn the fill value on train, apply to both — what a <code>Pipeline</code> guarantees.</li>
+  </ul>
 
-  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
-  <ul>
-    <li><strong>Scaling before the split.</strong> If you call <code>fit_transform</code> on the whole dataset and <em>then</em> split, the test set's mean and spread leaked into the scaler. Always split first, fit the scaler on train, transform both. A <code>Pipeline</code> enforces this automatically.</li>
-    <li><strong>One-hot dummy explosion.</strong> A column with thousands of categories (like zip code) becomes thousands of columns, most of them almost all zeros — slow, memory-hungry, and prone to overfitting. Group rare categories into "Other," or use target encoding with proper cross-validation.</li>
-    <li><strong>Unseen categories at test time.</strong> If "SF" appears only in the test set, a naive encoder crashes or invents a column the model never trained on. Set <code>handle_unknown="ignore"</code> in <code>OneHotEncoder</code> so unknown values become all-zeros.</li>
-    <li><strong>Scaling tree-based models unnecessarily.</strong> Decision trees and random forests (Module 8 — Classical Algorithms) split on thresholds like "age &gt; 30," which are unaffected by rescaling. Scaling them wastes effort and can confuse you about what helped. Scale for linear models, logistic regression, neural nets, and distance-based methods; skip it for trees.</li>
-    <li><strong>Ordinal-encoding unordered categories.</strong> Mapping {red, blue, green} → {0, 1, 2} secretly tells the model green is "bigger" than red. Use one-hot for unordered categories; reserve ordinal for true orders.</li>
-    <li><strong>Imputing with the test set's statistics.</strong> Filling missing values with the median computed over all data leaks test information. Learn the median on train, apply it to both — again, what a <code>Pipeline</code> guarantees.</li>
-  </ul></div>
+  <details class="spoiler"><summary>Two more hand exercises (with solutions)</summary>
+  <div class="body">
+    <p style="margin-top:.6rem"><b>1. Standardize [2, 4, 6, 8] by hand.</b> Give &mu;, &sigma;, and the four z-scores.</p>
+    <p>&mu; = (2+4+6+8)/4 = 20/4 = 5. Squared distances: 9, 1, 1, 9 → sum 20. Variance: 20/4 = 5. &sigma; = √5 ≈ 2.236. Z-scores: (2−5)/2.236 ≈ −1.34, (4−5)/2.236 ≈ −0.45, (6−5)/2.236 ≈ 0.45, (8−5)/2.236 ≈ 1.34. So <b>[−1.34, −0.45, 0.45, 1.34]</b>.</p>
+    <p><b>2. Min-max [10, 20, 30], then map the unseen test value 40.</b></p>
+    <p>Train min = 10, max = 30, range = 20. (10−10)/20 = 0, (20−10)/20 = 0.5, (30−10)/20 = 1 → <b>[0, 0.5, 1]</b>. Test 40: (40−10)/20 = 30/20 = <b>1.5</b>. It lands <em>above</em> 1 — min-max doesn't clip, and unseen values can fall outside [0, 1]. Expected and fine; just don't assume the range holds for new data.</p>
+  </div>
+  </details>
 
-  <h3>Exercises</h3>
-  <ol class="exercises">
-    <li>Standardize the list \( [2, 4, 6, 8] \) by hand. Give \( \mu \), \( \sigma \), and the four z-scores.
-      <details class="solution"><summary>Show solution</summary>
-      <p>Mean: \( \mu = (2+4+6+8)/4 = 20/4 = 5 \). Squared distances: \( (2-5)^2=9,\ (4-5)^2=1,\ (6-5)^2=1,\ (8-5)^2=9 \), summing to 20. Variance: \( 20/4 = 5 \). Std: \( \sigma=\sqrt{5}\approx 2.236 \). Z-scores: \( (2-5)/2.236\approx -1.34 \), \( (4-5)/2.236\approx -0.45 \), \( (6-5)/2.236\approx 0.45 \), \( (8-5)/2.236\approx 1.34 \). So \( [-1.34, -0.45, 0.45, 1.34] \).</p>
-      </details>
-    </li>
-    <li>Apply min-max normalization to \( [10, 20, 30] \). Then say what min-max value the unseen test value 40 would get, using the train min and max.
-      <details class="solution"><summary>Show solution</summary>
-      <p>Train min = 10, max = 30, range = 20. \( (10-10)/20=0 \), \( (20-10)/20=0.5 \), \( (30-10)/20=1 \). So \( [0, 0.5, 1] \). The test value 40: \( (40-10)/20 = 30/20 = 1.5 \). Note it lands <em>above</em> 1 — min-max does not clip, and unseen values can fall outside [0, 1]. That's expected and fine; just don't assume the range is guaranteed for new data.</p>
-      </details>
-    </li>
-    <li>One-hot encode the column \( [\text{cat}, \text{dog}, \text{cat}, \text{bird}] \). How many columns, and what does the "dog" row look like?
-      <details class="solution"><summary>Show solution</summary>
-      <p>Three distinct categories {bird, cat, dog} → three columns <code>is_bird</code>, <code>is_cat</code>, <code>is_dog</code> (alphabetical). The rows: cat → (0,1,0); dog → (0,0,1); cat → (0,1,0); bird → (1,0,0). The "dog" row is \( (0, 0, 1) \).</p>
-      </details>
-    </li>
-    <li>You have features <code>height_cm</code> (range 150–200) and <code>weight_kg</code> (range 45–120), and you'll train logistic regression with gradient descent. Explain in two or three sentences what goes wrong without scaling and how standardization fixes it.
-      <details class="solution"><summary>Show solution</summary>
-      <p>Without scaling, weight spans about 75 units while height spans about 50, and more importantly both are large compared to a 0–1 target signal, so the cost surface is an elongated valley. Gradient descent zig-zags slowly across the narrow direction and needs a tiny learning rate to stay stable. Standardizing both to mean 0, std 1 makes their scales comparable, rounding the cost contours so gradient descent heads almost straight to the minimum and converges in far fewer steps.</p>
-      </details>
-    </li>
-    <li>A teammate writes: <code>scaler.fit_transform(X); X_train, X_test = split(X)</code>. Identify the bug, explain the consequence, and write the corrected order in words (or pseudocode is fine).
-      <details class="solution"><summary>Show solution</summary>
-      <p>The bug: the scaler is fit on the full dataset <em>before</em> splitting, so the test rows' mean and standard deviation leak into the scaling parameters applied to the training rows. The consequence is optimistic, unreliable test scores — the evaluation no longer simulates truly unseen data. Correct order: split first (<code>X_train, X_test = split(X)</code>), then <code>scaler.fit(X_train)</code> to learn \( \mu, \sigma \) from train only, then <code>scaler.transform(X_train)</code> and <code>scaler.transform(X_test)</code> with those same numbers. Best practice: put the scaler in a <code>Pipeline</code> so this can't be done wrong.</p>
-      </details>
-    </li>
-  </ol>
-
-  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
-  <ul>
-    <li>Standardize a small list by hand and explain what a z-score of +1.5 means.</li>
-    <li>Say when to use min-max vs. standardization, and one-hot vs. ordinal encoding.</li>
-    <li>Explain, with the cost-bowl picture, why scaling speeds up gradient descent.</li>
-    <li>Spot data leakage caused by fitting a transform before the train/test split, and fix it with a <code>Pipeline</code>.</li>
-    <li>Engineer at least three new features from a raw column (extract, combine, bin).</li>
-  </ul></div>
-
-  <div class="callout resources"><h3>Curated resources</h3>
-  <ul>
-    <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn User Guide</a> — the preprocessing, compose, and impute chapters cover every transform here with runnable examples.</li>
-    <li><a href="https://developers.google.com/machine-learning/crash-course">Google ML Crash Course</a> — clear sections on numerical and categorical data and why scaling matters.</li>
-    <li><a href="https://www.kaggle.com/learn">Kaggle Learn</a> — the short Feature Engineering and Data Cleaning courses use the exact Titanic-style work above.</li>
-    <li><a href="https://www.youtube.com/@statquest">StatQuest</a> — friendly visual explanations of standardization, one-hot encoding, and data leakage.</li>
-  </ul></div>
 </section>

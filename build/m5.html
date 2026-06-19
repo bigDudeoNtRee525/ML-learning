@@ -1,114 +1,194 @@
 <section class="module" id="m5" data-title="Logistic Regression">
   <div class="module-head">
     <span class="module-kicker">Module 5</span>
-    <h2>Logistic Regression and Classification</h2>
+    <h2>Logistic Regression &amp; Classification</h2>
     <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m5"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>Learning objectives</h3>
-    <p>By the end of this module you'll be able to:</p>
-    <ul>
-      <li>Explain the difference between predicting a <em>number</em> (regression) and predicting a <em>category</em> (classification), and say why we predict a <em>probability</em> in between.</li>
-      <li>Use the sigmoid function \( \sigma(z) = \frac{1}{1+e^{-z}} \) to squash any score into a probability between 0 and 1, by hand and in code.</li>
-      <li>Describe what a <em>decision boundary</em> is, and explain why the 0.5 threshold is a convenient default rather than a law of nature.</li>
-      <li>Explain <em>cross-entropy / log loss</em> in plain words first, then compute it for a single prediction by hand.</li>
-      <li>Implement logistic regression from scratch in NumPy — sigmoid, log loss, and a gradient descent loop — and watch it learn a boundary.</li>
-      <li>Train the same model in three lines with scikit-learn, read <code>predict_proba</code>, and extend the idea to many classes with softmax.</li>
+  <!-- ===================== BEAT 1: STRUGGLE FIRST ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · the moment linear regression breaks</div>
+  <h3>An email lands. Spam, or not?</h3>
+  <p class="lead">You spent Module 3 building a model that predicts a <em>number</em>: \( z = wx + b \), a straight line. It is good at "how much will this house sell for." Now I hand you a new job: <strong>is this email spam — yes or no?</strong></p>
+  <p>So you do the obvious thing. You label spam as <code>1</code> and not-spam as <code>0</code>, you fit a line through it, and you say "if the line is above 0.5, call it spam." Reasonable. Watch it fail.</p>
+
+  <p>Here is the count of suspicious links in an email (\( x \)) versus its true label (\( y \), 0 or 1). Fit a straight line through those dots in your head. Now answer:</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">You fit a line to 0/1 labels. One email shows up with <strong>40 suspicious links</strong> — wildly spammy. What number does your straight line predict for it?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> Exactly 1.0. It is obviously spam, so the line says 1.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> 0.5. The line caps out at the middle.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> Something absurd like 4.7. A line keeps climbing forever; it has no idea 1.0 is the ceiling.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>A straight line does not know that probabilities live between 0 and 1. Feed it a big \( x \) and it cheerfully returns <strong>4.7</strong>, or <strong>−2.3</strong> for a clean email. "This email is 470% spam" is gibberish. Worse: one extreme outlier <em>tilts the whole line</em>, dragging the 0.5 crossing point and misclassifying emails that were fine before. Linear regression is the wrong shape for yes/no. We need an output that <em>can't escape</em> the 0-to-1 box.</p>
+    </div>
+  </div>
+
+  <!-- ===================== BEAT 2: THE FIX, INTUITION ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · the fix is a dimmer switch</div>
+  <h3>Don't kill the line. Squash it.</h3>
+  <p>The line itself is fine as a measure of <em>evidence</em>. Big positive \( z = wx+b \) means "tons of evidence for spam." Big negative means "tons of evidence for clean." Near zero means "on the fence." Keep that. The problem is only the final number escaping the box.</p>
+  <p>So bolt on a second step: take the unbounded evidence \( z \) and run it through an S-shaped squashing function that <strong>physically cannot leave 0 and 1</strong>. Think of a dimmer switch, not a light switch. A light switch is brutal — fully on or fully off. The dimmer slides smoothly: far-left is off (probability 0), the middle is half-bright (0.5), far-right is full (probability 1). Crank the dial to the extreme and the light barely changes; near the middle a tiny turn swings it a lot.</p>
+  <p>That dimmer is the <strong>sigmoid</strong>. Before I show you the formula, predict its behaviour:</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">The sigmoid takes any \( z \) from −∞ to +∞ and returns a probability. What does it return when the evidence is exactly zero, \( z = 0 \)?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> 0 — no evidence means no.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> 0.5 — no evidence means a perfect coin flip.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> 1 — it defaults to yes.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>Zero evidence is the definition of "I have no idea" — a coin flip, <strong>0.5</strong>. That is the pivot point of the whole curve. Push \( z \) positive and it slides up toward 1; push it negative and it slides down toward 0, but it <em>never</em> reaches either. There is always a sliver of doubt. That smoothness is not decoration — it is exactly what lets gradient descent feel which way to nudge the dial.</p>
+    </div>
+  </div>
+
+  <!-- ===================== BEAT 3: EARNED MATH ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · now the notation you earned</div>
+  <h3>You just invented the sigmoid.</h3>
+  <p>Two steps, written down. First the same old linear score from Module 3. Then squash it.</p>
+
+  <div class="math-card">
+    <div class="eq">\[ z = wx + b \qquad\qquad \sigma(z) = \frac{1}{1 + e^{-z}} \]</div>
+    <p class="legend"><b>x</b> the input feature (e.g. link-count). <b>w</b> the weight — how strongly \( x \) pushes toward "yes." <b>b</b> the bias — slides the curve left/right. <b>z</b> the raw evidence, any real number. <b>σ</b> (sigma) the sigmoid, the dimmer switch. <b>e</b> ≈ 2.718, Euler's number, a fixed constant.</p>
+  </div>
+
+  <p>Read the formula like a sentence. When \( z \) is large positive, \( -z \) is large negative, so \( e^{-z} \) is tiny, the denominator is ≈ 1, and \( \sigma(z) \approx 1 \). When \( z \) is large negative, \( e^{-z} \) is huge, the fraction is tiny, and \( \sigma(z) \approx 0 \). When \( z = 0 \), \( e^{0}=1 \), so \( \sigma(0) = \frac{1}{1+1} = 0.5 \) — the coin flip you predicted. One formula, the whole S.</p>
+
+  <p>The model's predicted probability that the example is class 1 is:</p>
+  <div class="math-card">
+    <div class="eq">\[ \hat{y} = \sigma(wx + b) \]</div>
+    <p class="legend"><b>ŷ</b> ("y-hat") our estimate of \( P(\text{class}=1) \). Predicted class is 1 if \( \hat{y} \ge 0.5 \), else 0. Since \( \sigma(z) \ge 0.5 \) exactly when \( z \ge 0 \), the <b>decision boundary</b> sits wherever \( wx + b = 0 \).</p>
+  </div>
+
+  <p>That boundary is the dividing line between "predict yes" and "predict no." With one feature it's a single point on the number line; with two features it's a straight line on a plane. And the 0.5 threshold? Just a default. You can move it — more on that when it bites you in Module 6.</p>
+
+  <div class="callback"><b>Free reuse.</b> Notice nothing here is new except the squash. The <code>z = wx + b</code> is Module 3, unchanged. In Beat 07 the optimiser will be Module 4's gradient descent, unchanged. You're adding one twist, not starting over.</div>
+
+  <!-- ===================== BEAT 4: BY-HAND SIGMOID ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · do it by hand before the machine does</div>
+  <h3>Squash three scores yourself.</h3>
+  <p>Grab \( e \approx 2.718 \). Cover the answers and compute \( \sigma(z) \) for \( z = 0 \), \( z = 2 \), and \( z = -1 \) before you peek. You only understand the dimmer once your own hand has turned it.</p>
+
+  <details class="spoiler">
+    <summary>Check my sigmoid arithmetic</summary>
+    <div class="body">
+      <p><b>\( z = 0 \):</b> \( e^{-0} = 1 \), so \( \sigma(0) = \frac{1}{1+1} = 0.5 \). Zero evidence, a perfect coin flip.</p>
+      <p><b>\( z = 2 \):</b> \( e^{-2} = \frac{1}{2.718^2} = \frac{1}{7.389} \approx 0.135 \). Then \( \sigma(2) = \frac{1}{1 + 0.135} = \frac{1}{1.135} \approx 0.881 \). Strong positive evidence, about 88% sure of "yes."</p>
+      <p><b>\( z = -1 \):</b> \( e^{-(-1)} = e^{1} = 2.718 \). Then \( \sigma(-1) = \frac{1}{1 + 2.718} = \frac{1}{3.718} \approx 0.269 \). Negative evidence, about 27% — i.e. ~73% sure of "no."</p>
+      <p>Sanity check: as \( z \) went −1 → 0 → 2, the probability climbed 0.27 → 0.50 → 0.88. More evidence, more confidence, smoothly. Good.</p>
+    </div>
+  </details>
+
+  <!-- ===================== BEAT 5: THE LAB ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · the lab — drive the dimmer</div>
+  <h3>Bend the curve. Move the boundary. Flip a point.</h3>
+  <p>This is the dimmer switch, live. Slide \( w \) to make the S steep or gentle, slide \( b \) to drag it left or right. The orange line is the decision boundary (where \( wx + b = 0 \)); watch each point flip its predicted class as it crosses \( p = 0.5 \). Don't just wiggle it — run the missions.</p>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> sigmoid &amp; the decision boundary</div>
+    <p class="aside">Each mission is something you make happen in the widget, then verify with your eyes (or your boss companion).</p>
+    <div class="mlviz" data-widget="sigmoid"></div>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Park the decision boundary at a target x <small>Slide b until the 0.5 crossing sits at a specific x you pick (say x = 3). The boundary lives at x = −b/w.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Make the curve STEEP, then GENTLE <small>Crank w large → a near-vertical cliff (decisive, almost a hard switch). Shrink w toward 0 → a lazy ramp (everything hovers near 0.5).</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Flip a point's predicted class <small>Pick a point near the boundary and move w or b until it crosses 0.5 — its class label should switch.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Break it on purpose <small>Set w negative. What happens to "more evidence = more yes"? Explain why the curve now runs backward.</small></span></li>
     </ul>
+    <details class="spoiler">
+      <summary>What "steep w" actually means</summary>
+      <div class="body"><p>\( w \) is the gain on the dimmer. Big \( |w| \) = the curve goes from ~0 to ~1 over a tiny range of \( x \): the model is decisive, almost a hard switch, confident everywhere except a razor-thin no-man's-land. Small \( w \) = a gentle ramp: wishy-washy, most points sit near 0.5. Negative \( w \) flips the orientation — now bigger \( x \) means <em>lower</em> probability. The boundary <em>location</em> is set by \( b \) (specifically \( x = -b/w \)); the boundary <em>sharpness</em> is set by \( w \).</p></div>
+    </details>
   </div>
 
-  <div class="callout hook"><h3>Why should I care?</h3>
-    <p>An email arrives. Is it spam, or not? A patient's blood test comes back. Does this point to a disease, or not? A user hovers over a "Buy" button. Will they click, or not? None of these questions wants a number like "spam-ness = 73.4". They want a <em>decision</em> — but a good system should also tell you <em>how sure it is</em>. "This email is 98% likely to be spam" lets you auto-delete it; "this email is 55% likely to be spam" tells you to keep it in the inbox just in case. Logistic regression is the simplest, most-used tool for exactly this: turning evidence into a calibrated probability and then into a yes/no call. It is the workhorse behind credit scoring, medical risk models, and click prediction — and, beautifully, it reuses everything you already learned in Module 3 — Linear Regression and Module 4 — Gradient Descent. You are not starting over; you are adding one small twist.</p>
+  <!-- ===================== BEAT 6: CROSS-ENTROPY ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · how wrong is a probability?</div>
+  <h3>Confident and wrong should hurt. A lot.</h3>
+  <p>To train this thing we need to measure error. In Module 3 we used squared distance \( (\hat{y}-y)^2 \). For probabilities that is a weak punishment — being 99% sure of the wrong answer barely registers. We want a loss that is near zero when you're confidently right, and that <strong>explodes toward infinity</strong> when you're confidently wrong. That is how a model learns humility.</p>
+  <p>Before the formula, predict the shape of the punishment:</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">The true label is 1. Your model said \( \hat{y} = 0.01 \) — just 1% on the thing that actually happened. Log loss penalises you by \( -\ln(\hat{y}) \). Roughly how big is that penalty?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> About 0.01 — small, matching the small probability.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> About 0.5 — a moderate slap.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> About 4.6 — and it grows without limit the more certain-and-wrong you are.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>\( -\ln(0.01) \approx 4.6 \). Push your wrong confidence to \( \hat{y} = 0.001 \) and the penalty jumps to \( \approx 6.9 \); at \( 10^{-6} \) it's \( \approx 13.8 \). The logarithm has a vertical wall at 0 — as your wrong-confidence approaches certainty, the loss approaches <strong>infinity</strong>. Meanwhile if you'd said 0.99 and been right, \( -\ln(0.99) \approx 0.01 \), almost free. That brutal asymmetry is the entire point of log loss.</p>
+    </div>
   </div>
 
-  <h3>Intuition first</h3>
-  <p>In Module 3 you built a model that produces a number: \( z = w x + b \), a straight line. That number can be anything — minus a million, zero, plus a thousand. For "will the user click?" a raw number is awkward: what would "click-ness = 42" even mean? We want an answer between "definitely no" and "definitely yes", and the natural language for that is <strong>probability</strong>: a value from 0 (no way) to 1 (certainly).</p>
-  <p>So logistic regression does two steps. First it computes the same old linear score \( z = w x + b \) — call this the <em>evidence</em>. A big positive \( z \) means "lots of evidence for yes"; a big negative \( z \) means "lots of evidence for no"; \( z \) near zero means "on the fence". Second, it <em>squashes</em> that evidence into a probability using a special S-shaped curve called the <strong>sigmoid</strong>. Huge positive evidence maps to a probability near 1, huge negative evidence to near 0, and zero evidence to exactly 0.5 — a coin flip.</p>
-
-  <div class="callout analogy">
-    <p><strong>Analogy — the dimmer switch.</strong> A regular light switch is brutal: fully on or fully off, nothing in between. That is what we'd get if we tried to output 0 or 1 directly. The sigmoid is a <em>dimmer switch</em>. As you turn the dial (increase the evidence \( z \)) the light brightens smoothly from off (probability 0) through half-bright (0.5) up to fully on (probability 1). It never quite hits pure 0 or pure 1 — there's always a sliver of doubt — and around the middle a small turn of the dial makes a big difference, while at the extremes you can crank the dial hard and barely change the brightness. That smoothness is not just pretty: it is exactly what lets gradient descent feel which way to nudge the dial.</p>
+  <p>The formula for a single example with true label \( y \in \{0,1\} \) and predicted probability \( \hat{y} \):</p>
+  <div class="math-card">
+    <div class="eq">\[ L(\hat{y}, y) = -\big[\, y \ln(\hat{y}) + (1 - y)\ln(1 - \hat{y}) \,\big] \]</div>
+    <p class="legend"><b>y</b> the true label, 0 or 1. <b>ŷ</b> your predicted probability of class 1. <b>ln</b> natural log (base \( e \)). The \( y \) and \( (1-y) \) are an <b>on/off switch</b>: only one term ever survives.</p>
   </div>
+  <p>It looks like two terms but only one is ever live. If \( y = 1 \), then \( (1-y) = 0 \) deletes the second term and the loss is \( -\ln(\hat{y}) \) — "how little probability did you give to <em>yes</em>?" If \( y = 0 \), the first term vanishes and the loss is \( -\ln(1-\hat{y}) \) — "how little did you give to <em>no</em>?" Average \( L \) over all examples to get the total cost gradient descent minimises.</p>
 
-  <p>Here is the sigmoid curve. Notice the gentle S: flat at the far left near 0, steep through the middle, flat at the far right near 1.</p>
-  <svg class="diagram" viewBox="0 0 360 200" role="img" aria-label="The sigmoid curve rising smoothly from 0 to 1">
-    <line x1="30" y1="170" x2="340" y2="170" stroke="currentColor" stroke-width="1"/>
-    <line x1="185" y1="20" x2="185" y2="180" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
-    <line x1="30" y1="95" x2="340" y2="95" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3"/>
-    <path d="M30,168 C110,166 150,150 185,95 C220,40 260,24 340,22" fill="none" stroke="#6366f1" stroke-width="2.5"/>
-    <circle cx="185" cy="95" r="3.5" fill="#10b981"/>
-    <text x="190" y="90" font-size="10" fill="currentColor">z=0, σ=0.5</text>
-    <text x="300" y="36" font-size="10" fill="currentColor">σ→1</text>
-    <text x="34" y="184" font-size="10" fill="currentColor">σ→0</text>
-    <text x="320" y="184" font-size="10" fill="currentColor">z</text>
-    <text x="24" y="28" font-size="10" fill="currentColor">1</text>
-  </svg>
-  <p class="caption">The sigmoid maps any real score \( z \) (horizontal) to a probability between 0 and 1 (vertical). At \( z=0 \) it passes through exactly 0.5.</p>
+  <p><strong>Do it by hand.</strong> Your model predicts \( \hat{y} = 0.9 \). Compute the loss in both worlds before you peek.</p>
+  <details class="spoiler">
+    <summary>Check my log-loss arithmetic</summary>
+    <div class="body">
+      <p><b>True label \( y = 1 \)</b> (confident and right): loss \( = -\ln(0.9) = -(-0.105) \approx 0.105 \). Small — gently nudged, because you were confident and correct but not perfectly certain.</p>
+      <p><b>True label \( y = 0 \)</b> (confident and wrong): loss \( = -\ln(1 - 0.9) = -\ln(0.1) = -(-2.302) \approx 2.302 \). More than twenty times bigger for the <em>exact same prediction</em>. The model is hammered for being sure of the wrong thing.</p>
+      <p>0.105 versus 2.302 — that gap is log loss teaching the model to be confident only when it has earned it.</p>
+    </div>
+  </details>
 
-  <p><strong>Play with it:</strong> drag <em>w</em> to stretch or squash the S-curve and <em>b</em> to slide it left or right. Watch the orange decision boundary (where w·x + b = 0) move, and see each point flip between predicted class 0 and class 1 as it crosses p = 0.5.</p>
-  <div class="mlviz" data-widget="sigmoid"></div>
-
-  <p>Once we have a probability, making a decision is easy: pick a <strong>threshold</strong>. The default is 0.5 — if the predicted probability is at least 0.5, say "yes" (class 1); otherwise "no" (class 0). The set of inputs where the probability is exactly 0.5 is the <strong>decision boundary</strong>: the dividing line between the two predicted classes. With one input feature that boundary is a single point on the number line; with two features it is a straight line on a 2D plane.</p>
-
-  <h3>Making it precise</h3>
-  <p>Let \( x \) be an input feature (a number describing the example, e.g. an email's link-count). Let \( w \) be the <em>weight</em> (a number we adjust during training that says how strongly \( x \) pushes toward "yes") and \( b \) the <em>bias</em> (a number we adjust that shifts the whole curve left or right). The linear score, exactly as in Module 3, is</p>
-  \[ z = w x + b \]
-  <p>where \( z \) is the raw evidence — any real number. We turn \( z \) into a probability with the <strong>sigmoid function</strong> \( \sigma \) (the Greek letter "sigma"):</p>
-  \[ \sigma(z) = \frac{1}{1 + e^{-z}} \]
-  <p>Here \( e \approx 2.718 \) is Euler's number (a fixed constant), and \( e^{-z} \) means \( e \) raised to the power \( -z \). Read the formula in words: when \( z \) is large and positive, \( -z \) is large and negative, so \( e^{-z} \) is tiny (close to 0), so the denominator is about 1 and \( \sigma(z) \approx 1 \). When \( z \) is large and negative, \( e^{-z} \) is huge, so the fraction is tiny and \( \sigma(z) \approx 0 \). When \( z = 0 \), \( e^{0} = 1 \), so \( \sigma(0) = \frac{1}{1+1} = 0.5 \). That single formula produces the whole S-curve.</p>
-  <p>We write the model's predicted probability that the example is class 1 as</p>
-  \[ \hat{y} = \sigma(w x + b) \]
-  <p>where \( \hat{y} \) (read "y-hat") is our estimate of \( P(\text{class} = 1) \). The predicted class is then class 1 if \( \hat{y} \ge 0.5 \), else class 0. Because \( \sigma(z) \ge 0.5 \) happens exactly when \( z \ge 0 \), the decision boundary is simply the place where \( w x + b = 0 \).</p>
-
-  <h4>How wrong is a probability? Cross-entropy, in words first</h4>
-  <p>In Module 3 we measured error with squared distance, \( (\hat{y} - y)^2 \). For probabilities that is a poor fit. We want a loss that does two things: it should be near zero when we confidently predict the correct class, and it should grow <em>very large</em> when we confidently predict the wrong class. Confident-and-wrong should hurt a lot — that is how the model learns humility.</p>
-  <p>The loss that does this is <strong>log loss</strong> (also called <strong>cross-entropy</strong>). The intuition: it asks "what probability did you assign to the answer that actually happened?" and then penalises you by the negative logarithm of that probability. If you said the right answer was 99% likely and it happened, \( -\ln(0.99) \) is almost 0 — barely any penalty. If you said it was 1% likely and it still happened, \( -\ln(0.01) \approx 4.6 \) — a big penalty. The logarithm is what makes overconfident mistakes explode toward infinity.</p>
-  <p>For a single example with true label \( y \in \{0, 1\} \) (0 or 1) and predicted probability \( \hat{y} \), the formula is</p>
-  \[ L(\hat{y}, y) = -\big[\, y \ln(\hat{y}) + (1 - y)\ln(1 - \hat{y}) \,\big] \]
-  <p>where \( \ln \) is the natural logarithm (log base \( e \)). This looks like two terms but only one is ever "switched on": if the true label \( y = 1 \), then \( (1-y) = 0 \) kills the second term and the loss is \( -\ln(\hat{y}) \) — penalise by how little probability you gave to "yes". If \( y = 0 \), the first term vanishes and the loss is \( -\ln(1 - \hat{y}) \) — penalise by how little probability you gave to "no". The \( y \) and \( (1-y) \) are just a tidy on/off switch for picking the right penalty. Averaging \( L \) over all training examples gives the total cost we minimise.</p>
-
-  <div class="callout worked"><h3>Worked example — by hand</h3>
-    <p><strong>Part 1 — squashing scores with the sigmoid.</strong> Let's compute \( \sigma(z) \) for three scores, using \( e \approx 2.718 \).</p>
-    <ul>
-      <li><strong>\( z = 0 \):</strong> \( e^{-0} = 1 \), so \( \sigma(0) = \frac{1}{1+1} = \frac{1}{2} = 0.5 \). Zero evidence, a perfect coin flip.</li>
-      <li><strong>\( z = 2 \):</strong> \( e^{-2} = \frac{1}{e^{2}} = \frac{1}{2.718^2} = \frac{1}{7.389} \approx 0.135 \). Then \( \sigma(2) = \frac{1}{1 + 0.135} = \frac{1}{1.135} \approx 0.881 \). Strong positive evidence, about 88% confident in "yes".</li>
-      <li><strong>\( z = -1 \):</strong> \( e^{-(-1)} = e^{1} = 2.718 \). Then \( \sigma(-1) = \frac{1}{1 + 2.718} = \frac{1}{3.718} \approx 0.269 \). Negative evidence, about 27% — i.e. roughly 73% confident in "no".</li>
-    </ul>
-    <p>Sanity check: as \( z \) went from \( -1 \) to \( 0 \) to \( 2 \), the probability climbed from 0.27 to 0.50 to 0.88. More evidence, more confidence, smoothly. Good.</p>
-    <p><strong>Part 2 — the cost of a single prediction.</strong> Suppose the model predicts \( \hat{y} = 0.9 \) (90% sure it's class 1). Compare two worlds.</p>
-    <ul>
-      <li><strong>If the true label is \( y = 1 \)</strong> (we were right): loss \( = -\ln(0.9) = -(-0.105) \approx 0.105 \). Small — we are gently nudged because we were confident and correct, but not perfectly certain.</li>
-      <li><strong>If the true label is \( y = 0 \)</strong> (we were confidently wrong): loss \( = -\ln(1 - 0.9) = -\ln(0.1) = -(-2.302) \approx 2.302 \). More than twenty times larger. The model is strongly punished for being sure of the wrong thing.</li>
-    </ul>
-    <p>That asymmetry — 0.105 versus 2.302 for the very same prediction — is the whole point of log loss. It teaches the model to be confident only when it has earned it.</p>
+  <!-- ===================== BEAT 7: REUSE GD + DEBUG ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · the optimiser is free</div>
+  <h3>No new optimiser. Module 4, again.</h3>
+  <p>Here is the delightful part. To train, we minimise the average log loss with gradient descent — the <em>exact</em> procedure from Module 4. We just need the gradients (the slopes telling us how to nudge \( w \) and \( b \)). After the calculus settles, they come out identical in shape to linear regression's:</p>
+  <div class="math-card">
+    <div class="eq">\[ \frac{\partial L}{\partial w} = (\hat{y} - y)\,x, \qquad \frac{\partial L}{\partial b} = (\hat{y} - y) \]</div>
+    <p class="legend"><b>(ŷ − y)</b> the prediction error. Weight gradient = error × input. Bias gradient = error alone (its "input" is the constant 1). The <em>only</em> change from Module 3 is that \( \hat{y} \) is now \( \sigma(wx+b) \), not raw \( wx+b \).</p>
   </div>
+  <p>So the update rule is the one you already know cold:</p>
+  <div class="math-card">
+    <div class="eq">\[ w \leftarrow w - \alpha\,\frac{\partial L}{\partial w}, \qquad b \leftarrow b - \alpha\,\frac{\partial L}{\partial b} \]</div>
+    <p class="legend"><b>α</b> (alpha) the learning rate, a small positive step size. <b>←</b> means "becomes." Same loop, same minus sign, same robot-in-fog from Module 4.</p>
+  </div>
+  <p>Logistic regression is linear regression wearing a sigmoid hat and a log-loss coat. Now find the bug a beginner planted in the loop.</p>
 
-  <h3>Reusing gradient descent — no new optimizer</h3>
-  <p>Here is the delightful part. To train the model we minimise the average log loss by gradient descent, exactly the procedure from Module 4 — Gradient Descent. We just need the gradients (the slopes telling us which way to nudge \( w \) and \( b \)). Remarkably, after the calculus settles, they look <em>identical in shape</em> to linear regression's:</p>
-  \[ \frac{\partial L}{\partial w} = (\hat{y} - y)\,x, \qquad \frac{\partial L}{\partial b} = (\hat{y} - y) \]
-  <p>In words: the gradient is the prediction error \( (\hat{y} - y) \) times the input \( x \) (for the weight) or just the error (for the bias). The only change from Module 3 is that \( \hat{y} \) is now \( \sigma(wx+b) \) instead of the raw \( wx+b \). So the update rule is unchanged:</p>
-  \[ w \leftarrow w - \alpha\,\frac{\partial L}{\partial w}, \qquad b \leftarrow b - \alpha\,\frac{\partial L}{\partial b} \]
-  <p>where \( \alpha \) (alpha) is the <em>learning rate</em>, a small positive number controlling step size, and \( \leftarrow \) means "becomes". You already know how to run this loop. Logistic regression is linear regression wearing a sigmoid hat and a log-loss coat.</p>
+  <p>This trainer runs without errors, but the loss <em>climbs</em> every step instead of falling. Read it and spot the bug before you open the fix.</p>
+  <codeblock>import numpy as np
 
-  <svg class="diagram" viewBox="0 0 320 220" role="img" aria-label="A 2D scatter of two classes separated by a straight decision boundary">
-    <line x1="30" y1="190" x2="300" y2="190" stroke="currentColor" stroke-width="1"/>
-    <line x1="30" y1="20" x2="30" y2="190" stroke="currentColor" stroke-width="1"/>
-    <line x1="60" y1="40" x2="280" y2="180" stroke="#f59e0b" stroke-width="2.5"/>
-    <circle cx="80" cy="60" r="5" fill="#6366f1"/>
-    <circle cx="110" cy="50" r="5" fill="#6366f1"/>
-    <circle cx="95" cy="95" r="5" fill="#6366f1"/>
-    <circle cx="140" cy="75" r="5" fill="#6366f1"/>
-    <circle cx="200" cy="150" r="5" fill="#10b981"/>
-    <circle cx="230" cy="160" r="5" fill="#10b981"/>
-    <circle cx="245" cy="120" r="5" fill="#10b981"/>
-    <circle cx="180" cy="170" r="5" fill="#10b981"/>
-    <text x="240" y="60" font-size="10" fill="#f59e0b">boundary: wx+b=0</text>
-    <text x="305" y="194" font-size="10" fill="currentColor">x₁</text>
-    <text x="20" y="24" font-size="10" fill="currentColor">x₂</text>
-  </svg>
-  <p class="caption">With two features, the decision boundary is a straight line. Points on one side get probability above 0.5 (predicted blue), points on the other side below 0.5 (predicted green).</p>
+def sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-z))
 
-  <h3>In code: from scratch</h3>
-  <p>Let's build the whole thing in NumPy on a tiny 2D dataset: blue points (class 0) clustered low-left, green points (class 1) high-right. We implement the sigmoid, the log loss, and a plain gradient descent loop, then watch the loss fall and read off the learned boundary.</p>
+X = np.array([[1.,1.],[1.5,.5],[.5,1.5],[1.,2.],
+              [4.,4.],[4.5,3.5],[3.5,4.5],[4.,5.]])
+y = np.array([0,0,0,0,1,1,1,1], dtype=float)
+w, b, alpha, n = np.zeros(2), 0.0, 0.1, len(y)
+
+for step in range(2001):
+    y_hat = sigmoid(X @ w + b)
+    error = y_hat - y
+    grad_w = (X.T @ error) / n
+    grad_b = error.mean()
+    w = w + alpha * grad_w        # <-- something is wrong on this line
+    b = b + alpha * grad_b        # <-- and on this one
+</codeblock>
+  <details class="spoiler">
+    <summary>Show the bug &amp; why</summary>
+    <div class="body"><p>The signs are flipped. <code>w = w + alpha * grad_w</code> walks <em>uphill</em> — it climbs the loss. The gradient points toward higher cost, so to go down you must <strong>subtract</strong> it: <code>w = w - alpha * grad_w</code> and <code>b = b - alpha * grad_b</code>. This is the identical sign trap from Module 4: one flipped minus is the whole difference between a model that learns and one that screams off to infinity.</p></div>
+  </details>
+
+  <!-- ===================== BEAT 8: FROM SCRATCH ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · the whole thing, from scratch</div>
+  <h3>Predict the output, then run it.</h3>
+  <p>The corrected, complete trainer on a tiny 2D dataset: blue points (class 0) low-left, green points (class 1) high-right. Sigmoid, log loss, plain gradient descent. Before you run it — <strong>predict</strong>: what loss does it start at when every weight is zero, before any learning?</p>
+
+  <details class="spoiler">
+    <summary>My guess for the starting loss</summary>
+    <div class="body"><p>With <code>w = 0, b = 0</code>, every \( z = 0 \), so every \( \hat{y} = \sigma(0) = 0.5 \). The model guesses 0.5 for everything, and log loss of a constant 0.5 is \( -\ln(0.5) \approx 0.693 \). That is the "I know nothing" baseline — if your loss ever sits above 0.693, your model is worse than a coin flip.</p></div>
+  </details>
+
   <codeblock>import numpy as np
 
 # --- tiny 2D dataset: 4 points class 0 (lower-left), 4 points class 1 (upper-right)
@@ -138,7 +218,7 @@ for step in range(2001):
     error = y_hat - y           # (y_hat - y), the shared gradient piece
     grad_w = (X.T @ error) / n  # average gradient for the weights
     grad_b = error.mean()       # average gradient for the bias
-    w -= alpha * grad_w         # gradient descent step
+    w -= alpha * grad_w         # gradient descent step (note the MINUS)
     b -= alpha * grad_b
     if step % 500 == 0:
         print(f"step {step:4d}  loss {log_loss(y, y_hat):.4f}  w={np.round(w,3)} b={b:.3f}")
@@ -149,10 +229,12 @@ preds = (probs >= 0.5).astype(int)
 print("predicted classes:", preds)
 print("accuracy:", (preds == y).mean())
 </codeblock>
-  <p>Running this prints a loss that starts near 0.693 (that's \( -\ln 0.5 \), the loss of a model guessing 0.5 for everything) and steadily falls toward roughly 0.05 as the weights grow. The final line reports <code>accuracy: 1.0</code> — all eight points classified correctly. The decision boundary is wherever <code>X @ w + b == 0</code>; because both learned weights are positive, that boundary is the diagonal line separating lower-left from upper-right, exactly matching the picture above. Notice we wrote <em>no</em> new optimizer: the <code>error = y_hat - y</code> trick is the same gradient shape you used in Module 4.</p>
+  <p>The loss starts near <strong>0.693</strong> (your predicted \( -\ln 0.5 \) baseline) and falls steadily toward roughly <strong>0.05</strong> as the weights grow. The last line reports <code>accuracy: 1.0</code> — all eight points correct. The boundary is wherever <code>X @ w + b == 0</code>; both learned weights are positive, so it's the diagonal splitting lower-left from upper-right. And notice: <em>no new optimiser was written.</em> The <code>error = y_hat - y</code> trick is the same gradient shape from Module 4.</p>
 
-  <h3>In code: the library way</h3>
-  <p>Once you understand the mechanics, scikit-learn does all of it in a few lines — and adds <code>predict_proba</code> so you can read the calibrated probabilities, not just the hard labels. Here we use the classic Iris dataset, reduced to a binary problem: is the flower the species <em>setosa</em>, or not?</p>
+  <!-- ===================== BEAT 9: LIBRARY + SOFTMAX ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">09</span> · the three-line version &amp; going multiclass</div>
+  <h3>scikit-learn, and beyond yes/no.</h3>
+  <p>Once you understand the mechanics, the library does all of it — and hands you <code>predict_proba</code> so you can read calibrated probabilities, not just hard labels. Binary Iris: is the flower <em>setosa</em>, or not? Predict the first row of <code>predict_proba</code> before running — setosa is famously easy to separate, so expect near-certainty.</p>
   <codeblock>from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -173,143 +255,84 @@ print("test accuracy:", model.score(X_test, y_test))
 print(model.predict_proba(X_test[:3]).round(3))
 print("hard predictions:", model.predict(X_test[:3]))
 </codeblock>
-  <p>This prints <code>test accuracy: 1.0</code> (setosa is famously easy to separate), then a small table where each row is two numbers summing to 1 — for example <code>[0.998 0.002]</code> meaning "99.8% not-setosa, 0.2% setosa". The <code>.predict</code> method just applies the 0.5 threshold to those probabilities for you. Same idea as your from-scratch loop, fewer keystrokes, plus battle-tested numerical care.</p>
+  <p>Prints <code>test accuracy: 1.0</code>, then a small table where each row is two numbers summing to 1 — e.g. <code>[0.998 0.002]</code> meaning "99.8% not-setosa, 0.2% setosa." <code>.predict</code> just applies the 0.5 threshold to those probabilities for you. Same idea as your from-scratch loop, fewer keystrokes, plus battle-tested numerical care.</p>
 
-  <h4>More than two classes: softmax</h4>
-  <p>What if you have three or more categories — say all three Iris species, or the ten handwritten digits 0–9? We generalise the sigmoid to the <strong>softmax</strong> function. Instead of one score \( z \), we compute one score \( z_k \) per class \( k \), then convert the whole bundle of scores into a set of probabilities that are all positive and sum to 1:</p>
-  \[ P(\text{class}=k) = \frac{e^{z_k}}{\sum_{j} e^{z_j}} \]
-  <p>where \( z_k \) is the score for class \( k \), and the denominator \( \sum_j e^{z_j} \) adds up \( e^{z_j} \) over every class \( j \) so the probabilities are normalised. In words: exponentiate every score (making them all positive), then divide each by the total. The biggest score gets the biggest probability; the chosen class is the one with the highest probability. The matching loss is <em>categorical</em> cross-entropy, the same "negative log of the probability you gave the true class" idea extended to many classes. Scikit-learn handles this automatically — call <code>LogisticRegression</code> on a target with three labels and it does the multiclass version for you. You will meet softmax again as the last layer of classification neural networks in Module 10 — Neural Network Fundamentals.</p>
+  <h4>Three or more classes: softmax</h4>
+  <p>What about ten digits, or all three Iris species? Generalise the sigmoid to <strong>softmax</strong>. Instead of one score \( z \), compute one score \( z_k \) per class \( k \), then turn the whole bundle into probabilities that are all positive and sum to 1:</p>
+  <div class="math-card">
+    <div class="eq">\[ P(\text{class}=k) = \frac{e^{z_k}}{\sum_{j} e^{z_j}} \]</div>
+    <p class="legend"><b>z<sub>k</sub></b> the score for class \( k \). The <b>denominator</b> adds \( e^{z_j} \) over every class \( j \), normalising so the probabilities sum to 1. Exponentiate every score (forces positive), then divide each by the total.</p>
+  </div>
+  <p>The biggest score gets the biggest probability; the chosen class is the highest one. The matching loss is <em>categorical</em> cross-entropy — the same "negative log of the probability you gave the true class" idea, extended to many classes. scikit-learn does this automatically: call <code>LogisticRegression</code> on a target with three labels and it runs the multiclass version. You'll meet softmax again as the last layer of classification neural networks in Module 10.</p>
 
-  <div class="callout companion"><h3>Work this with your Claude Code companion</h3>
-    <p>Paste these to your Claude Code companion as you study:</p>
-    <ul>
-      <li>"Explain why we use log loss instead of squared error for logistic regression, using a different analogy than the dimmer switch, and show me what goes wrong if I use squared error."</li>
-      <li>"Run my from-scratch logistic regression code, then change the learning rate to 1.0 and to 0.001 and show me how the loss curve and final boundary change. Explain what you see."</li>
-      <li>"Generate 5 practice problems on computing sigmoid and log loss by hand with small numbers, wait for my answers, then check them and explain any mistakes."</li>
-      <li>"Pair with me to extend my NumPy code to three classes using softmax and categorical cross-entropy, and review my implementation line by line."</li>
-    </ul>
+  <div class="callback"><b>Lock this in.</b> The sigmoid you bent in the lab is the 2-class special case of softmax. You will see softmax again in <b>Module 10</b> as the final layer of every classification neural net — same exponentiate-then-normalise, just wider. The trap to dodge: sigmoid is for binary (one probability); softmax is for multiclass (a probability per class). A sigmoid bolted onto ten classes is a bug, not a shortcut.</div>
+
+  <!-- ===================== BEAT 10: RECALL ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">10</span> · cold recall — no scrolling back</div>
+  <h3>Pull it out of your own head.</h3>
+  <p>Re-reading feels like learning but mostly isn't. Retrieving is. Answer each in your head, <em>then</em> flip. Can't? That's your signal to scroll up — but try first.</p>
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why can't a plain straight line predict yes/no probabilities?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">A line climbs forever — it returns nonsense like 4.7 or −2.3, outside [0,1], and outliers tilt the whole boundary. The sigmoid squashes evidence into a value that can't escape 0 to 1.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What is \( \sigma(0) \), and why?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">0.5. At \( z=0 \), \( e^{0}=1 \), so \( \sigma = \frac{1}{1+1} \). Zero evidence = coin flip. That's also where the decision boundary sits.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Why log loss instead of squared error?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Log loss explodes toward infinity for confident-and-wrong predictions (the log has a wall at 0) and is near-zero for confident-and-right. Squared error barely punishes overconfidence.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What's new in the training loop vs. Module 4?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Nothing in the optimiser. Same \( w \leftarrow w - \alpha\cdot\text{grad} \), same <code>error = y_hat - y</code> gradient shape. The only change: \( \hat{y} = \sigma(wx+b) \) instead of raw \( wx+b \).</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Sigmoid vs. softmax — when each?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Sigmoid for binary (one probability). Softmax for 3+ classes (a probability per class, summing to 1). Softmax with 2 classes reduces to the sigmoid.</div>
+    </div></div>
   </div>
 
-  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
-    <ul>
-      <li><strong>"Logistic regression is a kind of regression, so it predicts numbers."</strong> The name is a historical accident. It is a <em>classification</em> algorithm. The only number it predicts is a probability, which you immediately turn into a class label.</li>
-      <li><strong>Judging an imbalanced problem by accuracy.</strong> If 99% of emails are legitimate, a lazy model that always says "not spam" scores 99% accuracy while catching zero spam. On imbalanced data, accuracy lies — use precision, recall, or AUC instead (you'll meet these in Module 6 — Model Evaluation).</li>
-      <li><strong>Treating the 0.5 threshold as sacred.</strong> 0.5 is just the default. For cancer screening you might flag anyone above 0.1 (better to over-refer than miss a case); for an expensive automated action you might require 0.9. Move the threshold to trade off false alarms against misses.</li>
-      <li><strong>Reading probabilities as certainties.</strong> A predicted 0.7 does not mean the model is "70% right"; it means that, among inputs like this one, roughly 70% are class 1. Probabilities describe frequencies, not guarantees.</li>
-      <li><strong>Forgetting to scale features.</strong> Like linear regression, logistic regression converges faster and behaves better when features are on similar scales. If one feature is in thousands and another in fractions, standardise them first (Module 7 — Feature Engineering).</li>
-      <li><strong>Confusing sigmoid with softmax.</strong> Sigmoid is for binary (one probability); softmax is for multiclass (a probability per class that sum to 1). Using two sigmoids for two classes is fine; using a sigmoid for ten classes is not.</li>
-    </ul>
+  <!-- ===================== BEAT 11: BOSS ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">11</span> · boss fight</div>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — with your Claude companion</div>
+    <p>A box of "suggested prompts" is lazy. Here's a real challenge loop. Paste it to your Claude Code companion and don't move on until you beat it cold — by hand, no calculator from them.</p>
+    <div class="prompt"><button class="copy">copy</button>You are quizzing me on logistic regression. Run an adaptive loop. Round 1: give me a w, b, and an x, and I will compute z, then sigmoid(z) by hand, then say the predicted class and where the decision boundary is. Round 2: give me a true label y and a predicted probability, and I will compute the log loss by hand and tell you whether the model was confident-and-right or confident-and-wrong. Grade each answer, show me exactly where I slipped if I did, then escalate — make the next one harder (negative z, probabilities near 0 or 1 where the loss explodes, a case where the 0.5 threshold is the wrong call). Keep going until I get two rounds in a row perfect, then make me explain in words why log loss punishes confident-wrong far more than squared error would.</div>
+    <p class="aside">You pass this module when you can compute \( \sigma(z) \) and a log loss in your head, locate the decision boundary, and explain — using the dimmer switch and the robot-in-fog, not a memorised formula — why confident-and-wrong gets hammered and why training reused Module 4 unchanged.</p>
   </div>
 
-  <h3>Exercises</h3>
+  <!-- ===================== BEAT 12: EXERCISES ===================== -->
+  <div class="beat-tag"><span class="dot"></span><span class="n">12</span> · spar a few more</div>
+  <h3>Extra reps, answers hidden.</h3>
   <ol class="exercises">
-    <li>Compute \( \sigma(z) \) by hand for \( z = 1 \) and \( z = -2 \). Use \( e \approx 2.718 \). Which prediction is more confident, and in which direction?
-      <details class="solution"><summary>Show solution</summary>
-        <p>For \( z = 1 \): \( e^{-1} = 1/2.718 \approx 0.368 \), so \( \sigma(1) = \frac{1}{1+0.368} = \frac{1}{1.368} \approx 0.731 \) — about 73% confident in class 1.</p>
-        <p>For \( z = -2 \): \( e^{2} \approx 7.389 \), so \( \sigma(-2) = \frac{1}{1+7.389} = \frac{1}{8.389} \approx 0.119 \) — about 12% for class 1, i.e. ~88% confident in class 0.</p>
-        <p>\( z = -2 \) is the more confident prediction (0.119 is further from the uncertain 0.5 than 0.731 is), and it points toward class 0.</p>
-      </details>
+    <li>Compute \( \sigma(z) \) by hand for \( z = 1 \) and \( z = -2 \) (use \( e \approx 2.718 \)). Which prediction is more confident, and in which direction?
+      <details class="spoiler"><summary>Show solution</summary><div class="body">
+        <p>\( z = 1 \): \( e^{-1} = 1/2.718 \approx 0.368 \), so \( \sigma(1) = \frac{1}{1.368} \approx 0.731 \) — about 73% for class 1.</p>
+        <p>\( z = -2 \): \( e^{2} \approx 7.389 \), so \( \sigma(-2) = \frac{1}{8.389} \approx 0.119 \) — about 12% for class 1, i.e. ~88% for class 0.</p>
+        <p>\( z = -2 \) is more confident (0.119 is further from 0.5 than 0.731 is) and points toward class 0.</p>
+      </div></details>
     </li>
-    <li>A model predicts \( \hat{y} = 0.6 \). Compute the log loss if the true label is \( y = 1 \), and again if \( y = 0 \). Which is larger and why?
-      <details class="solution"><summary>Show solution</summary>
-        <p>If \( y = 1 \): loss \( = -\ln(0.6) \approx -(-0.511) = 0.511 \).</p>
-        <p>If \( y = 0 \): loss \( = -\ln(1 - 0.6) = -\ln(0.4) \approx -(-0.916) = 0.916 \).</p>
-        <p>The \( y = 0 \) case is larger because the model leaned the wrong way (it gave only 0.4 probability to the correct class 0), so it is penalised more than when it leaned the right way.</p>
-      </details>
+    <li>A model predicts \( \hat{y} = 0.6 \). Compute the log loss if \( y = 1 \), and again if \( y = 0 \). Which is larger, and why?
+      <details class="spoiler"><summary>Show solution</summary><div class="body">
+        <p>\( y = 1 \): loss \( = -\ln(0.6) \approx 0.511 \).</p>
+        <p>\( y = 0 \): loss \( = -\ln(1 - 0.6) = -\ln(0.4) \approx 0.916 \).</p>
+        <p>The \( y=0 \) case is larger: the model leaned the wrong way (only 0.4 on the correct class 0), so it's penalised more than when it leaned right.</p>
+      </div></details>
     </li>
-    <li>The decision boundary is where \( w x + b = 0 \). If \( w = 2 \) and \( b = -4 \) for a single feature \( x \), at what value of \( x \) does the prediction flip from class 0 to class 1? Predict the class for \( x = 1 \) and \( x = 3 \).
-      <details class="solution"><summary>Show solution</summary>
-        <p>Boundary: \( 2x - 4 = 0 \Rightarrow x = 2 \). For \( x \gt 2 \), \( z \gt 0 \) so \( \hat{y} \gt 0.5 \) (class 1); for \( x \lt 2 \), class 0.</p>
-        <p>\( x = 1 \): \( z = 2(1) - 4 = -2 \), \( \sigma(-2) \approx 0.12 \) → class 0. \( x = 3 \): \( z = 2(3) - 4 = 2 \), \( \sigma(2) \approx 0.88 \) → class 1.</p>
-      </details>
+    <li>With \( w = 2 \), \( b = -4 \) for a single feature \( x \): where is the decision boundary? Predict the class for \( x = 1 \) and \( x = 3 \).
+      <details class="spoiler"><summary>Show solution</summary><div class="body">
+        <p>Boundary: \( 2x - 4 = 0 \Rightarrow x = 2 \). For \( x \gt 2 \), \( z \gt 0 \) so class 1; for \( x \lt 2 \), class 0.</p>
+        <p>\( x = 1 \): \( z = 2(1)-4 = -2 \), \( \sigma(-2) \approx 0.12 \) → class 0. \( x = 3 \): \( z = 2(3)-4 = 2 \), \( \sigma(2) \approx 0.88 \) → class 1.</p>
+      </div></details>
     </li>
-    <li>In the from-scratch code, the gradient line is <code>error = y_hat - y</code>. Explain why the bias gradient is just the mean of <code>error</code> while the weight gradient multiplies by <code>X</code>. (Hint: revisit the formulas under "Reusing gradient descent".)
-      <details class="solution"><summary>Show solution</summary>
-        <p>The per-example gradients are \( \partial L/\partial w = (\hat{y}-y)\,x \) and \( \partial L/\partial b = (\hat{y}-y) \). The bias has no input attached (its "feature" is the constant 1), so its gradient is just the error itself; averaging over examples gives <code>error.mean()</code>. Each weight \( w_i \) is tied to feature \( x_i \), so its gradient scales the error by that feature value — in matrix form <code>X.T @ error / n</code> computes the average of \( (\hat{y}-y)\,x_i \) for every feature at once.</p>
-      </details>
-    </li>
-    <li><strong>Challenge.</strong> Suppose 5% of transactions are fraud. A model always predicts "not fraud". What is its accuracy, and why is that a terrible model? Suggest a better threshold strategy and a better metric.
-      <details class="solution"><summary>Show solution</summary>
-        <p>Accuracy = 95% (it is right on every legitimate transaction, which are 95% of the data), yet it catches <em>zero</em> fraud — useless for the actual goal. This is the imbalanced-data trap. Better: lower the decision threshold well below 0.5 so borderline-suspicious transactions get flagged (accepting more false alarms to catch more fraud), and evaluate with <em>recall</em> (fraction of true fraud caught) and <em>precision</em> (fraction of flags that are real), or the area under the precision–recall curve, instead of raw accuracy. You'll formalise these in Module 6.</p>
-      </details>
+    <li><strong>The imbalance trap.</strong> 5% of transactions are fraud. A model always predicts "not fraud." What's its accuracy, why is it terrible, and what would you do instead?
+      <details class="spoiler"><summary>Show solution</summary><div class="body">
+        <p>Accuracy = 95% (right on every legit transaction, which are 95% of the data) yet it catches <em>zero</em> fraud — useless for the actual goal. Fix: lower the threshold well below 0.5 so suspicious transactions get flagged (more false alarms, more fraud caught), and judge with <em>recall</em> and <em>precision</em> (or area under the precision–recall curve), not raw accuracy. You'll formalise these in Module 6.</p>
+      </div></details>
     </li>
   </ol>
 
-  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
-    <ul>
-      <li>Explain in one breath how logistic regression turns \( wx + b \) into a class label, naming \( z \), \( \sigma \), and the threshold.</li>
-      <li>Compute \( \sigma(z) \) and the log loss for a single example by hand.</li>
-      <li>Say why confident-and-wrong predictions get punished much harder than confident-and-right ones.</li>
-      <li>Point to where the decision boundary lives and explain why 0.5 is a choice, not a law.</li>
-      <li>Describe how softmax extends the idea to three or more classes.</li>
-    </ul>
-  </div>
-
-  <div class="callout projects"><h3>Projects — build something real</h3>
-    <p>Reading and hand-calculation get you understanding; shipping a small project gets you fluency. Pick one (or work through several) and do it end to end. Each lists a concrete <em>goal</em>, a <em>dataset</em> you can grab today, <em>milestones</em> to pace yourself, a <em>success</em> bar, and a <em>stretch</em> for when you want more.</p>
-
-    <div class="project">
-      <h4>Project 1 — Spam vs. ham classifier</h4>
-      <ul>
-        <li><strong>Goal:</strong> Train a logistic regression model that labels a short text message as spam (1) or not-spam (0) and reports a calibrated probability for each message.</li>
-        <li><strong>Dataset:</strong> The SMS Spam Collection (~5,500 labelled texts), available from the UCI Machine Learning Repository or as a Kaggle download.</li>
-        <li><strong>Milestones:</strong> (1) Load the data and split into train/test. (2) Turn each message into numeric features with <code>CountVectorizer</code> or <code>TfidfVectorizer</code>. (3) Fit <code>LogisticRegression</code> and print test accuracy. (4) Inspect <code>predict_proba</code> on five messages and eyeball whether the confidence makes sense.</li>
-        <li><strong>Success:</strong> Test accuracy above 0.95, and you can explain one false positive and one false negative by reading the message.</li>
-        <li><strong>Stretch:</strong> Plot precision and recall as you sweep the threshold from 0.1 to 0.9, and pick the threshold you would actually deploy if missing spam costs more than a false alarm.</li>
-      </ul>
-    </div>
-
-    <div class="project">
-      <h4>Project 2 — From-scratch trainer, no scikit-learn</h4>
-      <ul>
-        <li><strong>Goal:</strong> Reproduce the from-scratch NumPy model above on a real (small) dataset and match scikit-learn's accuracy within a couple of percent.</li>
-        <li><strong>Dataset:</strong> The Breast Cancer Wisconsin dataset, built into scikit-learn via <code>load_breast_cancer()</code> (569 examples, 30 features, binary target).</li>
-        <li><strong>Milestones:</strong> (1) Standardise the features (subtract mean, divide by standard deviation) so gradient descent behaves. (2) Run your own sigmoid + log-loss + gradient-descent loop. (3) Track the loss every 100 steps and confirm it decreases. (4) Compare your accuracy to a fitted <code>LogisticRegression</code>.</li>
-        <li><strong>Success:</strong> Your hand-rolled model lands within 2 percentage points of scikit-learn on a held-out test set, and the loss curve is monotonically (mostly) decreasing.</li>
-        <li><strong>Stretch:</strong> Add L2 regularisation (subtract \( \lambda w \) from each weight gradient) and observe how it shrinks the weights and affects test accuracy.</li>
-      </ul>
-    </div>
-
-    <div class="project">
-      <h4>Project 3 — Threshold tuning for an imbalanced problem</h4>
-      <ul>
-        <li><strong>Goal:</strong> Take an imbalanced dataset and show concretely why accuracy misleads, then choose a threshold that optimises a metric you actually care about.</li>
-        <li><strong>Dataset:</strong> The Credit Card Fraud Detection dataset on Kaggle (284,807 transactions, only ~0.17% fraud) — heavily imbalanced by design.</li>
-        <li><strong>Milestones:</strong> (1) Fit logistic regression and note the deceptively high accuracy. (2) Compute precision, recall, and the confusion matrix at threshold 0.5. (3) Sweep the threshold and plot the precision-recall curve. (4) Report the threshold that gives recall above 0.80.</li>
-        <li><strong>Success:</strong> You can state, in one sentence, why the 99.8% accuracy model is useless and what threshold you would ship instead.</li>
-        <li><strong>Stretch:</strong> Re-train with <code>class_weight="balanced"</code> and compare the precision-recall curve to the unweighted model.</li>
-      </ul>
-    </div>
-
-    <div class="project">
-      <h4>Project 4 — Multiclass with softmax</h4>
-      <ul>
-        <li><strong>Goal:</strong> Move beyond binary: classify handwritten digits into ten classes (0 through 9) using softmax logistic regression.</li>
-        <li><strong>Dataset:</strong> The digits dataset built into scikit-learn via <code>load_digits()</code> (1,797 8x8 grayscale images, ten classes).</li>
-        <li><strong>Milestones:</strong> (1) Flatten each 8x8 image into a 64-length feature vector. (2) Fit <code>LogisticRegression</code> (it uses softmax for more than two classes automatically). (3) Print the test accuracy and the per-class confusion matrix. (4) Find the two digits most often confused with each other.</li>
-        <li><strong>Success:</strong> Test accuracy above 0.93, and you can name which digit pair the model confuses most.</li>
-        <li><strong>Stretch:</strong> Visualise the learned weight vector for one class as an 8x8 image and describe what pattern it has learned to detect.</li>
-      </ul>
-    </div>
-
-    <div class="project">
-      <h4>Project 5 — Probability calibration check</h4>
-      <ul>
-        <li><strong>Goal:</strong> Test whether your model's stated probabilities are honest — when it says "70%", does the event really happen about 70% of the time?</li>
-        <li><strong>Dataset:</strong> Any binary dataset from the projects above; the Titanic survival dataset (Kaggle) works well because the signal is moderate, not perfect.</li>
-        <li><strong>Milestones:</strong> (1) Fit logistic regression and get test-set probabilities. (2) Bin predictions into ten buckets (0.0-0.1, 0.1-0.2, ...). (3) For each bucket, compare the average predicted probability to the actual fraction of positives. (4) Plot the two against each other — this is a reliability diagram.</li>
-        <li><strong>Success:</strong> You produce a reliability diagram and can say whether the model is over-confident, under-confident, or well-calibrated.</li>
-        <li><strong>Stretch:</strong> Apply <code>CalibratedClassifierCV</code> and show whether it pulls the reliability curve closer to the diagonal.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="callout resources"><h3>Curated resources</h3>
-    <ul>
-      <li><a href="https://www.youtube.com/@statquest">StatQuest — Logistic Regression</a> — Josh Starmer's clearest-on-the-internet visual walkthrough of the sigmoid and the fit.</li>
-      <li><a href="https://developers.google.com/machine-learning/crash-course">Google ML Crash Course</a> — short, hands-on lessons on logistic regression, log loss, and classification thresholds.</li>
-      <li><a href="https://scikit-learn.org/stable/user_guide.html">scikit-learn User Guide</a> — the official reference for <code>LogisticRegression</code>, <code>predict_proba</code>, and multiclass options.</li>
-      <li><a href="https://www.statlearning.com/">An Introduction to Statistical Learning (free PDF)</a> — Chapter 4 gives a gentle but rigorous treatment of classification.</li>
-    </ul>
-  </div>
+  <div class="callback"><b>Where this returns.</b> Module 6 (Model Evaluation) is where the 0.5 threshold and "accuracy lies on imbalanced data" come back to bite — you'll learn precision, recall, and AUC there. Module 7 (Feature Engineering) is where "scale your features first" matters. And Module 10 puts a softmax on the end of a neural net, where this exact math becomes the final layer. One squash, three modules.</div>
 </section>

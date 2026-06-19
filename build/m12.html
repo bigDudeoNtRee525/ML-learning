@@ -5,99 +5,125 @@
     <label class="done-toggle"><input type="checkbox" class="done-box" data-id="m12"><span>Mark module complete</span></label>
   </div>
 
-  <div class="callout objectives"><h3>Learning objectives</h3><p>By the end of this module you'll be able to:</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">01</span> · do the math that breaks the obvious idea</div>
+  <h3>One dense layer. Count the weights. Then panic.</h3>
+  <p class="lead">You already know how to build a neural network (Module 10) and train it (Module 11). So here's the obvious move: take a photo, flatten it into a list of pixels, feed it to a dense layer. Done. Computer vision solved.</p>
+  <p>Before you scroll, do the arithmetic yourself. A normal colour photo is <strong>224 pixels wide, 224 tall, 3 colour channels</strong> (red, green, blue). Multiply: that's the length of the flattened input. Now imagine the first dense layer has just <strong>1,000 neurons</strong>, each connected to every input pixel. How many weights is that one layer?</p>
+  <p>Write down your guess. Thousands? Millions? Get a number in your head before you tap.</p>
+
+  <div class="predict" data-correct="c">
+    <p class="q">A 224×224×3 image into a 1,000-neuron dense first layer. How many weights in that <em>single</em> layer?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> About 150 thousand — one per pixel, roughly.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> About 1.5 million — manageable, that's a normal model.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> About 150 million — and that's just layer one.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>224 × 224 × 3 = <strong>150,528</strong> input numbers per image. Each of the 1,000 neurons connects to all of them: 150,528 × 1,000 ≈ <strong>150 million weights</strong>. One layer. A real net has dozens. That is too much to store comfortably and <em>way</em> too much to learn from a normal dataset without overfitting catastrophically (remember overfitting from Module 6). Dense layers on raw images are a dead end.</p>
+    </div>
+  </div>
+
+  <p>And the parameter explosion isn't even the worst part.</p>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">02</span> · the second, sneakier problem</div>
+  <h3>Flattening murders the picture.</h3>
+  <p>To feed an image into a dense layer you have to flatten it into one long line of numbers. The instant you do that, the network forgets that pixel #225 was sitting directly <em>below</em> pixel #1. Neighbouring pixels — the ones that together make edges, corners, textures — get scattered into unrelated slots.</p>
+  <p>Worse: a dense net has to learn a <em>separate</em> detector for a cat's ear in the top-left, another for the top-right, another for the middle. Move the cat two pixels and it's a brand-new pattern as far as the network is concerned. Nothing is shared. You're paying 150 million weights and still re-learning the same thing in every location.</p>
+
+  <p>So what's the fix? Here's the whole idea, and you should sit with it for a second before the formula shows up.</p>
+
+  <div class="callout analogy" style="border-left:3px solid var(--accent2);background:rgba(179,136,255,.07);border-radius:0 12px 12px 0;padding:.9rem 1.1rem;margin:1.4rem 0;">
+    <p style="margin:0"><strong>The rubber stamp.</strong> Picture a giant photo and a tiny transparent stamp with one little pattern printed on it — say, a short vertical edge. Press the stamp onto the top-left of the photo and score how well the photo underneath matches the stamp. Slide it one step right, score again. Keep going across and down until you've stamped everywhere, writing each score into a grid. That grid is a map of <em>where this pattern appears</em>. The stamp is the <strong>filter</strong> (or <strong>kernel</strong>); it's maybe 3×3 = 9 numbers, reused everywhere. The grid of scores is a <strong>feature map</strong>. One small reusable detector, slid across the whole image — that single idea is the entire heart of a convolution.</p>
+  </div>
+
+  <p>This fixes both problems at once. The stamp is tiny, so few weights. And because you slide the <em>same</em> stamp everywhere, the pattern is found no matter where it sits — learn it once, apply it everywhere. (Fancy name for that: <strong>translation equivariance</strong>. Move the cat, its activations move with it.) Now go watch it actually happen.</p>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">03</span> · the lab</div>
+  <h3>Drive a convolution. Three missions.</h3>
+  <p>Below, a 3×3 filter slides over a 9×9 grayscale image. At each spot it multiplies the 9 overlapping pairs and sums them into one cell of the output feature map. The image is built on purpose: <em>dark on the left, bright on the right</em> (a vertical edge down the middle), a bright horizontal band across the middle rows, a dark square top-right, and a bright dot bottom-left. Switch kernels and watch which structure each one reacts to.</p>
+  <p>Don't just press Play and zone out. Each mission is a <strong>prediction you commit to first</strong>, then check in the widget.</p>
+
+  <div class="do">
+    <div class="do-head"><span class="badge">LAB</span> slide a filter, read the feature map</div>
+    <p class="aside">Pick a kernel preset, press Step to crawl one cell at a time, or Play to sweep. Watch where the feature map goes bright (high score) vs. dark (near zero).</p>
+    <div class="mlviz" data-widget="convolution"></div>
+    <ul class="missions">
+      <li><span class="chk"></span><span class="mtext">Select <b>Vertical edge</b> and predict, before sweeping, <em>which column</em> of the 7×7 map will light up. Then sweep and check.<small>Hint: the image switches from dark to bright between columns 4 and 5. A vertical-edge filter fires on left↔right brightness changes.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Switch to <b>Identity</b> <code>[[0,0,0],[0,1,0],[0,0,0]]</code>. Predict what the feature map will look like before you sweep.<small>Hint: this kernel multiplies the centre pixel by 1 and everything else by 0.</small></span></li>
+      <li><span class="chk"></span><span class="mtext">Switch to <b>Box blur</b>. Predict whether the sharp vertical edge gets sharper, blurrier, or vanishes.<small>Hint: every weight is 1/9 — you're averaging the 3×3 patch.</small></span></li>
+    </ul>
+    <details class="spoiler">
+      <summary>Show what you should have seen</summary>
+      <div class="body">
+        <p><b>Vertical edge:</b> the map is near-zero (mid-gray) across flat regions and lights up in the column straddling the dark→bright boundary. The detector found exactly one vertical edge and ignored everything flat. That's a feature map doing its job.</p>
+        <p><b>Identity:</b> the feature map is just a 7×7 crop of the original image — it copies the centre pixel of every window and throws the neighbours away. A kernel can literally do nothing. Good baseline for your intuition.</p>
+        <p><b>Box blur:</b> the sharp edge spreads into a soft gradient. Averaging smears neighbouring pixels together, so high-frequency detail (sharp edges) gets washed out. Edges = the thing detectors want; blur = the thing that destroys them.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">04</span> · predict the shape before you trust the formula</div>
+  <h3>How big is the output?</h3>
+  <p>You just watched a 3×3 filter sweep a 9×9 image and fill a 7×7 map. Why 7? Don't take the widget's word for it — reason it out. The filter's top-left corner can sit at column 0, 1, 2, … but once its <em>right</em> edge would hang off the image, you have to stop. Count the valid starting positions in one row.</p>
+
+  <div class="predict" data-correct="b">
+    <p class="q">A 3×3 filter does a <strong>valid</strong> (no padding) convolution, stride 1, over a 9×9 image. What's the output side length?</p>
+    <div class="opts">
+      <button class="opt" data-opt="a"><span class="lab">A</span> 9×9 — convolution keeps the size.</button>
+      <button class="opt" data-opt="b"><span class="lab">B</span> 7×7 — you lose one pixel off each edge.</button>
+      <button class="opt" data-opt="c"><span class="lab">C</span> 3×3 — the output matches the filter.</button>
+    </div>
+    <div class="reveal">
+      <div class="verdict" data-ok="Nailed it." data-no="Not quite — here is why:"></div>
+      <p>A 3×3 window's top-left can start at columns 0 through 6 — that's 7 positions (at column 7 the window's right edge would hang off the 9-wide image). Same for rows. So the output is 7×7. The general rule: \( 9 - 3 + 1 = 7 \). "Valid" convolution always shrinks by \( F - 1 \) per dimension. Now let's earn that formula in full.</p>
+    </div>
+  </div>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">05</span> · now the notation, because you've earned it</div>
+  <h3>The math you already invented.</h3>
+  <p>Call the input grid \( X \) (pixel brightnesses) and the filter \( K \) (the small grid of numbers — these are the <em>weights the network learns</em>). Lay the filter on a patch of \( X \), multiply each filter number by the input number underneath, and add all the products into one number. That number is one cell of the output \( Y \). Move the filter, repeat.</p>
+
+  <div class="math-card"><div class="eq">\[ Y_{i,j} \;=\; \sum_{a=0}^{F-1}\;\sum_{b=0}^{F-1}\; X_{\,i+a,\;j+b}\;\cdot\;K_{a,b} \]</div>
+  <p class="legend"><b>Y</b> the output feature map. <b>X</b> the input image. <b>K</b> the filter/kernel. <b>F</b> the filter side length (e.g. 3 for a 3×3). The two sums just walk over every cell of the filter; \( (i,j) \) is where you placed its top-left corner.</p></div>
+
+  <p class="aside">Read it out loud: "line the filter up at position \( (i,j) \), multiply each overlapping pair, sum them into one output number." That's it. (Pedant's note: this is technically <em>cross-correlation</em>; real textbook convolution flips the filter first. Deep-learning libraries skip the flip and call it convolution anyway. Since the filter is learned, the flip makes no practical difference — don't lose sleep over it.)</p>
+
+  <p>Real networks bolt on three more knobs. You met two of them already in the lab as intuition; here are the names:</p>
+  <div class="math-card"><div class="eq">\[ O \;=\; \left\lfloor \frac{W - F + 2P}{S} \right\rfloor + 1 \]</div>
+  <p class="legend"><b>O</b> output side length. <b>W</b> input side length. <b>F</b> filter size. <b>P</b> padding (rings of zeros added to <em>each</em> side). <b>S</b> stride (how many pixels you slide each step). \( \lfloor \cdot \rfloor \) means round down.</p></div>
   <ul>
-    <li>Explain in plain words <strong>why a plain fully-connected network struggles on images</strong>, and count exactly how many weights it would need.</li>
-    <li>Describe what a <strong>convolution</strong> is — a small filter sliding over an image to detect a pattern — and compute one by hand.</li>
-    <li>Define <strong>filter/kernel</strong>, <strong>feature map</strong>, <strong>stride</strong>, <strong>padding</strong>, and <strong>pooling</strong>, and use the output-size formula to predict the shape of every layer.</li>
-    <li>Implement a single 2D convolution from scratch in NumPy, then build a small working CNN for MNIST digits in PyTorch.</li>
-    <li>Use <strong>transfer learning</strong> with a pretrained ResNet to get strong results from a small dataset — and explain when that beats training from scratch.</li>
-    <li>Recognize the classic architectures (LeNet, AlexNet, ResNet) and explain the <strong>residual connection</strong> idea.</li>
-  </ul></div>
-
-  <div class="callout hook"><h3>Why should I care?</h3><p>Open your phone's photo app and search "dog". It instantly finds every dog photo you ever took — across breeds, lighting, angles, and backgrounds it has never seen. Nobody wrote rules like "if there are four legs and a tail". The system <em>learned</em> what a dog looks like by being shown labelled examples, and the engine that made this practical is the convolutional neural network. The same idea reads handwritten zip codes, flags tumors in X-rays, and lets a self-driving car spot a stop sign. In this module you'll build the core machinery yourself — a convolution by hand, then a real CNN that reads handwritten digits — and then borrow a network trained on millions of images so you can classify your own photos with a few dozen examples.</p></div>
-
-  <h3>Intuition first</h3>
-  <p>You already met neural networks in <strong>Module 10 — Neural Network Fundamentals</strong> and learned to train them in <strong>Module 11</strong>. There, every neuron in a layer was connected to <em>every</em> input. That is called a <strong>fully-connected</strong> (or <strong>dense</strong>) layer. It works fine for small tabular data. For images it falls apart, for two reasons.</p>
-
-  <p><strong>Reason 1: the number of weights explodes.</strong> A modest colour photo is 224 pixels wide, 224 tall, with 3 colour channels (red, green, blue). That is 224 × 224 × 3 = 150,528 numbers <em>per image</em>. If the first dense layer had just 1,000 neurons, each connected to every input, that single layer would have 150,528 × 1,000 ≈ <strong>150 million weights</strong>. One layer. That is too many parameters to store comfortably and far too many to learn from a normal-sized dataset without badly overfitting (recall overfitting from <strong>Module 6</strong>).</p>
-
-  <p><strong>Reason 2: a dense layer throws away the picture's geometry.</strong> To feed an image into a dense layer you must flatten it into one long list of numbers. The moment you do that, the network no longer knows that pixel #225 sits directly below pixel #1. Neighbouring pixels — which together form edges, corners, and textures — are scattered into unrelated slots. A dense net has to <em>relearn</em> that structure from scratch, and it has to learn a separate detector for a cat's ear in the top-left corner, another for the top-right, another for the middle, and so on. Nothing is shared.</p>
-
-  <div class="callout analogy"><p><strong>The rubber-stamp analogy.</strong> Imagine you're given a giant photo and a small transparent stamp with a tiny pattern printed on it — say, a short diagonal edge. You press the stamp onto the top-left of the photo and score how well the photo underneath matches the stamp's pattern. Then you slide the stamp one step right and score again. You keep sliding across and down until you've stamped the whole photo, writing each score into a grid. That grid of scores is a <strong>feature map</strong>: a map of <em>where in the image this particular pattern appears</em>. The stamp is the <strong>filter</strong> (or <strong>kernel</strong>). Because you reuse the same small stamp everywhere, you need only a handful of numbers to define it — not a separate detector per location. That single idea — <em>one small reusable pattern detector, slid across the whole image</em> — is the entire heart of a convolution.</p></div>
-
-  <p>This solves both problems at once. The stamp is small (say 3×3 = 9 numbers), so we have very few weights. And because we slide the <em>same</em> stamp everywhere, a pattern is detected no matter where it appears — the network has learned the pattern once and applies it everywhere. This property is called <strong>translation equivariance</strong>: move the cat, and its activations move with it.</p>
-
-  <svg class="diagram" viewBox="0 0 420 180" width="100%" style="max-width:520px">
-    <text x="10" y="16" fill="currentColor" font-size="12">Input grid</text>
-    <g stroke="currentColor" stroke-width="1" fill="none">
-      <rect x="10" y="24" width="120" height="120"/>
-      <line x1="10" y1="64" x2="130" y2="64"/><line x1="10" y1="104" x2="130" y2="104"/>
-      <line x1="50" y1="24" x2="50" y2="144"/><line x1="90" y1="24" x2="90" y2="144"/>
-    </g>
-    <rect x="10" y="24" width="80" height="80" fill="#6366f1" fill-opacity="0.18" stroke="#6366f1" stroke-width="2"/>
-    <text x="14" y="42" fill="#6366f1" font-size="11">filter here…</text>
-    <path d="M140 84 L200 84" stroke="#10b981" stroke-width="2" marker-end="url(#a12)"/>
-    <defs><marker id="a12" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#10b981"/></marker></defs>
-    <text x="150" y="78" fill="#10b981" font-size="11">slide &amp; score</text>
-    <text x="250" y="16" fill="currentColor" font-size="12">Feature map (scores)</text>
-    <g stroke="currentColor" stroke-width="1" fill="none">
-      <rect x="250" y="44" width="80" height="80"/>
-      <line x1="250" y1="84" x2="330" y2="84"/><line x1="290" y1="44" x2="290" y2="124"/>
-    </g>
-    <rect x="250" y="44" width="40" height="40" fill="#6366f1" fill-opacity="0.35"/>
-  </svg>
-  <p class="caption">A small filter is placed on the top-left of the input, scored, then slid step by step across the whole grid. Each score lands in one cell of the output feature map.</p>
-
-  <p><strong>Play with it:</strong> watch a real convolution happen below. The 3×3 filter slides across a 9×9 grayscale image; at each spot it multiplies the 9 overlapping pairs and sums them into one cell of the 7×7 feature map. Press Play, or Step one position at a time, and switch the kernel preset — notice how the <em>vertical-edge</em> and <em>horizontal-edge</em> filters light up exactly where brightness changes, while <em>box blur</em> smooths and <em>identity</em> just copies the centre pixel.</p>
-  <div class="mlviz" data-widget="convolution"></div>
-
-  <h3>Making it precise</h3>
-  <p>Let the input be a small grid of numbers (pixel brightnesses) called \( X \), and the filter be a smaller grid of numbers \( K \) (these numbers are the <em>weights</em> the network will learn). Place the filter on top of a patch of the input, multiply each filter number by the input number underneath it, and add all those products up into a single number. That number is one cell of the output feature map. Then move the filter and repeat.</p>
-
-  <p>If the input patch and the filter are both \( F \times F \) (here \( F \) is the <strong>filter size</strong>, the side length of the square filter), the value written into the output at row \( i \), column \( j \) is</p>
-  \[ Y_{i,j} \;=\; \sum_{a=0}^{F-1}\;\sum_{b=0}^{F-1} \; X_{\,i+a,\; j+b}\; \cdot \; K_{a,b} \]
-  <p>In words: <em>line the filter up starting at position \( (i,j) \), multiply each overlapping pair of numbers together, and sum them all into one output number.</em> The two sums (over \( a \) and \( b \)) just walk across every cell of the filter. (Strictly, this operation is called <em>cross-correlation</em>; deep-learning libraries call it "convolution" and so will we — the only difference from textbook convolution is whether the filter is flipped first, and since the filter is learned it makes no practical difference.)</p>
-
-  <p>Real networks add two more knobs and one more operation:</p>
-  <ul>
-    <li><strong>Stride \( S \)</strong> — how many pixels you slide the filter each step. \( S = 1 \) slides one pixel at a time (lots of overlap, big output). \( S = 2 \) jumps two pixels, halving the output size roughly.</li>
-    <li><strong>Padding \( P \)</strong> — how many rings of zeros you add around the input border before convolving. Without padding the output shrinks every layer and edge pixels get visited less often. Adding zeros lets the filter centre sit over the corners too. Padding \( P = 0 \) is called <strong>valid</strong> convolution (no padding); padding chosen so the output matches the input size is called <strong>same</strong> convolution.</li>
-    <li><strong>Pooling</strong> — after convolving, we often shrink the feature map by summarizing each little block. <strong>Max pooling</strong> with a 2×2 window keeps only the largest value in each 2×2 block, halving width and height. This makes the representation smaller, faster, and a bit robust to tiny shifts (a feature detected one pixel over still survives).</li>
+    <li><strong>Stride \( S \)</strong> — pixels you jump per step. \( S=1 \): slide one pixel, big overlapping output. \( S=2 \): jump two, roughly halving the output.</li>
+    <li><strong>Padding \( P \)</strong> — rings of zeros around the border. \( P=0 \) is <strong>valid</strong> convolution (output shrinks every layer). Padding chosen so output equals input is <strong>same</strong> convolution. The \( 2P \) in the formula is there because you pad both sides.</li>
+    <li><strong>Pooling</strong> — a separate shrinking step. <strong>Max pooling</strong> with a 2×2 window keeps only the largest value in each 2×2 block, halving width and height. Smaller, faster, and a bit robust to tiny shifts.</li>
   </ul>
+  <p>Sanity-check the formula against the lab: \( W=9, F=3, P=0, S=1 \) gives \( O = \lfloor(9-3+0)/1\rfloor + 1 = 6 + 1 = 7 \). The widget was right. Memorize this formula — getting a shape wrong is the <strong>#1 beginner bug</strong>, and you'll use it constantly.</p>
 
-  <p>The <strong>output-size formula</strong> tells you exactly how big a feature map will be after a convolution (or pooling) layer:</p>
-  \[ O \;=\; \left\lfloor \frac{W - F + 2P}{S} \right\rfloor + 1 \]
-  <p>where \( O \) is the output side length (in pixels), \( W \) is the input side length, \( F \) is the filter size, \( P \) is the padding added to <em>each</em> side, \( S \) is the stride, and \( \lfloor \cdot \rfloor \) means round down to the nearest whole number. The \( 2P \) is there because padding is added on both sides. Memorize this one formula — you will use it constantly to keep track of shapes, and getting a shape wrong is the #1 beginner bug.</p>
-
-  <div class="callout">
-    <p><strong>Quick check with the formula.</strong> A 28×28 image, a 3×3 filter, no padding, stride 1: \( O = \lfloor (28 - 3 + 0)/1 \rfloor + 1 = 25 + 1 = 26 \). Output is 26×26. Now add padding \( P = 1 \): \( O = \lfloor (28 - 3 + 2)/1 \rfloor + 1 = 27 + 1 = 28 \) — same size as the input, hence the name "same" padding.</p>
+  <div class="callout" style="border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:1rem 1.2rem;margin:1.2rem 0;">
+    <p style="margin:0"><strong>Two more quick checks.</strong> A 28×28 image, 3×3 filter, \( P=0, S=1 \): \( O = \lfloor(28-3+0)/1\rfloor + 1 = 26 \), so 26×26. Add \( P=1 \): \( O = \lfloor(28-3+2)/1\rfloor + 1 = 28 \) — same size as the input, which is exactly why \( P=1 \) with a 3×3 filter is called "same" padding.</p>
   </div>
 
-  <p><strong>Channels.</strong> A colour image has 3 channels (R, G, B), so it is not really a flat grid but a stack of 3 grids. A filter then also has depth 3 — it has its own 3×3 grid for each input channel — and it sums across all channels to produce <em>one</em> output feature map. A convolutional layer has <em>many</em> such filters (say 32), producing 32 output feature maps stacked into a new 32-channel "image". Those 32 maps become the input channels for the next layer. So channel counts grow as spatial size shrinks: an image journeys from 3×224×224 toward something like 512×7×7 before a final dense layer makes the decision.</p>
+  <p><strong>Channels.</strong> A colour image is 3 stacked grids (R, G, B). A filter then has depth 3 too — its own 3×3 for each input channel — and it sums across all channels into <em>one</em> output map. A conv layer holds <em>many</em> such filters (say 32), making 32 output maps stacked into a new 32-channel "image" for the next layer. So depth grows as spatial size shrinks: an image travels from 3×224×224 toward something like 512×7×7 before a final dense layer decides.</p>
+  <p>PyTorch stores image batches in <strong>NCHW</strong> order: shape (N, C, H, W) = (batch size, channels, height, width). Feeding (H, W) or NHWC is the second most common beginner bug. Tape NCHW to your monitor.</p>
 
-  <p>PyTorch stores image batches in <strong>NCHW</strong> order: a 4-D array of shape (N, C, H, W) = (number of images in the batch, channels, height, width). Forgetting this and feeding, say, (H, W) or (N, H, W, C) is the second most common beginner bug. Keep NCHW taped to your monitor.</p>
-
-  <div class="callout worked"><h3>Worked example — by hand</h3>
-  <p>Let's convolve a 3×3 input with a 2×2 filter, using <strong>valid</strong> padding (\( P=0 \)) and <strong>stride 1</strong>. By the formula the output is \( O = \lfloor (3 - 2 + 0)/1 \rfloor + 1 = 2 \), so a 2×2 output.</p>
-  <p>Input \( X \) and filter \( K \):</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">06</span> · do it by hand</div>
+  <h3>Convolve a 3×3 with a 2×2. No computer.</h3>
+  <p>Get a pen. We'll convolve a 3×3 input with a 2×2 filter, valid padding, stride 1. First, the shape: \( O = \lfloor(3-2+0)/1\rfloor + 1 = 2 \), so a 2×2 output — four windows.</p>
   \[ X = \begin{bmatrix} 1 & 2 & 3 \\ 0 & 1 & 2 \\ 3 & 1 & 0 \end{bmatrix} \qquad K = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix} \]
-  <p>This particular filter computes "(top-left value) minus (bottom-right value)", a crude diagonal-difference detector. There are four positions where a 2×2 window fits inside a 3×3 grid. For each, multiply overlapping numbers and add.</p>
-  <p><strong>Window 1 — top-left</strong>, rows 0–1, cols 0–1: \( \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix} \).
-  Compute \( 1\cdot 1 + 2\cdot 0 + 0\cdot 0 + 1\cdot(-1) = 1 + 0 + 0 - 1 = \mathbf{0} \).</p>
-  <p><strong>Window 2 — top-right</strong>, rows 0–1, cols 1–2: \( \begin{bmatrix} 2 & 3 \\ 1 & 2 \end{bmatrix} \).
-  Compute \( 2\cdot 1 + 3\cdot 0 + 1\cdot 0 + 2\cdot(-1) = 2 + 0 + 0 - 2 = \mathbf{0} \).</p>
-  <p><strong>Window 3 — bottom-left</strong>, rows 1–2, cols 0–1: \( \begin{bmatrix} 0 & 1 \\ 3 & 1 \end{bmatrix} \).
-  Compute \( 0\cdot 1 + 1\cdot 0 + 3\cdot 0 + 1\cdot(-1) = 0 + 0 + 0 - 1 = \mathbf{-1} \).</p>
-  <p><strong>Window 4 — bottom-right</strong>, rows 1–2, cols 1–2: \( \begin{bmatrix} 1 & 2 \\ 1 & 0 \end{bmatrix} \).
-  Compute \( 1\cdot 1 + 2\cdot 0 + 1\cdot 0 + 0\cdot(-1) = 1 + 0 + 0 - 0 = \mathbf{1} \).</p>
-  <p>Assembling the four results in their grid positions gives the output feature map:</p>
-  \[ Y = \begin{bmatrix} 0 & 0 \\ -1 & 1 \end{bmatrix} \]
-  <p>Notice that 9 input numbers and 4 filter numbers produced a 2×2 summary, and that the <em>same</em> four filter weights were reused in all four windows. That reuse is exactly what saves us from the parameter explosion.</p>
+  <p>This filter computes "(top-left) minus (bottom-right)" — a crude diagonal-difference detector. <strong>Before you read on, compute Window 1 yourself</strong> (rows 0–1, cols 0–1). Then check.</p>
+  <div class="callout worked" style="border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:1rem 1.2rem;margin:1.2rem 0;">
+    <p><strong>Window 1 — top-left</strong>, \( \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix} \): \( 1{\cdot}1 + 2{\cdot}0 + 0{\cdot}0 + 1{\cdot}(-1) = 1 + 0 + 0 - 1 = \mathbf{0} \).</p>
+    <p><strong>Window 2 — top-right</strong>, \( \begin{bmatrix} 2 & 3 \\ 1 & 2 \end{bmatrix} \): \( 2{\cdot}1 + 3{\cdot}0 + 1{\cdot}0 + 2{\cdot}(-1) = 2 - 2 = \mathbf{0} \).</p>
+    <p><strong>Window 3 — bottom-left</strong>, \( \begin{bmatrix} 0 & 1 \\ 3 & 1 \end{bmatrix} \): \( 0{\cdot}1 + 1{\cdot}0 + 3{\cdot}0 + 1{\cdot}(-1) = -1 = \mathbf{-1} \).</p>
+    <p><strong>Window 4 — bottom-right</strong>, \( \begin{bmatrix} 1 & 2 \\ 1 & 0 \end{bmatrix} \): \( 1{\cdot}1 + 2{\cdot}0 + 1{\cdot}0 + 0{\cdot}(-1) = 1 = \mathbf{1} \).</p>
+    <p>Assemble in grid order:</p>
+    \[ Y = \begin{bmatrix} 0 & 0 \\ -1 & 1 \end{bmatrix} \]
+    <p style="margin-bottom:0">9 input numbers and 4 filter numbers produced a 2×2 summary — and the <em>same</em> four weights were reused in all four windows. That reuse is exactly what saves you from the 150-million-weight explosion.</p>
   </div>
 
-  <h3>In code: from scratch</h3>
-  <p>Let's turn the by-hand procedure into NumPy: slide the kernel over the matrix and compute each windowed sum. We'll reproduce the worked example exactly, then run the same edge-style filter on a tiny synthetic image so you can see a feature map appear.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">07</span> · predict the output, then run it</div>
+  <h3>From scratch in NumPy.</h3>
+  <p>Here's the by-hand procedure as code: slide the kernel, compute each windowed sum. Before you run it: the first <code>print</code> reproduces the worked example above. <strong>What 2×2 grid should it print?</strong> (You computed it 30 seconds ago.) Predict, then read.</p>
   <codeblock>import numpy as np
 
 def conv2d(X, K, stride=1, padding=0):
@@ -124,7 +150,7 @@ K = np.array([[1, 0],
               [0, -1]])
 print("Worked example output:\n", conv2d(X, K))
 
-# A vertical-edge detector on a tiny image that is dark on the left, bright on the right
+# A vertical-edge detector on a tiny image: dark on the left, bright on the right
 img = np.array([[0, 0, 9, 9],
                 [0, 0, 9, 9],
                 [0, 0, 9, 9],
@@ -132,10 +158,42 @@ img = np.array([[0, 0, 9, 9],
 vedge = np.array([[ 1, -1],
                   [ 1, -1]])
 print("Vertical-edge feature map:\n", conv2d(img, vedge))</codeblock>
-  <p>The first print reproduces our hand calculation exactly: <code>[[0, 0], [-1, 1]]</code>. The second filter, <code>[[1,-1],[1,-1]]</code>, fires strongly only where brightness changes from left to right. The image is flat (0) on the left and flat (9) on the right, with one vertical boundary in the middle, so the feature map is near zero everywhere <em>except</em> the column straddling that boundary, where it reads about −18. The network sees a clear "there is a vertical edge here" signal — produced by just four weights. That is a convolution detecting a pattern.</p>
+  <p>First print: <code>[[0, 0], [-1, 1]]</code> — exactly your hand calculation. The second filter <code>[[1,-1],[1,-1]]</code> fires only where brightness changes left-to-right. The image is flat 0 on the left, flat 9 on the right, one vertical boundary in the middle — so the feature map is near zero everywhere <em>except</em> the column straddling that boundary, where it reads about −18. A clear "vertical edge here" signal, from just four weights. (Same behaviour you saw in the lab, now in numbers.)</p>
 
-  <h3>In code: the library way</h3>
-  <p>Doing this for real means many filters, many layers, ReLU nonlinearities (from <strong>Module 10</strong>), pooling, and gradient descent (from <strong>Module 4</strong>) to <em>learn</em> the filter numbers instead of hand-picking them. PyTorch gives us all of that. Here is a compact but complete CNN that learns to read MNIST handwritten digits (28×28 grayscale, ten classes 0–9).</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">08</span> · find the bug</div>
+  <h3>This shape math is wrong. Where?</h3>
+  <p>A beginner wrote this <code>SmallCNN</code> for MNIST (28×28 grayscale, 10 classes). It defines fine but <strong>crashes at runtime</strong> with a shape-mismatch error the moment the first batch hits <code>fc1</code>. Trace the spatial size through both conv+pool stages using the output-size formula, and find the wrong number <em>before</em> you open the answer.</p>
+  <codeblock>import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class SmallCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)   # 28x28 stays 28x28
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)  # stays same size
+        self.pool  = nn.MaxPool2d(2)                              # halves H and W
+        self.fc1   = nn.Linear(64 * 14 * 14, 128)   # <-- something is wrong on this line
+        self.fc2   = nn.Linear(128, 10)
+
+    def forward(self, x):                  # x: (N,1,28,28)
+        x = self.pool(F.relu(self.conv1(x)))   # -> (N,32,14,14)
+        x = self.pool(F.relu(self.conv2(x)))   # -> (N,64,7,7)
+        x = torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        return self.fc2(x)</codeblock>
+  <details class="spoiler">
+    <summary>Show the bug &amp; the fix</summary>
+    <div class="body">
+      <p style="margin-top:.6rem">The padding-1, 3×3 convs keep the spatial size (28→28, then 14→14 — that's why "same" padding exists). But there are <em>two</em> poolings: 28 → 14 → <strong>7</strong>. So the tensor entering flatten is (N, 64, 7, 7), and flatten gives 64·7·7 = <strong>3,136</strong> features — not 64·14·14 = 12,544. The author counted only one pooling. Fix:</p>
+      <p><code>self.fc1 = nn.Linear(64 * 7 * 7, 128)</code></p>
+      <p>This is the #1 beginner bug in the flesh: a shape miscount. The forward comments even spell out <code>(N,64,7,7)</code> — when in doubt, <code>print(x.shape)</code> before every layer and let the formula, not vibes, tell you the number.</p>
+    </div>
+  </details>
+
+  <div class="beat-tag"><span class="dot"></span><span class="n">09</span> · the library way, for real</div>
+  <h3>A working CNN that reads handwriting.</h3>
+  <p>Here's the corrected, complete CNN. Many filters, ReLU nonlinearities (Module 10), pooling, and gradient descent (Module 4) to <em>learn</em> the filter numbers instead of hand-picking them. Watch the shapes flow in the comments — that's the whole skill.</p>
   <codeblock>import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -166,7 +224,7 @@ class SmallCNN(nn.Module):
     def forward(self, x):                  # x: (N,1,28,28)
         x = self.pool(F.relu(self.conv1(x)))   # -> (N,32,14,14)
         x = self.pool(F.relu(self.conv2(x)))   # -> (N,64,7,7)
-        x = torch.flatten(x, 1)                # -> (N, 64*7*7)
+        x = torch.flatten(x, 1)                # -> (N, 64*7*7) = (N, 3136)
         x = F.relu(self.fc1(x))                # -> (N,128)
         return self.fc2(x)                     # -> (N,10) raw scores (logits)
 
@@ -195,10 +253,12 @@ with torch.no_grad():
         correct += (pred == labels).sum().item()
         total   += labels.size(0)
 print(f"Test accuracy: {correct/total:.4f}")</codeblock>
-  <p>After a single epoch this network typically reaches about 98% test accuracy — out of 10,000 test digits it misclassifies only a couple hundred. Train for a few more epochs and it passes 99%. Notice how the shapes flow: 1 channel becomes 32 then 64 (more pattern detectors deeper in), while the spatial size shrinks 28 → 14 → 7 via the two poolings. The flatten step turns the final 64×7×7 = 3,136 numbers into a vector that two dense layers map to 10 class scores. The convolutions did the heavy lifting of <em>seeing</em>; the dense layers just <em>decide</em>.</p>
+  <p>After a single epoch this typically hits about <strong>98%</strong> test accuracy — out of 10,000 digits it misses only a couple hundred. A few more epochs and it passes 99%. Notice the flow: 1 channel becomes 32 then 64 (more detectors deeper in) while spatial size shrinks 28 → 14 → 7 via the two poolings. Flatten turns the final 64×7×7 = 3,136 numbers into a vector two dense layers map to 10 scores. The convolutions did the <em>seeing</em>; the dense layers just <em>decide</em>.</p>
 
-  <h4>Transfer learning: standing on a giant's shoulders</h4>
-  <p>MNIST is easy because we have 60,000 training images. What if you have 200 photos of two flower species? Training a big CNN from scratch on 200 images will overfit instantly. The fix is <strong>transfer learning</strong>: take a network already trained on millions of images (so its early filters already detect edges, textures, and shapes that are useful for <em>any</em> vision task), and reuse it. You freeze most of it and replace just the final classification layer with one sized for <em>your</em> classes, then train only that.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">10</span> · steal a giant's brain</div>
+  <h3>Transfer learning: ~1,000 trainable params, 90%+ accuracy.</h3>
+  <p>MNIST is easy — 60,000 training images. But say you have <strong>200 photos of two flower species</strong>. Train a big CNN from scratch on 200 images and it overfits instantly (Module 6). The fix is <strong>transfer learning</strong>: grab a network already trained on millions of images, so its early filters already detect edges, textures, and shapes useful for <em>any</em> vision task. Freeze it, replace just the final classification layer with one sized for <em>your</em> classes, train only that.</p>
+  <p>Before you run it: the last line prints how many parameters are trainable. ResNet18 has ~11 million total. After we freeze everything and bolt on a 512→2 layer, <strong>how many are trainable?</strong> Guess the order of magnitude.</p>
   <codeblock>import torch
 import torch.nn as nn
 from torchvision import models
@@ -228,89 +288,51 @@ preprocess = weights.transforms()   # resize to 224, center-crop, normalize with
 #     loss = loss_fn(net(images), labels)
 #     loss.backward(); opt.step()
 print("Trainable params:", sum(p.numel() for p in net.parameters() if p.requires_grad))</codeblock>
-  <p>The print shows only ~1,026 trainable parameters (512 weights + bias times the new layer's structure) instead of ResNet's 11 million — yet on a small flower or pet dataset this routinely hits 90%+ accuracy in minutes. The pretrained filters supply the visual "common sense"; you only teach the network how to <em>name</em> your specific classes. The one non-negotiable: preprocess your images with the <em>same</em> resize and normalization the network was trained with (here, <code>weights.transforms()</code> does it for you). Feed it raw, differently-scaled pixels and accuracy collapses.</p>
+  <p>It prints about <strong>1,026</strong> (512 weights + 1 bias per output, times 2 outputs) instead of 11 million — yet on a small flower or pet dataset this routinely hits 90%+ in minutes. The pretrained filters supply visual "common sense"; you only teach the net how to <em>name</em> your classes. The one non-negotiable: preprocess your images with the <em>same</em> resize and normalization the network was trained with (here <code>weights.transforms()</code> does it). Feed it raw, differently-scaled pixels and accuracy collapses.</p>
 
-  <h4>A quick tour of classic architectures</h4>
-  <ul>
-    <li><strong>LeNet-5 (1998, Yann LeCun).</strong> The original CNN, built to read handwritten digits on cheques. Two convolution-plus-pooling stages feeding small dense layers — essentially the structure of our SmallCNN above. It proved the convolution idea worked.</li>
-    <li><strong>AlexNet (2012).</strong> A deeper, wider LeNet trained on GPUs that won the ImageNet competition by a huge margin and kicked off the deep-learning era. It popularized ReLU activations and dropout (both in <strong>Module 11</strong>) as standard ingredients.</li>
-    <li><strong>ResNet (2015).</strong> When researchers stacked very deep networks (50, 100+ layers), accuracy mysteriously got <em>worse</em> — the gradient signal degraded over so many layers (the vanishing-gradient problem from <strong>Module 11</strong>). ResNet's fix is the <strong>residual connection</strong> (or skip connection): instead of asking a block of layers to compute a brand-new output \( H(x) \), you ask it to compute only a <em>correction</em> \( F(x) \) and add the input back: the block outputs \( F(x) + x \). If the best thing to do is nothing, the block can just learn \( F(x) = 0 \) and pass the input through unchanged. And because of that "+x", gradients have a clean shortcut path straight back through the network, so even 100+ layers train well. This one trick unlocked very deep networks and is everywhere today, including inside the Transformers of <strong>Module 14</strong>.</li>
-  </ul>
+  <div class="callout" style="border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:1rem 1.2rem;margin:1.2rem 0;">
+    <p style="margin:0"><strong>Why the residual trick exists (you'll meet it again).</strong> When researchers stacked <em>very</em> deep nets (50, 100+ layers), accuracy got mysteriously <em>worse</em> — the gradient signal degraded over so many layers (vanishing gradients, Module 11). ResNet's fix is the <strong>residual connection</strong>: instead of a block computing a brand-new output \( H(x) \), it computes only a <em>correction</em> \( F(x) \) and adds the input back, outputting \( F(x)+x \). If the best move is to do nothing, the block learns \( F(x)=0 \) and passes \( x \) through untouched. And that "+x" gives gradients a clean shortcut straight back, so even 100+ layers train. This one trick is everywhere today — including inside the Transformers of Module 14.</p>
+  </div>
+  <p class="aside">Lineage worth knowing: <strong>LeNet-5</strong> (1998) read cheque digits — basically our SmallCNN. <strong>AlexNet</strong> (2012) was a deeper LeNet on GPUs that crushed ImageNet and started the deep-learning era (popularized ReLU + dropout). <strong>ResNet</strong> (2015) added the residual connection and unlocked very deep nets.</p>
 
-  <svg class="diagram" viewBox="0 0 380 130" width="100%" style="max-width:460px">
-    <text x="10" y="16" fill="currentColor" font-size="12">Residual block</text>
-    <circle cx="30" cy="70" r="6" fill="#6366f1"/><text x="20" y="95" fill="currentColor" font-size="11">x</text>
-    <rect x="70" y="50" width="70" height="40" rx="6" fill="none" stroke="currentColor"/>
-    <text x="78" y="74" fill="currentColor" font-size="11">conv→relu</text>
-    <rect x="160" y="50" width="60" height="40" rx="6" fill="none" stroke="currentColor"/>
-    <text x="168" y="74" fill="currentColor" font-size="11">conv</text>
-    <line x1="36" y1="70" x2="70" y2="70" stroke="currentColor" marker-end="url(#b12)"/>
-    <line x1="140" y1="70" x2="160" y2="70" stroke="currentColor" marker-end="url(#b12)"/>
-    <line x1="220" y1="70" x2="270" y2="70" stroke="currentColor" marker-end="url(#b12)"/>
-    <circle cx="285" cy="70" r="10" fill="none" stroke="#10b981" stroke-width="2"/>
-    <text x="281" y="74" fill="#10b981" font-size="13">+</text>
-    <path d="M30 70 C 30 20, 285 20, 285 60" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#c12)"/>
-    <text x="120" y="30" fill="#10b981" font-size="11">skip connection (carries x forward)</text>
-    <line x1="295" y1="70" x2="340" y2="70" stroke="currentColor" marker-end="url(#b12)"/>
-    <text x="300" y="95" fill="currentColor" font-size="11">F(x)+x</text>
-    <defs>
-      <marker id="b12" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="currentColor"/></marker>
-      <marker id="c12" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#10b981"/></marker>
-    </defs>
-  </svg>
-  <p class="caption">A residual block: the layers learn a correction F(x), and the input x is added back via a skip connection, giving F(x)+x.</p>
+  <div class="beat-tag"><span class="dot"></span><span class="n">11</span> · cold recall — answer before you flip</div>
+  <h3>Pull it out of your own head.</h3>
+  <p>Re-reading feels productive and mostly isn't. Retrieving is. Say the answer out loud, <em>then</em> flip.</p>
+  <div class="recall">
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">Two reasons a dense layer chokes on images?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">(1) Weight explosion — a 224×224×3 image into one dense layer is ~150M weights. (2) Flattening destroys geometry, and nothing is shared across positions.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What does a convolution actually do, in one sentence?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Slide one small reusable filter over the image; at each spot multiply overlapping pairs and sum them into a feature map of "where this pattern appears."</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">The output-size formula?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">\( O = \lfloor (W - F + 2P)/S \rfloor + 1 \). Input \( W \), filter \( F \), padding \( P \) per side, stride \( S \).</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">What does NCHW stand for, and why care?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">(batch N, channels C, height H, width W) — PyTorch's tensor order. Feed (H,W) or NHWC and you get a shape error or silently learn garbage.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">200 images, 2 classes, deadline. Scratch or transfer learning?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">Transfer learning. 200 is too few to train deep from scratch (overfits). Freeze a pretrained net, replace the final layer, train just that — and reuse the model's own resize + normalization.</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="face front"><div class="q">A residual block outputs what, and why does it help?</div><div class="hint">tap to flip</div></div>
+      <div class="face back">\( F(x)+x \). The "+x" lets a block learn a correction (or nothing, \( F(x)=0 \)) and gives gradients a shortcut back, so very deep nets train without the signal vanishing.</div>
+    </div></div>
+  </div>
 
-  <div class="callout companion"><h3>Work this with your Claude Code companion</h3><p>Paste these to your Claude Code companion as you study:</p>
-  <ul>
-    <li>"Explain a convolution to me with a completely different analogy than the rubber-stamp one, then quiz me on stride and padding."</li>
-    <li>"Run my from-scratch <code>conv2d</code> NumPy code, then show me what the output feature map looks like if I change the kernel to a horizontal-edge detector <code>[[1,1],[-1,-1]]</code> and explain why it differs."</li>
-    <li>"Generate 5 output-shape problems using the formula (W − F + 2P)/S + 1 with different W, F, P, S, and check my answers one by one."</li>
-    <li>"Pair with me to take the MNIST CNN and adapt it to the FashionMNIST dataset, then help me debug any tensor-shape errors I hit."</li>
-  </ul></div>
+  <div class="beat-tag"><span class="dot"></span><span class="n">12</span> · boss fight</div>
+  <div class="boss">
+    <div class="boss-head">🤖 Boss fight — with your Claude companion</div>
+    <p>A list of "suggested prompts" is lazy. Here's a real challenge loop. Paste this to your Claude Code companion and don't move on until you win it cold — by hand, no help with the arithmetic.</p>
+    <div class="prompt"><button class="copy">copy</button>You are drilling me on CNN shapes and convolutions. Round 1: give me a small input image and kernel (4x4 or 5x5 input, 2x2 or 3x3 kernel) with a stride and padding, and ask me to (a) predict the output side length with the formula O = floor((W - F + 2P)/S) + 1, and (b) compute one specific output cell by hand. Wait for my answers, grade both, and show the correct work if I slip. Round 2: hand me a full layer stack (conv with padding, then maxpool, repeat) and make me trace the tensor shape NCHW after every layer, then tell you the in_features for the final Linear. Escalate stride and padding each round. Keep going until I nail two rounds in a row with zero shape errors, then make me explain in my own words why we use convolutions instead of dense layers on images.</div>
+    <p class="aside">You pass this module when you can predict any layer's output shape with the formula, compute a small convolution by hand, and explain — without notes — why convolutions beat dense layers on images (few shared weights, keeps spatial structure).</p>
+  </div>
 
-  <div class="callout pitfalls"><h3>Common pitfalls &amp; misconceptions</h3>
-  <ul>
-    <li><strong>Forgetting the channel dimension.</strong> A grayscale image is shape (1, 28, 28), not (28, 28). <code>Conv2d</code> always expects a channel axis even when there is only one channel. Add it with <code>x.unsqueeze(0)</code> or <code>transforms.ToTensor()</code>, which inserts it for you.</li>
-    <li><strong>Wrong batch shape (NCHW).</strong> PyTorch wants (N, C, H, W). A single image must still be a 4-D batch of size 1: (1, 1, 28, 28). Passing (28, 28) or NHWC order throws a shape error or silently learns garbage. When in doubt, <code>print(x.shape)</code> before every layer.</li>
-    <li><strong>Not normalizing images.</strong> Raw pixels (0–255) make training unstable; the loss can explode or stall. Always scale to roughly zero-mean, unit-variance — <code>ToTensor()</code> then <code>Normalize(...)</code>. For transfer learning you must use the <em>pretrained model's own</em> mean and std, not your data's.</li>
-    <li><strong>A giant dense layer right after flatten.</strong> If you flatten a large feature map straight into a wide dense layer you reintroduce the parameter explosion. Pool down to a small spatial size first (we went to 7×7), or use adaptive pooling, before the dense head.</li>
-    <li><strong>Thinking more filters or layers always helps.</strong> Bigger models overfit small datasets (Module 6). On small data, transfer learning from a pretrained net almost always beats training a large CNN from scratch — and is faster.</li>
-    <li><strong>Confusing kernel size with number of filters.</strong> <code>kernel_size=3</code> sets the filter's 3×3 spatial extent; the <em>out_channels</em> argument sets how many different filters (how many feature maps) the layer produces. They are independent knobs.</li>
-  </ul></div>
+  <div class="callback"><b>Lock this in.</b> A CNN feels like a different beast, but it's the <em>same</em> <code>w ← w − α·gradient</code> from Module 4 running underneath. The filter numbers <em>are</em> weights; <code>loss.backward()</code> computes their gradient (the autograd from Module 11), and <code>opt.step()</code> nudges them downhill. You didn't learn a new way to train — you learned a smarter <em>layer</em> to train. And that residual "+x" trick? It comes back in <strong>Module 14</strong>, wired into every Transformer block.</div>
 
-  <h3>Exercises</h3>
-  <ol class="exercises">
-    <li>Use the output-size formula to find the output side length for an input of width \( W = 32 \), filter \( F = 5 \), padding \( P = 0 \), stride \( S = 1 \). Then redo it with \( P = 2 \).
-      <details class="solution"><summary>Show solution</summary><p>With \( P=0 \): \( O = \lfloor (32 - 5 + 0)/1 \rfloor + 1 = 27 + 1 = 28 \). With \( P=2 \): \( O = \lfloor (32 - 5 + 4)/1 \rfloor + 1 = 31 + 1 = 32 \). The padding of 2 on each side exactly preserves the input size for a 5×5 filter — that is the "same" padding for \( F=5 \) (in general \( P = (F-1)/2 \)).</p></details>
-    </li>
-    <li>By hand, convolve \( X = \begin{bmatrix} 1 & 0 \\ 2 & 3 \end{bmatrix} \) with the 2×2 filter \( K = \begin{bmatrix} 1 & 1 \\ 1 & 1 \end{bmatrix} \), valid padding, stride 1. What single number do you get, and what does this filter compute?
-      <details class="solution"><summary>Show solution</summary><p>The output is \( O = \lfloor(2-2)/1\rfloor + 1 = 1 \), a single 1×1 value. Multiply each pair and sum: \( 1\cdot1 + 0\cdot1 + 2\cdot1 + 3\cdot1 = 1 + 0 + 2 + 3 = 6 \). A filter of all ones simply <em>sums</em> the values under it; divide by 4 and it would be a 2×2 <strong>average</strong> (a blur). So this is a box/blur-style filter.</p></details>
-    </li>
-    <li>A dense network's first layer connects every pixel of a 100×100 grayscale image to 500 neurons. How many weights is that (ignoring biases)? Compare to a single Conv2d layer with 500 filters of size 3×3 on the same one-channel image.
-      <details class="solution"><summary>Show solution</summary><p>Dense: \( 100 \times 100 = 10{,}000 \) inputs, each connected to 500 neurons, so \( 10{,}000 \times 500 = 5{,}000{,}000 \) weights. Conv: each filter is \( 3 \times 3 \times 1 = 9 \) weights, and there are 500 filters, so \( 9 \times 500 = 4{,}500 \) weights — over a thousand times fewer, and they're reused across every position. This is the parameter-sharing payoff in numbers.</p></details>
-    </li>
-    <li>In the MNIST <code>SmallCNN</code>, trace the tensor shape after each layer for an input batch of 16 images. Where does the 64×7×7 in <code>fc1</code> come from?
-      <details class="solution"><summary>Show solution</summary><p>Input: (16, 1, 28, 28). After <code>conv1</code> (padding 1, 3×3): (16, 32, 28, 28). After first <code>pool</code> (2×2): (16, 32, 14, 14). After <code>conv2</code>: (16, 64, 14, 14). After second <code>pool</code>: (16, 64, 7, 7). Flatten keeps the batch axis and combines the rest: (16, 64·7·7) = (16, 3136). So <code>fc1</code> must accept 3136 = 64×7×7 inputs. If you changed the padding, kernel sizes, or number of poolings, you'd recompute this with the output-size formula and update <code>fc1</code> accordingly.</p></details>
-    </li>
-    <li>You have 300 labelled images across 3 plant-disease classes and a deadline. Would you train a CNN from scratch or use transfer learning? Justify, and name the two preprocessing steps you must get right.
-      <details class="solution"><summary>Show solution</summary><p>Use transfer learning. 300 images is far too few to train a deep CNN from scratch without severe overfitting (Module 6), and a pretrained ResNet already knows generic visual features. Load a pretrained net, freeze the backbone, replace the final layer with a 3-class <code>Linear</code>, and train just that. The two preprocessing essentials: (1) <strong>resize/crop</strong> images to the input size the network expects (224×224 for ResNet18), and (2) <strong>normalize</strong> with the pretrained model's own mean and std (use <code>weights.transforms()</code>). Skip either and accuracy falls apart even though the model is excellent.</p></details>
-    </li>
-  </ol>
-
-  <div class="callout selfcheck"><h3>You've got this if you can…</h3>
-  <ul>
-    <li>Explain in one breath why we use convolutions instead of dense layers on images (few shared weights, keeps spatial structure).</li>
-    <li>Compute a small 2D convolution by hand and predict any layer's output shape with \( (W - F + 2P)/S + 1 \).</li>
-    <li>State what stride, padding, pooling, channels, and feature maps each mean — and what NCHW stands for.</li>
-    <li>Read the MNIST CNN code and say what each layer does to the tensor shape.</li>
-    <li>Describe transfer learning and a residual connection, and say when transfer learning beats training from scratch.</li>
-  </ul></div>
-
-  <div class="callout resources"><h3>Curated resources</h3>
-  <ul>
-    <li><a href="https://www.3blue1brown.com/topics/neural-networks">3Blue1Brown — Neural Networks</a> — the visual foundation that makes the convolution-as-feature-detector idea click.</li>
-    <li><a href="https://course.fast.ai/">fast.ai — Practical Deep Learning</a> — gets you training and fine-tuning real image classifiers fast, with transfer learning front and centre.</li>
-    <li><a href="https://d2l.ai/">Dive into Deep Learning (d2l.ai)</a> — thorough, free chapters on convolutions, pooling, LeNet, AlexNet, and ResNet with runnable code.</li>
-    <li><a href="https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html">PyTorch 60-Minute Blitz</a> — official hands-on intro that builds a small image classifier end to end.</li>
-  </ul></div>
 </section>
