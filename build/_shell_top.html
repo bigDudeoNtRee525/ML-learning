@@ -367,6 +367,47 @@ body.nav-open #overlay{opacity:1;pointer-events:auto;}
   .code-wrap pre{font-size:.8rem;}
 }
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;}}
+
+/* ============================================================
+   INTERACTIVE WIDGETS (MLViz)
+   ============================================================ */
+.mlviz{margin:1.7rem 0;}
+.mlviz-card{border:1px solid var(--border);border-radius:var(--radius);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 5%,var(--bg-elev)),var(--bg-elev));
+  overflow:hidden;box-shadow:var(--shadow);}
+.mlviz-title{font-family:var(--font-ui);font-weight:700;font-size:.84rem;letter-spacing:.01em;
+  padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem;color:var(--text);
+  background:color-mix(in srgb,var(--accent) 7%,transparent);}
+.mlviz-title::before{content:"";width:.5rem;height:.5rem;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent);}
+.mlviz-body{padding:1rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;}
+.mlviz-body canvas{display:block;touch-action:none;border-radius:8px;cursor:default;}
+.mlviz-controls{display:flex;flex-wrap:wrap;gap:.55rem .9rem;align-items:center;justify-content:center;
+  padding:.2rem 1rem 1rem;font-family:var(--font-ui);}
+.mlviz-controls:empty{display:none;padding:0;}
+.mlviz-btn{font-family:var(--font-ui);font-weight:600;font-size:.8rem;padding:.42rem .85rem;border-radius:8px;
+  cursor:pointer;background:var(--accent);color:#fff;border:1px solid var(--accent);transition:filter var(--speed),border-color var(--speed),color var(--speed);}
+.mlviz-btn:hover{filter:brightness(1.08);}
+.mlviz-btn.ghost{background:var(--bg-elev);color:var(--text);border-color:var(--border-strong);}
+.mlviz-btn.ghost:hover{border-color:var(--accent);color:var(--accent);filter:none;}
+.mlviz-btn:disabled{opacity:.45;cursor:not-allowed;filter:none;}
+.mlviz-slider{display:flex;flex-direction:column;gap:.25rem;font-size:.76rem;color:var(--text-soft);
+  min-width:150px;flex:1 1 160px;max-width:260px;}
+.mlviz-shead{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;}
+.mlviz-slabel{font-weight:600;color:var(--text);}
+.mlviz-readout{font-family:var(--font-mono);font-size:.76rem;color:var(--accent);font-weight:600;white-space:nowrap;}
+.mlviz-slider input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0;}
+.mlviz-caption{font-family:var(--font-ui);font-size:.8rem;color:var(--text-soft);
+  padding:0 1.1rem 1rem;text-align:center;line-height:1.55;}
+.mlviz-readline{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;justify-content:center;
+  font-family:var(--font-ui);font-size:.82rem;color:var(--text-soft);}
+.mlviz-readline b{color:var(--text);font-family:var(--font-mono);font-weight:600;}
+.mlviz-legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;justify-content:center;
+  font-family:var(--font-ui);font-size:.77rem;color:var(--text-soft);}
+.mlviz-legend i{width:.7rem;height:.7rem;border-radius:3px;display:inline-block;margin-right:.32rem;vertical-align:middle;font-style:normal;}
+.mlviz-tag{font-family:var(--font-ui);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-soft);padding:.15rem .5rem;border-radius:99px;}
+@media (max-width:560px){ .mlviz-body{padding:.6rem;} }
 </style>
 <script>
 /* Set theme before first paint to avoid a flash of the wrong colours */

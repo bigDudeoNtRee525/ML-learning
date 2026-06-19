@@ -63,6 +63,9 @@
 
   <p>Read the picture as a flow. The two inputs feed <em>both</em> hidden neurons (every arrow is a separate weight). Each hidden neuron computes its own weighted sum, adds its bias, and squashes the result — producing a single number. Those two hidden numbers then feed the output neuron, which does the same dance one more time to produce the final prediction \( \hat{y} \). "2-2-1" just names the sizes: 2 inputs, 2 hidden neurons, 1 output.</p>
 
+  <p><strong>Play with it:</strong> drag the three input sliders below (or press "Run forward pass") to send a real signal through a slightly bigger 3-4-4-2 network and watch each neuron light up as its weighted sum arrives. Blue edges are positive weights, red are negative, and thicker means a larger weight.</p>
+  <div class="mlviz" data-widget="neural-net"></div>
+
   <h3>Making it precise</h3>
   <p>Let's name everything carefully, because precise names make the math (and the code) painless. We process one <em>layer</em> at a time.</p>
 
@@ -103,6 +106,9 @@
     <text x="370" y="60" font-size="9" fill="currentColor">slope 1</text>
   </svg>
   <p class="caption">Sigmoid bends gently and saturates at both ends (slopes flatten). ReLU is flat-then-straight: zero for negatives, identity for positives.</p>
+
+  <p><strong>Play with it:</strong> switch between Sigmoid, Tanh, ReLU, and Leaky ReLU below, and tick "show derivative" to overlay each function's slope. See how the sigmoid and tanh derivatives collapse toward 0 at the edges (the seed of the vanishing-gradient problem), while ReLU's slope stays a clean 0 or 1.</p>
+  <div class="mlviz" data-widget="activation-functions"></div>
 
   <h4>Layers, in matrix form</h4>
   <p>Writing out every neuron's sum by hand is tedious, so we bundle a whole layer's weights into a <em>matrix</em> and its biases into a <em>vector</em> (you met these shapes in <strong>Module 1 — Just-Enough Math Intuition</strong>). For a layer that takes a vector of inputs \( \mathbf{x} \) and has its weights in matrix \( W \) and biases in vector \( \mathbf{b} \):</p>

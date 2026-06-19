@@ -76,6 +76,9 @@
   </svg>
   <p class="caption">A matrix tugs the whole grid at once: the same instruction moves every point.</p>
 
+  <p><strong>Play with it:</strong> change the four numbers of the matrix (or hit a preset like Rotate 90° or Shear) and watch the grid and the basis vectors î, ĵ glide to their new home. The shaded square is the image of the unit square — its area is the <em>determinant</em>.</p>
+  <div class="mlviz" data-widget="linear-transform"></div>
+
   <div class="callout worked"><h3>Worked example — by hand</h3>
     <p><strong>(a) Dot product of two 3-vectors.</strong> Let \( \mathbf{a} = [1, 2, 3] \) and \( \mathbf{b} = [4, 5, 6] \).</p>
     <p>Multiply matching components, then add:</p>
@@ -111,6 +114,9 @@
   <p>Slope is "rise over run." So pick a tiny step \( h \) (a small number like \( 0.001 \)), move from \( x \) to \( x + h \), and measure how much \( f \) rose, divided by how far you ran:</p>
   \[ \text{slope} \approx \frac{f(x+h) - f(x)}{h} \]
   <p>The \( \approx \) means "approximately equal." The smaller \( h \) is, the closer this estimate gets to the true slope. This is the literal definition of a derivative with the "shrink \( h \) to zero" step left implied — and it's how a computer can find slopes for <em>any</em> function, even ones with no tidy formula.</p>
+
+  <p><strong>Play with it:</strong> drag the blue point to choose x₀, then shrink the step h (or press “animate h → 0”) and watch the orange secant line swing onto the green tangent. The secant slope marches toward the true derivative f′(x₀).</p>
+  <div class="mlviz" data-widget="derivative-slope"></div>
 
   <div class="callout worked"><h3>Worked example — by hand</h3>
     <p><strong>Derivative of \( f(x)=x^2 \) at \( x=3 \), two ways.</strong></p>

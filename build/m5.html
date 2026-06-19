@@ -44,6 +44,9 @@
   </svg>
   <p class="caption">The sigmoid maps any real score \( z \) (horizontal) to a probability between 0 and 1 (vertical). At \( z=0 \) it passes through exactly 0.5.</p>
 
+  <p><strong>Play with it:</strong> drag <em>w</em> to stretch or squash the S-curve and <em>b</em> to slide it left or right. Watch the orange decision boundary (where w·x + b = 0) move, and see each point flip between predicted class 0 and class 1 as it crosses p = 0.5.</p>
+  <div class="mlviz" data-widget="sigmoid"></div>
+
   <p>Once we have a probability, making a decision is easy: pick a <strong>threshold</strong>. The default is 0.5 — if the predicted probability is at least 0.5, say "yes" (class 1); otherwise "no" (class 0). The set of inputs where the probability is exactly 0.5 is the <strong>decision boundary</strong>: the dividing line between the two predicted classes. With one input feature that boundary is a single point on the number line; with two features it is a straight line on a 2D plane.</p>
 
   <h3>Making it precise</h3>

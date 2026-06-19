@@ -59,6 +59,9 @@
 
   <p>Notice something the picture already tells us: where the bowl is <em>steep</em>, the slope is large, so we move a lot; where it <em>flattens out</em> near the bottom, the slope is near zero, so we barely move. Gradient descent is self-braking. That's why it doesn't fly past the minimum (as long as the steps aren't too big — more on that under learning rate).</p>
 
+  <p><strong>Play with it:</strong> press <em>Step</em> to take one update on the bowl J(w) = (w − 3)², or <em>Run</em> to auto-descend. Drag the learning-rate slider: around 0.1–0.3 the ball glides to w = 3, a tiny α crawls, and α ≥ 1.0 makes it overshoot and diverge. Watch the red slope line (the gradient) flatten as it nears the bottom.</p>
+  <div class="mlviz" data-widget="gradient-descent"></div>
+
   <h3>Making it precise</h3>
   <p>Let's name things. We want to minimize a <em>cost function</em> \( J \) — a number measuring total error — by choosing a parameter \( w \) (a single adjustable number, the "knob"). The key quantity is the <em>derivative</em> of the cost with respect to the knob, written \( \frac{\partial J}{\partial w} \) and read "the partial derivative of \( J \) with respect to \( w \)." In plain words it answers one question:</p>
   <p><em>"If I nudge \( w \) up by a tiny amount, does the cost go up or down, and how fast?"</em> A positive value means "increasing \( w \) increases the cost" (so we should decrease \( w \)); a negative value means "increasing \( w \) decreases the cost" (so we should increase \( w \)); a value near zero means "we're on flat ground — possibly at the bottom." The word <em>partial</em> just signals that when there are several knobs (like \( w \) and \( b \)), we measure the slope in one knob's direction at a time, holding the others fixed.</p>

@@ -66,7 +66,34 @@ for(const id of ORDER){
   body += '\n<!-- ===== ' + id + ' ===== -->\n' + sec + '\n';
 }
 
-const finalHtml = top + body + bottom;
+// ---- inject interactive widget scripts ----
+const WIDGET_DIR = path.join(DIR, 'widgets');
+let widgetScript = '';
+let widgetNames = [];
+if(fs.existsSync(WIDGET_DIR)){
+  const files = fs.readdirSync(WIDGET_DIR).filter(f => f.endsWith('.js')).sort();
+  for(const f of files){
+    const js = fs.readFileSync(path.join(WIDGET_DIR, f), 'utf8');
+    // build-time syntax gate so a broken widget is caught here, not in the browser
+    try{ new Function(js); }catch(e){ issues.push(f + ': JS syntax error — ' + e.message); }
+    (js.match(/MLViz\.register\(\s*['"]([^'"]+)['"]/g) || []).forEach(m => {
+      widgetNames.push(m.replace(/MLViz\.register\(\s*['"]/, '').replace(/['"]$/, ''));
+    });
+    // each widget in its OWN <script> so a failure can't take down the others
+    widgetScript += '\n<script>\n/* widget file: ' + f + ' */\n' + js + '\n</script>\n';
+  }
+}
+let assembled = top + body + bottom;
+if(widgetScript){
+  assembled = assembled.replace('<!--WIDGET-SCRIPTS-->', widgetScript);
+}
+// cross-check: every mount point has a registered widget, and vice-versa
+const mountNames = Array.from(new Set((assembled.match(/data-widget="([^"]+)"/g) || []).map(m => m.replace(/data-widget="/, '').replace(/"$/, ''))));
+const regSet = new Set(widgetNames);
+mountNames.forEach(n => { if(!regSet.has(n)) issues.push('widget mount "' + n + '" has no registered implementation'); });
+widgetNames.forEach(n => { if(!mountNames.includes(n)) issues.push('widget "' + n + '" is defined but never mounted'); });
+
+const finalHtml = assembled;
 fs.writeFileSync(OUT, finalHtml, 'utf8');
 
 // ---- report ----
@@ -80,6 +107,7 @@ console.log('Exercise solutions: ' + exCount);
 const svgCount = (finalHtml.match(/<svg/g)||[]).length;
 console.log('Inline SVG diagrams: ' + svgCount);
 console.log('Companion callouts: ' + (finalHtml.match(/callout companion/g)||[]).length);
+console.log('Interactive widgets: ' + widgetNames.length + ' defined, ' + mountNames.length + ' mounted' + (widgetNames.length ? ' [' + widgetNames.sort().join(', ') + ']' : ''));
 if(issues.length){
   console.log('\n*** ' + issues.length + ' ISSUE(S) ***');
   issues.forEach(x=>console.log('  - ' + x));

@@ -78,6 +78,9 @@
   </svg>
   <p class="caption">Same six points, three model complexities. The overfit curve nails every point but would predict nonsense between them.</p>
 
+  <p><strong>Play with it:</strong> the picture above is fixed, but the demo below is live. Drag the <em>polynomial degree</em> slider from 1 to 9 and watch the fitted curve change. Notice how the <em>training</em> error keeps falling as the degree rises, while the <em>test</em> error (on data the fit never saw) bottoms out in the middle and then climbs — the signature of overfitting. Hit "Resample data" to draw fresh noise and confirm the pattern is real, not a fluke of one dataset.</p>
+  <div class="mlviz" data-widget="overfitting"></div>
+
   <h3>The bias-variance tradeoff</h3>
   <p>Why can't we just always use a more flexible model? Because flexibility cuts both ways. The classic way to understand this is the <strong>dartboard</strong>. Imagine you train your model many times on slightly different samples of data. Each trained model is a dart thrown at the bullseye (the true answer).</p>
 

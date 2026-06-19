@@ -367,6 +367,47 @@ body.nav-open #overlay{opacity:1;pointer-events:auto;}
   .code-wrap pre{font-size:.8rem;}
 }
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;}}
+
+/* ============================================================
+   INTERACTIVE WIDGETS (MLViz)
+   ============================================================ */
+.mlviz{margin:1.7rem 0;}
+.mlviz-card{border:1px solid var(--border);border-radius:var(--radius);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 5%,var(--bg-elev)),var(--bg-elev));
+  overflow:hidden;box-shadow:var(--shadow);}
+.mlviz-title{font-family:var(--font-ui);font-weight:700;font-size:.84rem;letter-spacing:.01em;
+  padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem;color:var(--text);
+  background:color-mix(in srgb,var(--accent) 7%,transparent);}
+.mlviz-title::before{content:"";width:.5rem;height:.5rem;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent);}
+.mlviz-body{padding:1rem;display:flex;flex-direction:column;align-items:center;gap:.6rem;}
+.mlviz-body canvas{display:block;touch-action:none;border-radius:8px;cursor:default;}
+.mlviz-controls{display:flex;flex-wrap:wrap;gap:.55rem .9rem;align-items:center;justify-content:center;
+  padding:.2rem 1rem 1rem;font-family:var(--font-ui);}
+.mlviz-controls:empty{display:none;padding:0;}
+.mlviz-btn{font-family:var(--font-ui);font-weight:600;font-size:.8rem;padding:.42rem .85rem;border-radius:8px;
+  cursor:pointer;background:var(--accent);color:#fff;border:1px solid var(--accent);transition:filter var(--speed),border-color var(--speed),color var(--speed);}
+.mlviz-btn:hover{filter:brightness(1.08);}
+.mlviz-btn.ghost{background:var(--bg-elev);color:var(--text);border-color:var(--border-strong);}
+.mlviz-btn.ghost:hover{border-color:var(--accent);color:var(--accent);filter:none;}
+.mlviz-btn:disabled{opacity:.45;cursor:not-allowed;filter:none;}
+.mlviz-slider{display:flex;flex-direction:column;gap:.25rem;font-size:.76rem;color:var(--text-soft);
+  min-width:150px;flex:1 1 160px;max-width:260px;}
+.mlviz-shead{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;}
+.mlviz-slabel{font-weight:600;color:var(--text);}
+.mlviz-readout{font-family:var(--font-mono);font-size:.76rem;color:var(--accent);font-weight:600;white-space:nowrap;}
+.mlviz-slider input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0;}
+.mlviz-caption{font-family:var(--font-ui);font-size:.8rem;color:var(--text-soft);
+  padding:0 1.1rem 1rem;text-align:center;line-height:1.55;}
+.mlviz-readline{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;justify-content:center;
+  font-family:var(--font-ui);font-size:.82rem;color:var(--text-soft);}
+.mlviz-readline b{color:var(--text);font-family:var(--font-mono);font-weight:600;}
+.mlviz-legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;justify-content:center;
+  font-family:var(--font-ui);font-size:.77rem;color:var(--text-soft);}
+.mlviz-legend i{width:.7rem;height:.7rem;border-radius:3px;display:inline-block;margin-right:.32rem;vertical-align:middle;font-style:normal;}
+.mlviz-tag{font-family:var(--font-ui);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-soft);padding:.15rem .5rem;border-radius:99px;}
+@media (max-width:560px){ .mlviz-body{padding:.6rem;} }
 </style>
 <script>
 /* Set theme before first paint to avoid a flash of the wrong colours */
@@ -819,6 +860,9 @@ print(df[df["size_m2"] &gt; 50]) # rows where size is over 50 m2</code></pre>
   </svg>
   <p class="caption">A matrix tugs the whole grid at once: the same instruction moves every point.</p>
 
+  <p><strong>Play with it:</strong> change the four numbers of the matrix (or hit a preset like Rotate 90° or Shear) and watch the grid and the basis vectors î, ĵ glide to their new home. The shaded square is the image of the unit square — its area is the <em>determinant</em>.</p>
+  <div class="mlviz" data-widget="linear-transform"></div>
+
   <div class="callout worked"><h3>Worked example — by hand</h3>
     <p><strong>(a) Dot product of two 3-vectors.</strong> Let \( \mathbf{a} = [1, 2, 3] \) and \( \mathbf{b} = [4, 5, 6] \).</p>
     <p>Multiply matching components, then add:</p>
@@ -854,6 +898,9 @@ print(df[df["size_m2"] &gt; 50]) # rows where size is over 50 m2</code></pre>
   <p>Slope is "rise over run." So pick a tiny step \( h \) (a small number like \( 0.001 \)), move from \( x \) to \( x + h \), and measure how much \( f \) rose, divided by how far you ran:</p>
   \[ \text{slope} \approx \frac{f(x+h) - f(x)}{h} \]
   <p>The \( \approx \) means "approximately equal." The smaller \( h \) is, the closer this estimate gets to the true slope. This is the literal definition of a derivative with the "shrink \( h \) to zero" step left implied — and it's how a computer can find slopes for <em>any</em> function, even ones with no tidy formula.</p>
+
+  <p><strong>Play with it:</strong> drag the blue point to choose x₀, then shrink the step h (or press “animate h → 0”) and watch the orange secant line swing onto the green tangent. The secant slope marches toward the true derivative f′(x₀).</p>
+  <div class="mlviz" data-widget="derivative-slope"></div>
 
   <div class="callout worked"><h3>Worked example — by hand</h3>
     <p><strong>Derivative of \( f(x)=x^2 \) at \( x=3 \), two ways.</strong></p>
@@ -1398,6 +1445,9 @@ train_idx = indices[10:]   # remaining 40 -&gt; train</code></pre>
   </ul>
   <p>You may see \( \tfrac{1}{2m} \) instead of \( \tfrac{1}{m} \) elsewhere; the extra \( \tfrac12 \) just makes a derivative cleaner in Module 4 and doesn't change which \( (w,b) \) is best. We'll use \( \tfrac1m \) here.</p>
 
+  <p><strong>Play with it:</strong> drag the slope and intercept knobs to draw your own line through the dots. Watch the red residuals (and their squared-error squares) grow and shrink, and the MSE update live. Then press <em>Best fit</em> to see the line snap to the least-squares optimum and the MSE bottom out.</p>
+  <div class="mlviz" data-widget="linreg-fit"></div>
+
   <h4>From one feature to many</h4>
   <p>Real problems have several features (temperature, day-of-week, whether it rained). Give each feature its own weight and add them up:</p>
   \[ \hat{y} = w_1 x_1 + w_2 x_2 + \dots + w_n x_n + b \]
@@ -1629,6 +1679,9 @@ print("R^2 on training data:", round(model.score(x, y), 4))</code></pre>
   <p class="caption">Each green dot is one update. The steeper the bowl, the bigger the step; near the bottom the slope flattens and steps shrink, so we glide gently into the minimum.</p>
 
   <p>Notice something the picture already tells us: where the bowl is <em>steep</em>, the slope is large, so we move a lot; where it <em>flattens out</em> near the bottom, the slope is near zero, so we barely move. Gradient descent is self-braking. That's why it doesn't fly past the minimum (as long as the steps aren't too big — more on that under learning rate).</p>
+
+  <p><strong>Play with it:</strong> press <em>Step</em> to take one update on the bowl J(w) = (w − 3)², or <em>Run</em> to auto-descend. Drag the learning-rate slider: around 0.1–0.3 the ball glides to w = 3, a tiny α crawls, and α ≥ 1.0 makes it overshoot and diverge. Watch the red slope line (the gradient) flatten as it nears the bottom.</p>
+  <div class="mlviz" data-widget="gradient-descent"></div>
 
   <h3>Making it precise</h3>
   <p>Let's name things. We want to minimize a <em>cost function</em> \( J \) — a number measuring total error — by choosing a parameter \( w \) (a single adjustable number, the "knob"). The key quantity is the <em>derivative</em> of the cost with respect to the knob, written \( \frac{\partial J}{\partial w} \) and read "the partial derivative of \( J \) with respect to \( w \)." In plain words it answers one question:</p>
@@ -1940,6 +1993,9 @@ print(f"R^2 on training data: {model.score(X, y):.3f}")</code></pre>
     <text x="24" y="28" font-size="10" fill="currentColor">1</text>
   </svg>
   <p class="caption">The sigmoid maps any real score \( z \) (horizontal) to a probability between 0 and 1 (vertical). At \( z=0 \) it passes through exactly 0.5.</p>
+
+  <p><strong>Play with it:</strong> drag <em>w</em> to stretch or squash the S-curve and <em>b</em> to slide it left or right. Watch the orange decision boundary (where w·x + b = 0) move, and see each point flip between predicted class 0 and class 1 as it crosses p = 0.5.</p>
+  <div class="mlviz" data-widget="sigmoid"></div>
 
   <p>Once we have a probability, making a decision is easy: pick a <strong>threshold</strong>. The default is 0.5 — if the predicted probability is at least 0.5, say "yes" (class 1); otherwise "no" (class 0). The set of inputs where the probability is exactly 0.5 is the <strong>decision boundary</strong>: the dividing line between the two predicted classes. With one input feature that boundary is a single point on the number line; with two features it is a straight line on a 2D plane.</p>
 
@@ -2286,6 +2342,9 @@ print("hard predictions:", model.predict(X_test[:3]))</code></pre>
     </g>
   </svg>
   <p class="caption">Same six points, three model complexities. The overfit curve nails every point but would predict nonsense between them.</p>
+
+  <p><strong>Play with it:</strong> the picture above is fixed, but the demo below is live. Drag the <em>polynomial degree</em> slider from 1 to 9 and watch the fitted curve change. Notice how the <em>training</em> error keeps falling as the degree rises, while the <em>test</em> error (on data the fit never saw) bottoms out in the middle and then climbs — the signature of overfitting. Hit "Resample data" to draw fresh noise and confirm the pattern is real, not a fluke of one dataset.</p>
+  <div class="mlviz" data-widget="overfitting"></div>
 
   <h3>The bias-variance tradeoff</h3>
   <p>Why can't we just always use a more flexible model? Because flexibility cuts both ways. The classic way to understand this is the <strong>dartboard</strong>. Imagine you train your model many times on slightly different samples of data. Each trained model is a dart thrown at the bullseye (the true answer).</p>
@@ -2909,6 +2968,9 @@ print(df[["Title", "FamilySize", "IsAlone", "FareBin"]])</code></pre>
   </svg>
   <p class="caption">With k=3, the new point's three nearest neighbors are two green (class B) and one purple (class A). Majority vote: class B.</p>
 
+  <p><strong>Play with it:</strong> drag the white "?" point around the plane and watch its nearest neighbors (the ringed points) and its predicted class change live. Slide k from 1 up to 15 and notice how the shaded decision regions go from jagged and noisy to smooth.</p>
+  <div class="mlviz" data-widget="knn"></div>
+
   <h4>Decision trees: "a flowchart it builds for itself"</h4>
   <p>A decision tree is a series of yes/no questions arranged like a flowchart, ending in a prediction. "Is age below 30? If yes, is debt above $5,000? If yes, predict 'high risk'." The clever part is that the tree <em>learns which questions to ask, and in what order</em>, from the data. At each step it searches every feature for the single split that best separates the classes, then repeats on each branch. It's how a doctor diagnoses (asking the most informative question first) turned into an algorithm.</p>
 
@@ -3179,6 +3241,9 @@ print("XGBoost test accuracy =", round(xgb.score(X_te, y_te), 3))</code></pre>
     <path d="M382 108 l3 8 8 0 -6 5 2 8 -7 -5 -7 5 2 -8 -6 -5 8 0 z" fill="#f59e0b"/>
   </svg>
   <p class="caption">Each colour is a cluster; the orange star is its centroid — the average location of its members.</p>
+
+  <p><strong>Play with it:</strong> press <em>Step</em> to watch one phase at a time — first points recolour to their nearest centroid (✕), then each centroid glides to the mean of its members. <em>Run</em> repeats until a round changes nothing (convergence). Try different <em>k</em>, and hit <em>Reset / new centroids</em> a few times to see how the starting positions can lead to better or worse clusterings.</p>
+  <div class="mlviz" data-widget="kmeans"></div>
 
   <h4>Anomaly detection: learn "normal", flag the rest</h4>
   <p>Sometimes you don't want groups — you want the one weird row. Anomaly detection builds a picture of what "normal" looks like (most of your data) and then flags points that don't fit. The crucial reason this is often unsupervised: with fraud, machine faults, or network intrusions, you have mountains of normal examples and almost no examples of the rare bad thing — and tomorrow's fraud won't look like yesterday's. A supervised classifier (Module 5) needs many labelled examples of <em>both</em> classes; anomaly detection only needs to know what normal looks like, so it can catch <em>new</em> kinds of weirdness it has never seen.</p>
@@ -3451,6 +3516,9 @@ print("explained_variance_ratio_:", np.round(pca.explained_variance_ratio_, 3))<
 
   <p>Read the picture as a flow. The two inputs feed <em>both</em> hidden neurons (every arrow is a separate weight). Each hidden neuron computes its own weighted sum, adds its bias, and squashes the result — producing a single number. Those two hidden numbers then feed the output neuron, which does the same dance one more time to produce the final prediction \( \hat{y} \). "2-2-1" just names the sizes: 2 inputs, 2 hidden neurons, 1 output.</p>
 
+  <p><strong>Play with it:</strong> drag the three input sliders below (or press "Run forward pass") to send a real signal through a slightly bigger 3-4-4-2 network and watch each neuron light up as its weighted sum arrives. Blue edges are positive weights, red are negative, and thicker means a larger weight.</p>
+  <div class="mlviz" data-widget="neural-net"></div>
+
   <h3>Making it precise</h3>
   <p>Let's name everything carefully, because precise names make the math (and the code) painless. We process one <em>layer</em> at a time.</p>
 
@@ -3491,6 +3559,9 @@ print("explained_variance_ratio_:", np.round(pca.explained_variance_ratio_, 3))<
     <text x="370" y="60" font-size="9" fill="currentColor">slope 1</text>
   </svg>
   <p class="caption">Sigmoid bends gently and saturates at both ends (slopes flatten). ReLU is flat-then-straight: zero for negatives, identity for positives.</p>
+
+  <p><strong>Play with it:</strong> switch between Sigmoid, Tanh, ReLU, and Leaky ReLU below, and tick "show derivative" to overlay each function's slope. See how the sigmoid and tanh derivatives collapse toward 0 at the edges (the seed of the vanishing-gradient problem), while ReLU's slope stays a clean 0 or 1.</p>
+  <div class="mlviz" data-widget="activation-functions"></div>
 
   <h4>Layers, in matrix form</h4>
   <p>Writing out every neuron's sum by hand is tedious, so we bundle a whole layer's weights into a <em>matrix</em> and its biases into a <em>vector</em> (you met these shapes in <strong>Module 1 — Just-Enough Math Intuition</strong>). For a layer that takes a vector of inputs \( \mathbf{x} \) and has its weights in matrix \( W \) and biases in vector \( \mathbf{b} \):</p>
@@ -4066,6 +4137,9 @@ print("reloaded model ready")</code></pre>
   </svg>
   <p class="caption">A small filter is placed on the top-left of the input, scored, then slid step by step across the whole grid. Each score lands in one cell of the output feature map.</p>
 
+  <p><strong>Play with it:</strong> watch a real convolution happen below. The 3×3 filter slides across a 9×9 grayscale image; at each spot it multiplies the 9 overlapping pairs and sums them into one cell of the 7×7 feature map. Press Play, or Step one position at a time, and switch the kernel preset — notice how the <em>vertical-edge</em> and <em>horizontal-edge</em> filters light up exactly where brightness changes, while <em>box blur</em> smooths and <em>identity</em> just copies the centre pixel.</p>
+  <div class="mlviz" data-widget="convolution"></div>
+
   <h3>Making it precise</h3>
   <p>Let the input be a small grid of numbers (pixel brightnesses) called \( X \), and the filter be a smaller grid of numbers \( K \) (these numbers are the <em>weights</em> the network will learn). Place the filter on top of a patch of the input, multiply each filter number by the input number underneath it, and add all those products up into a single number. That number is one cell of the output feature map. Then move the filter and repeat.</p>
 
@@ -4469,6 +4543,9 @@ print("Trainable params:", sum(p.numel() for p in net.parameters() if p.requires
   </svg>
   <p class="caption">Self-attention from the word "it." Thicker line = more attention. The model has learned to point "it" mostly at "trophy" (0.62), with some at "suitcase" (0.28) and almost none at the function word "the." These weights are the softmaxed scores, and they sum to 1.</p>
 
+  <p><strong>Play with it:</strong> pick a query token (click a word, a heatmap row, or use ◀ ▶). Watch the arcs, the bars, and the highlighted heatmap row update — every query's row of weights is a softmax of query·key similarities and sums to 1. Notice how content words ("cat", "sat", "mat") attend to each other, while the function words ("the", "on") cluster apart.</p>
+  <div class="mlviz" data-widget="attention"></div>
+
   <div class="callout worked"><h3>Worked example — by hand</h3>
     <p><strong>Part A: cosine similarity.</strong> Compare \( \mathbf{a} = [1, 0] \) and \( \mathbf{b} = [0.7, 0.7] \). Dot product: \( (1)(0.7) + (0)(0.7) = 0.7 \). Lengths: \( \lVert \mathbf{a} \rVert = \sqrt{1^2 + 0^2} = 1 \); \( \lVert \mathbf{b} \rVert = \sqrt{0.7^2 + 0.7^2} = \sqrt{0.49 + 0.49} = \sqrt{0.98} \approx 0.99 \). Cosine similarity \( = \frac{0.7}{1 \times 0.99} \approx 0.707 \). That's the cosine of 45°, which is exactly right: \( [0.7, 0.7] \) points up-and-right at 45°, while \( [1, 0] \) points straight right, so the angle between them is 45° and \( \cos 45^\circ \approx 0.707 \). The vectors are <em>somewhat</em> similar — pointing partly the same way.</p>
 
@@ -4820,6 +4897,9 @@ print(vectors.shape)                   # torch.Size([3, 8])</code></pre>
   </ul>
   <p>So the model says the next token is most likely <code>"cat"</code> (66%), then <code>"sat"</code> (24%), then <code>"mat"</code> (10%) — and \( 0.659 + 0.242 + 0.099 = 1.000 \), exactly as probabilities must. A model set to "greedy" decoding always picks the top token (<code>"cat"</code>). One set to <em>sample</em> rolls a weighted die: 66% of the time it draws "cat," but sometimes it picks "sat" or even "mat," which is why the same prompt can give different answers. A <strong>temperature</strong> knob rescales the logits before softmax — dividing by a temperature below 1 sharpens the distribution toward the top choice (more deterministic), above 1 flattens it (more random and creative). At temperature 0.5 these same logits become roughly \( [0.864,\ 0.117,\ 0.019] \) — far more confident in "cat"; at temperature 2.0 they flatten to about \( [0.502,\ 0.304,\ 0.194] \).</p>
   </div>
+
+  <p><strong>Play with it:</strong> drag the temperature T and watch the next-token distribution sharpen toward one word (low T, greedy) or flatten into many plausible words (high T, creative). Hit <em>Sample</em> to roll a weighted die and pick the actual next token — exactly what an LLM does at every step.</p>
+  <div class="mlviz" data-widget="softmax-temperature"></div>
 
   <h3>In code: from scratch</h3>
   <p>Let's make the worked example runnable. We implement softmax in NumPy (with the standard numerical-stability trick of subtracting the max logit, which never changes the result but prevents overflow), reproduce the hand calculation, then show greedy vs. sampled next-token selection over our tiny vocabulary.</p>
@@ -5764,6 +5844,3803 @@ for text, score in retrieve(question):
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
+<!-- =========================================================
+     MLViz — tiny vanilla-JS framework for the interactive
+     concept animations. No external libraries. Theme-aware.
+     ========================================================= -->
+<script>
+window.MLViz = (function(){
+  "use strict";
+  var registry = {};
+
+  function register(name, init){ registry[name] = init; }
+
+  // Theme-aware colour palette — call fresh each frame so widgets recolour on theme switch.
+  function palette(){
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      dark: dark,
+      bg:     dark ? '#161b22' : '#ffffff',
+      panel:  dark ? '#1b212b' : '#fbfaf8',
+      ink:    dark ? '#e7ebf0' : '#1f2328',
+      soft:   dark ? '#9aa4b2' : '#586069',
+      faint:  dark ? '#3a434f' : '#cfc9be',
+      grid:   dark ? '#283039' : '#ece7dd',
+      axis:   dark ? '#6e7884' : '#9a9388',
+      accent: dark ? '#818cf8' : '#4f46e5',
+      accent2:dark ? '#c4b5fd' : '#7c3aed',
+      good:   dark ? '#34d399' : '#10b981',
+      warn:   dark ? '#fbbf24' : '#d97706',
+      bad:    dark ? '#f87171' : '#e11d48',
+      blue:   dark ? '#60a5fa' : '#2563eb',
+      teal:   dark ? '#2dd4bf' : '#0d9488',
+      pink:   dark ? '#f472b6' : '#db2777',
+      series: dark ? ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#c4b5fd','#2dd4bf']
+                   : ['#4f46e5','#10b981','#d97706','#e11d48','#2563eb','#7c3aed','#0d9488']
+    };
+  }
+
+  // Hi-DPI canvas; you draw in CSS pixels (w x h).
+  function makeCanvas(parent, w, h){
+    var c = document.createElement('canvas');
+    var dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    c.style.width = '100%';
+    c.style.maxWidth = w + 'px';
+    c.style.aspectRatio = w + ' / ' + h;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    var ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    parent.appendChild(c);
+    // map a mouse/touch event to canvas CSS-pixel coords
+    c.evtPos = function(ev){
+      var r = c.getBoundingClientRect();
+      var src = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+      return { x: (src.clientX - r.left) * (w / r.width), y: (src.clientY - r.top) * (h / r.height) };
+    };
+    return { canvas: c, ctx: ctx, w: w, h: h };
+  }
+
+  function el(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if(attrs) for(var k in attrs){
+      if(k === 'class') e.className = attrs[k];
+      else if(k === 'html') e.innerHTML = attrs[k];
+      else if(k === 'style') e.setAttribute('style', attrs[k]);
+      else if(k.slice(0,2) === 'on' && typeof attrs[k] === 'function') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    if(kids != null){
+      if(typeof kids === 'string' || typeof kids === 'number') e.textContent = '' + kids;
+      else if(Array.isArray(kids)) kids.forEach(function(c){ if(c != null) e.appendChild(typeof c==='string'?document.createTextNode(c):c); });
+      else e.appendChild(kids);
+    }
+    return e;
+  }
+
+  function button(label, onClick, opts){
+    var b = el('button', { class: 'mlviz-btn' + (opts && opts.ghost ? ' ghost' : ''), type: 'button' }, label);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function slider(o){
+    var read = el('span', { class: 'mlviz-readout' });
+    var lab  = el('span', { class: 'mlviz-slabel' }, o.label || '');
+    var head = el('span', { class: 'mlviz-shead' }, [lab, read]);
+    var inp  = el('input', { type: 'range', min: o.min, max: o.max, step: (o.step != null ? o.step : 1), value: o.value });
+    function fmt(v){ return o.format ? o.format(v) : ('' + v); }
+    read.textContent = fmt(+o.value);
+    inp.addEventListener('input', function(){ var v = +inp.value; read.textContent = fmt(v); if(o.onInput) o.onInput(v); });
+    var wrap = el('label', { class: 'mlviz-slider' }, [head, inp]);
+    return { wrap: wrap, input: inp, get: function(){ return +inp.value; },
+             set: function(v){ inp.value = v; read.textContent = fmt(+v); } };
+  }
+
+  // Standard card: title, body (canvas/readouts), controls, caption.
+  function panel(node, opts){
+    opts = opts || {};
+    node.classList.add('mlviz');
+    var card = el('div', { class: 'mlviz-card' });
+    if(opts.title) card.appendChild(el('div', { class: 'mlviz-title' }, opts.title));
+    var body = el('div', { class: 'mlviz-body' });
+    var controls = el('div', { class: 'mlviz-controls' });
+    card.appendChild(body);
+    card.appendChild(controls);
+    var cap = null;
+    if(opts.caption){ cap = el('figcaption', { class: 'mlviz-caption', html: opts.caption }); card.appendChild(cap); }
+    node.appendChild(card);
+    return { root: card, body: body, controls: controls, caption: cap };
+  }
+
+  // requestAnimationFrame loop that skips drawing while scrolled off-screen.
+  function loop(draw, node){
+    var running = true, raf = 0;
+    function frame(t){
+      if(!running) return;
+      var ok = true;
+      if(node){ var r = node.getBoundingClientRect(); ok = (r.bottom > -80 && r.top < (window.innerHeight + 80)); }
+      if(ok){ try{ draw(t || 0); }catch(e){ running = false; console.error('[MLViz] draw error', e); return; } }
+      raf = requestAnimationFrame(frame);
+    }
+    raf = requestAnimationFrame(frame);
+    return { stop: function(){ running = false; if(raf) cancelAnimationFrame(raf); },
+             start: function(){ if(!running){ running = true; raf = requestAnimationFrame(frame); } } };
+  }
+
+  function onTheme(cb){ window.addEventListener('mlviz:theme', cb); }
+  function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t){ return a + (b - a) * t; }
+
+  var API = { register: register, palette: palette, makeCanvas: makeCanvas, el: el,
+              button: button, slider: slider, panel: panel, loop: loop,
+              onTheme: onTheme, clamp: clamp, lerp: lerp };
+
+  // Lazy-mount each [data-widget] when it first scrolls near the viewport.
+  API.mountAll = function(){
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('[data-widget]'));
+    function mount(node){
+      if(node.__mounted) return;
+      var fn = registry[node.dataset.widget];
+      if(!fn){ return; }
+      node.__mounted = true;
+      try{ fn(node, API); }
+      catch(err){ console.error('[MLViz] widget failed:', node.dataset.widget, err);
+        node.innerHTML = '<p class="mlviz-caption">(this interactive demo could not load)</p>'; }
+    }
+    // Debug/verification: ?mlviz=eager mounts every widget immediately, ignoring the viewport.
+    if((location.search || '').indexOf('mlviz=eager') !== -1){ nodes.forEach(mount); return; }
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); mount(e.target); } });
+      }, { rootMargin: '200px 0px' });
+      nodes.forEach(function(n){ io.observe(n); });
+    } else {
+      nodes.forEach(mount);
+    }
+  };
+
+  return API;
+})();
+</script>
+
+
+<script>
+/* widget file: activation-functions.js */
+/* widget: activation-functions — plot Sigmoid / Tanh / ReLU / Leaky ReLU on
+   x in [-5,5], with an optional dashed derivative overlay. Teaching point:
+   sigmoid/tanh derivatives shrink to ~0 for large |x| (vanishing gradients),
+   while ReLU's derivative is a clean 0 or 1. */
+MLViz.register('activation-functions', function(node, V){
+  var P = V.panel(node, {
+    title: 'Activation functions and their slopes',
+    caption: 'Pick an activation and (optionally) overlay its derivative as a dashed curve — that slope is exactly what backprop multiplies by. Notice how sigmoid and tanh go flat (slope ≈ 0) for large |x|: stack many such tiny slopes in a deep net and the gradient vanishes. ReLU and Leaky ReLU keep a clean slope of 1 on the positive side, which is why they dominate hidden layers.'
+  });
+  var C = V.makeCanvas(P.body, 560, 320), ctx = C.ctx;
+
+  // ---- the four activations and their derivatives ----
+  var LEAK = 0.1;
+  var fns = {
+    Sigmoid: {
+      f: function(x){ return 1 / (1 + Math.exp(-x)); },
+      d: function(x){ var s = 1 / (1 + Math.exp(-x)); return s * (1 - s); },
+      note: 'Range (0,1). Max slope only 0.25 at x=0; flattens to ≈0 at the ends.'
+    },
+    Tanh: {
+      f: function(x){ return Math.tanh(x); },
+      d: function(x){ var t = Math.tanh(x); return 1 - t * t; },
+      note: 'Range (-1,1), zero-centred. Max slope 1 at x=0 but still saturates to ≈0.'
+    },
+    ReLU: {
+      f: function(x){ return x > 0 ? x : 0; },
+      d: function(x){ return x > 0 ? 1 : 0; },
+      note: 'max(0,x). Slope is a clean 0 (x<0) or 1 (x>0) — no vanishing on the positive side.'
+    },
+    'Leaky ReLU': {
+      f: function(x){ return x > 0 ? x : LEAK * x; },
+      d: function(x){ return x > 0 ? 1 : LEAK; },
+      note: 'Like ReLU but a small slope (' + LEAK + ') for x<0, so negative neurons still learn.'
+    }
+  };
+  var order = ['Sigmoid', 'Tanh', 'ReLU', 'Leaky ReLU'];
+
+  var state = { cur: 'Sigmoid', showDeriv: true };
+
+  // ---- plot region ----
+  var XMIN = -5, XMAX = 5, YMIN = -1.4, YMAX = 1.9;
+  var m = { l: 42, r: 14, t: 16, b: 26 };
+  function px(x){ return m.l + (x - XMIN) / (XMAX - XMIN) * (C.w - m.l - m.r); }
+  function py(y){ return C.h - m.b - (y - YMIN) / (YMAX - YMIN) * (C.h - m.t - m.b); }
+
+  function drawCurve(fn, color, dashed){
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = dashed ? 2 : 2.6;
+    ctx.setLineDash(dashed ? [6, 5] : []);
+    var first = true;
+    for(var i = 0; i <= 280; i++){
+      var x = XMIN + (XMAX - XMIN) * i / 280;
+      var y = fn(x);
+      // ReLU/Leaky have a kink at 0 but f & d are still finite everywhere here
+      var X = px(x), Y = py(y);
+      if(first){ ctx.moveTo(X, Y); first = false; } else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    // ---- grid ----
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var gx;
+    for(gx = XMIN; gx <= XMAX; gx++){
+      ctx.beginPath(); ctx.moveTo(px(gx), py(YMAX)); ctx.lineTo(px(gx), py(YMIN)); ctx.stroke();
+    }
+    var yticks = [-1, 0, 1];
+    var gy;
+    for(var yi = 0; yi < yticks.length; yi++){
+      gy = yticks[yi];
+      ctx.beginPath(); ctx.moveTo(px(XMIN), py(gy)); ctx.lineTo(px(XMAX), py(gy)); ctx.stroke();
+    }
+
+    // ---- axes (x=0 and y=0) ----
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(px(0), py(YMAX)); ctx.lineTo(px(0), py(YMIN)); ctx.stroke(); // y-axis
+    ctx.beginPath(); ctx.moveTo(px(XMIN), py(0)); ctx.lineTo(px(XMAX), py(0)); ctx.stroke(); // x-axis
+
+    // axis tick labels
+    ctx.fillStyle = p.soft;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(gx = XMIN; gx <= XMAX; gx += 1){
+      if(gx === 0) continue;
+      ctx.fillText('' + gx, px(gx), py(0) + 4);
+    }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(var yj = 0; yj < yticks.length; yj++){
+      gy = yticks[yj];
+      if(gy === 0) continue;
+      ctx.fillText('' + gy, m.l - 5, py(gy));
+    }
+    // axis names
+    ctx.fillStyle = p.soft; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText('x', px(XMAX) - 2, py(0) - 4);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('g(x)', px(0) + 5, py(YMAX) + 2);
+
+    // ---- the selected curve and (optionally) its derivative ----
+    var entry = fns[state.cur];
+    if(state.showDeriv) drawCurve(entry.d, p.warn, true);   // derivative dashed, behind
+    drawCurve(entry.f, p.accent, false);                    // function, on top
+
+    // ---- legend ----
+    var lx = px(XMIN) + 8, ly = py(YMAX) + 6;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    // function swatch
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.6; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(lx, ly + 6); ctx.lineTo(lx + 22, ly + 6); ctx.stroke();
+    ctx.fillStyle = p.ink; ctx.fillText(state.cur + '  g(x)', lx + 28, ly + 6);
+    if(state.showDeriv){
+      ctx.strokeStyle = p.warn; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(lx, ly + 22); ctx.lineTo(lx + 22, ly + 22); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = p.ink; ctx.fillText("derivative g'(x)", lx + 28, ly + 22);
+    }
+
+    // ---- short note about this activation (bottom-right) ----
+    ctx.fillStyle = p.soft; ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText(entry.note, px(XMAX) - 2, C.h - 4);
+  }
+
+  // ---- controls: function selector buttons + derivative checkbox ----
+  var btns = {};
+  function refreshBtns(){
+    var pal = V.palette();
+    for(var name in btns){
+      var b = btns[name];
+      if(name === state.cur){
+        b.style.background = pal.accent;
+        b.style.color = '#ffffff';
+        b.style.borderColor = pal.accent;
+      } else {
+        b.style.background = '';
+        b.style.color = '';
+        b.style.borderColor = '';
+      }
+    }
+  }
+  order.forEach(function(name){
+    var b = V.button(name, function(){ state.cur = name; refreshBtns(); draw(); }, { ghost: true });
+    btns[name] = b;
+    P.controls.appendChild(b);
+  });
+
+  // derivative checkbox
+  var cb = V.el('input', { type: 'checkbox' });
+  cb.checked = state.showDeriv;
+  cb.addEventListener('change', function(){ state.showDeriv = cb.checked; draw(); });
+  var cbLabel = V.el('label', {
+    class: 'mlviz-slider',
+    style: 'flex-direction:row; align-items:center; gap:6px; cursor:pointer;'
+  }, [cb, V.el('span', { class: 'mlviz-slabel' }, 'show derivative')]);
+  P.controls.appendChild(cbLabel);
+
+  refreshBtns();
+  draw();
+  V.onTheme(function(){ refreshBtns(); draw(); });
+});
+
+</script>
+
+<script>
+/* widget file: attention.js */
+/* widget: attention — self-attention over a short fixed sentence.
+   Every token "looks at" every other token. We give each token a tiny fixed 2-D
+   embedding, set q = k = (a scaled copy of) that embedding, score with q·k / √d,
+   then softmax each row so the attention from one query to all keys sums to 1.
+   The user picks a QUERY token (click it, or use ◀ ▶). We show the weights three ways:
+     (a) curved arcs from the query to every token, opacity ∝ weight,
+     (b) a shaded bar under each token with the weight number,
+     (c) a full n×n heatmap (rows = queries, cols = keys) with the query row boxed.
+   Selecting a new query animates the bars/arcs/row toward the new softmax. */
+MLViz.register('attention', function(node, V){
+  var P = V.panel(node, {
+    title: 'Self-attention: who looks at whom',
+    caption: 'Pick a query token (click it, or use ◀ ▶). Each token gets a tiny fixed 2-D embedding; the score for query→key is their dot product ÷ √d, and a softmax turns the row of scores into attention weights that sum to 1. Arcs and the bars under each word show those weights; the n×n grid shows every query row at once. Weights are illustrative, computed via softmax of query·key similarities.'
+  });
+  var C = V.makeCanvas(P.body, 580, 340), ctx = C.ctx;
+
+  // ---------- fixed sentence + tiny deterministic 2-D embeddings ----------
+  // Directions are hand-picked so related content words score higher with each
+  // other: cat / sat / mat sit in a similar region; the / on cluster apart.
+  var TOKENS = ['the', 'cat', 'sat', 'on', 'the', 'mat'];
+  var EMB = [
+    [ 0.95, -0.30],  // the   (function word A)
+    [ 0.55,  1.15],  // cat   (subject — content)
+    [ 0.20,  1.30],  // sat   (verb — content, near cat & mat)
+    [ 1.05, -0.15],  // on    (function word, near "the")
+    [ 0.95, -0.30],  // the   (same as token 0)
+    [-0.10,  1.20]   // mat   (object — content, near sat)
+  ];
+  var N = TOKENS.length;
+  var D = 2;                 // embedding / key dimension d_k
+  var SQRT_D = Math.sqrt(D);
+
+  // q = k = embedding here (simplest faithful illustration: self-similarity).
+  function dot(a, b){ var s = 0; for(var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+
+  // full n×n attention matrix: row i = softmax over j of (e_i · e_j)/√d
+  function attentionMatrix(){
+    var M = [];
+    for(var i = 0; i < N; i++){
+      var scores = [];
+      var mx = -Infinity;
+      for(var j = 0; j < N; j++){
+        var s = dot(EMB[i], EMB[j]) / SQRT_D;
+        scores.push(s);
+        if(s > mx) mx = s;
+      }
+      var sum = 0, row = [];
+      for(var k = 0; k < N; k++){ var e = Math.exp(scores[k] - mx); row.push(e); sum += e; }
+      for(var m = 0; m < N; m++) row[m] /= sum;
+      M.push(row);
+    }
+    return M;
+  }
+  var ATTN = attentionMatrix();   // ATTN[query][key]
+
+  // ---------- state ----------
+  var state = { q: 1 };           // selected query token (start on "cat")
+  // animated weights shown for the currently-selected query
+  var shownW = ATTN[state.q].slice();
+  var fromW  = shownW.slice();
+  var toW    = shownW.slice();
+  var anim   = { active: false, t: 0, dur: 22 };
+
+  function selectQuery(i){
+    if(i === state.q && anim.active === false){
+      // re-affirm; still animate from current shown for a gentle pulse
+    }
+    state.q = ((i % N) + N) % N;
+    fromW = shownW.slice();
+    toW   = ATTN[state.q].slice();
+    anim.active = true; anim.t = 0;
+  }
+
+  // ---------- layout ----------
+  var m = { l: 14, r: 14, t: 50, b: 14 };
+  // token row geometry
+  var rowY = 96;                                  // baseline-ish y for token chips
+  var chipH = 30;
+  function chipW(){ return (C.w - m.l - m.r) / N; }
+  function chipCX(i){ return m.l + chipW() * (i + 0.5); }
+  // bar block under tokens
+  var barTop = rowY + 26;
+  var barMaxH = 46;
+  // heatmap geometry (bottom block)
+  var heat = { top: barTop + barMaxH + 26 };
+
+  // ---------- drawing helpers ----------
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    var W = shownW;     // weights currently displayed (animated)
+    var cw = chipW();
+    var qx = chipCX(state.q);
+
+    // ===== title strip =====
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 12px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.ink;
+    ctx.fillText('query: ', m.l, 22);
+    var qw = ctx.measureText('query: ').width;
+    ctx.fillStyle = p.accent;
+    ctx.fillText('"' + TOKENS[state.q] + '"', m.l + qw, 22);
+    ctx.fillStyle = p.soft;
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('weights softmax(query·key / √d),  row sums to 1', C.w - m.r, 22);
+
+    // ===== (a) curved arcs from query to every token =====
+    // draw arcs first so chips sit on top
+    var arcTopY = rowY - chipH / 2 - 2;
+    for(var j = 0; j < N; j++){
+      var w = W[j];
+      var tx = chipCX(j);
+      // arc height grows with horizontal distance so far links bow higher
+      var dist = Math.abs(tx - qx);
+      var lift = 18 + dist * 0.42;
+      var ctrlY = arcTopY - lift;
+      var midX = (qx + tx) / 2;
+      ctx.beginPath();
+      ctx.moveTo(qx, arcTopY);
+      ctx.quadraticCurveTo(midX, ctrlY, tx, arcTopY);
+      // opacity & width ∝ weight; keep a faint floor so tiny links still hint
+      var a = 0.10 + 0.85 * w;
+      ctx.globalAlpha = V.clamp(a, 0, 1);
+      ctx.strokeStyle = (j === state.q) ? p.accent2 : p.accent;
+      ctx.lineWidth = 1 + 6 * w;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // ===== token chips (the row) =====
+    ctx.font = '600 13px Inter, system-ui, sans-serif';
+    for(var i = 0; i < N; i++){
+      var cx = chipCX(i);
+      var bw = cw - 12;
+      var bx = cx - bw / 2;
+      var by = rowY - chipH / 2;
+      var isQ = (i === state.q);
+      roundRect(bx, by, bw, chipH, 8);
+      if(isQ){
+        ctx.fillStyle = p.accent;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = p.panel;
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = p.grid;
+        ctx.stroke();
+      }
+      ctx.fillStyle = isQ ? '#ffffff' : p.ink;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(TOKENS[i], cx, rowY);
+    }
+
+    // ===== (b) weight bars + numbers under each token =====
+    for(var b2 = 0; b2 < N; b2++){
+      var cx2 = chipCX(b2);
+      var ww = W[b2];
+      var bw2 = cw - 22;
+      var bx2 = cx2 - bw2 / 2;
+      // track
+      roundRect(bx2, barTop, bw2, barMaxH, 5);
+      ctx.fillStyle = p.panel; ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = p.grid; ctx.stroke();
+      // fill (grows upward from bottom)
+      var fh = barMaxH * ww;
+      if(fh > 0.5){
+        roundRect(bx2, barTop + (barMaxH - fh), bw2, fh, 5);
+        ctx.fillStyle = (b2 === state.q) ? p.accent2 : p.accent;
+        ctx.globalAlpha = 0.92;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      // number
+      ctx.font = '700 11px Inter, system-ui, sans-serif';
+      ctx.fillStyle = p.ink;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(ww.toFixed(2), cx2, barTop + barMaxH + 4);
+    }
+    // small label for the bar block
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('attention weight from "' + TOKENS[state.q] + '" to each token', m.l, barTop - 6);
+
+    // ===== (c) full n×n heatmap =====
+    drawHeatmap(p);
+  }
+
+  function drawHeatmap(p){
+    var labelW = 40;                 // room for row labels on the left
+    var topLabelH = 16;              // room for column labels on top
+    var gx = m.l + labelW;
+    var gy = heat.top + topLabelH;
+    var availW = C.w - m.r - gx;
+    var availH = C.h - 6 - gy;
+    var cell = Math.min(availW / N, availH / N);
+    var gridW = cell * N;
+
+    // column header (keys)
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    for(var c = 0; c < N; c++){
+      ctx.fillText(TOKENS[c], gx + cell * (c + 0.5), gy - 3);
+    }
+    // axis caption ("keys →"): place to the right of the grid so it never
+    // overlaps the column token labels.
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = p.soft;
+    ctx.fillText('keys →', gx + cell * N + 10, gy + cell * 0.5);
+    // rows axis caption ("queries ↓") under the row labels
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('queries ↓', gx + cell * N + 10, gy + cell * 1.6);
+
+    // cells
+    for(var r = 0; r < N; r++){
+      // row label (query)
+      ctx.font = '10px Inter, system-ui, sans-serif';
+      ctx.fillStyle = (r === state.q) ? p.accent : p.soft;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(TOKENS[r], gx - 5, gy + cell * (r + 0.5));
+
+      for(var cc = 0; cc < N; cc++){
+        var w = (r === state.q) ? shownW[cc] : ATTN[r][cc];  // animate only active row
+        var x = gx + cell * cc;
+        var y = gy + cell * r;
+        // intensity: blend panel -> accent by weight
+        ctx.fillStyle = p.accent;
+        ctx.globalAlpha = 0.12 + 0.85 * w;
+        ctx.fillRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
+        ctx.globalAlpha = 1;
+        // number for the highlighted query row only (keeps grid readable)
+        if(r === state.q && cell >= 18){
+          ctx.font = '9px Inter, system-ui, sans-serif';
+          ctx.fillStyle = (w > 0.45) ? '#ffffff' : p.soft;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(w.toFixed(2), x + cell / 2, y + cell / 2);
+        }
+      }
+    }
+
+    // grid lines
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var gi = 0; gi <= N; gi++){
+      ctx.moveTo(gx + cell * gi, gy);            ctx.lineTo(gx + cell * gi, gy + cell * N);
+      ctx.moveTo(gx, gy + cell * gi);            ctx.lineTo(gx + gridW, gy + cell * gi);
+    }
+    ctx.stroke();
+
+    // highlight the selected query row with a box
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.2;
+    ctx.strokeRect(gx + 1, gy + cell * state.q + 1, gridW - 2, cell - 2);
+
+    // store hit region for clicking the grid to change query
+    heat.hit = { gx: gx, gy: gy, cell: cell };
+  }
+
+  // ---------- interaction: click a token chip or a heatmap row to set query ----------
+  C.canvas.style.touchAction = 'manipulation';
+  function pick(ev){
+    var pos = C.canvas.evtPos(ev);
+    var cw = chipW();
+    // token row band
+    if(pos.y >= rowY - chipH / 2 - 4 && pos.y <= barTop + barMaxH + 4){
+      var idx = Math.floor((pos.x - m.l) / cw);
+      if(idx >= 0 && idx < N){ selectQuery(idx); return; }
+    }
+    // heatmap rows -> set query = that row
+    if(heat.hit){
+      var h = heat.hit;
+      if(pos.x >= h.gx && pos.x <= h.gx + h.cell * N &&
+         pos.y >= h.gy && pos.y <= h.gy + h.cell * N){
+        var r = Math.floor((pos.y - h.gy) / h.cell);
+        if(r >= 0 && r < N){ selectQuery(r); }
+      }
+    }
+  }
+  C.canvas.addEventListener('mousedown', pick);
+  C.canvas.addEventListener('touchstart', function(ev){ ev.preventDefault(); pick(ev); }, { passive: false });
+
+  // ---------- controls ----------
+  P.controls.appendChild(V.button('◀ prev query', function(){ selectQuery(state.q - 1); }, { ghost: true }));
+  P.controls.appendChild(V.button('next query ▶', function(){ selectQuery(state.q + 1); }, { ghost: true }));
+
+  // ---------- animated loop ----------
+  V.loop(function(){
+    if(anim.active){
+      anim.t++;
+      var tt = V.clamp(anim.t / anim.dur, 0, 1);
+      // easeOutCubic
+      var e = 1 - Math.pow(1 - tt, 3);
+      for(var i = 0; i < N; i++) shownW[i] = V.lerp(fromW[i], toW[i], e);
+      if(tt >= 1){ anim.active = false; for(var k = 0; k < N; k++) shownW[k] = toW[k]; }
+    }
+    draw();
+  }, node);
+
+  draw();
+});
+
+</script>
+
+<script>
+/* widget file: convolution.js */
+/* convolution — the flagship CNN demo. A 3x3 kernel slides over a 9x9 grayscale
+   image; at each valid position we compute the element-wise product sum (cross-
+   correlation) and write it to the matching cell of a 7x7 output feature map.
+   Presets: Identity, Box blur, Sharpen, Vertical edge (Sobel-x), Horizontal edge
+   (Sobel-y). Play / Pause / Step / Reset + speed. Uses 'valid' convolution so the
+   output is (9-2) x (9-2) = 7x7. Mathematically: Y[i,j] = sum_{a,b} X[i+a,j+b]*K[a,b]. */
+MLViz.register('convolution', function(node, V){
+  var P = V.panel(node, {
+    title: 'Convolution: slide a filter, build a feature map',
+    caption: 'A 3×3 filter (kernel) slides over the 9×9 image one cell at a time. At each spot we multiply the 9 overlapping pairs and add them up — that single number fills one cell of the output feature map. This is "valid" convolution, so the 9×9 image yields a 7×7 map (9−3+1=7). Pick a kernel preset to see different patterns appear: edge filters light up where brightness changes; blur smooths; sharpen exaggerates. Press Play, or Step one position at a time.'
+  });
+  var C = V.makeCanvas(P.body, 580, 348), ctx = C.ctx;
+
+  // ---- dimensions ----
+  var N = 9;            // image side
+  var F = 3;            // filter side
+  var OUT = N - F + 1;  // valid output side = 7
+
+  // ---- deterministic seeded grayscale image with a clear shape/edge ----
+  // Values in [0,1]. We build a scene with a bright diagonal-ish blob + a sharp
+  // left/right edge + a small dark square, so every filter produces visible structure.
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var IMG = [];
+  (function buildImage(){
+    var rng = mulberry32(20240612);
+    for(var r = 0; r < N; r++){
+      var row = [];
+      for(var c = 0; c < N; c++){
+        var v;
+        // base: dark left half, bright right half -> a strong vertical edge at col 4..5
+        v = (c >= 5) ? 0.82 : 0.16;
+        // a bright horizontal band across the middle rows -> a horizontal edge
+        if(r >= 3 && r <= 4) v = Math.max(v, 0.7);
+        // a small dark square top-right -> a corner / contrast feature
+        if(r <= 2 && c >= 6) v = 0.1;
+        // a bright dot bottom-left -> isolated blob
+        if(r >= 6 && r <= 7 && c >= 1 && c <= 2) v = 0.9;
+        // a touch of seeded texture so cells aren't perfectly flat
+        v += (rng() - 0.5) * 0.06;
+        row.push(V.clamp(v, 0, 1));
+      }
+      IMG.push(row);
+    }
+  })();
+
+  // ---- kernel presets (each 3x3, row-major) ----
+  var PRESETS = [
+    { name: 'Identity',        k: [[0,0,0],[0,1,0],[0,0,0]],          desc: 'copies the centre pixel' },
+    { name: 'Box blur',        k: [[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]], desc: 'averages the 3×3 patch → smooth' },
+    { name: 'Sharpen',         k: [[0,-1,0],[-1,5,-1],[0,-1,0]],      desc: 'boosts centre, subtracts neighbours' },
+    { name: 'Vertical edge',   k: [[1,0,-1],[2,0,-2],[1,0,-1]],       desc: 'Sobel-x: fires on left↔right changes' },
+    { name: 'Horizontal edge', k: [[1,2,1],[0,0,0],[-1,-2,-1]],       desc: 'Sobel-y: fires on top↔bottom changes' }
+  ];
+  var presetIdx = 3; // start on Vertical edge — most visually instructive
+
+  // ---- the output feature map (raw sums) + a 'filled' mask ----
+  var OUTMAP = [];     // OUTMAP[i][j] raw convolution value
+  var FILLED = [];     // FILLED[i][j] true once computed
+  function resetMap(){
+    OUTMAP = []; FILLED = [];
+    for(var i = 0; i < OUT; i++){
+      OUTMAP.push(new Array(OUT).fill(0));
+      FILLED.push(new Array(OUT).fill(false));
+    }
+  }
+  resetMap();
+
+  // current window top-left position (oi, oj) over the OUTPUT grid; equals image
+  // top-left because valid conv with stride 1.
+  var pos = 0;             // linear index 0..OUT*OUT-1 of the NEXT cell to compute
+  var lastProducts = null; // 3x3 array of products for the cell just computed
+  var lastSum = 0;
+  var lastCell = null;     // {i,j} of last computed output cell
+
+  // compute convolution at output cell (i,j): sum_{a,b} IMG[i+a][j+b]*K[a][b]
+  function convAt(i, j){
+    var K = PRESETS[presetIdx].k;
+    var sum = 0, prods = [];
+    for(var a = 0; a < F; a++){
+      var prow = [];
+      for(var b = 0; b < F; b++){
+        var pr = IMG[i + a][j + b] * K[a][b];
+        prow.push(pr);
+        sum += pr;
+      }
+      prods.push(prow);
+    }
+    return { sum: sum, prods: prods };
+  }
+
+  // ---- compute the value range of the WHOLE current feature map so we can
+  // normalise to grayscale consistently (precomputed for the active kernel). ----
+  var mapMin = 0, mapMax = 1;
+  function computeRange(){
+    var lo = Infinity, hi = -Infinity;
+    for(var i = 0; i < OUT; i++){
+      for(var j = 0; j < OUT; j++){
+        var s = convAt(i, j).sum;
+        if(s < lo) lo = s; if(s > hi) hi = s;
+      }
+    }
+    if(hi - lo < 1e-9){ hi = lo + 1; } // avoid divide-by-zero on flat maps
+    mapMin = lo; mapMax = hi;
+  }
+  computeRange();
+
+  // normalise a raw sum to [0,1] for grayscale display
+  function norm(v){ return V.clamp((v - mapMin) / (mapMax - mapMin), 0, 1); }
+
+  // ---- animation control ----
+  var playing = false;
+  var stepFrames = 26;     // frames between auto-steps (speed control adjusts)
+  var frameCnt = 0;
+
+  // perform one step: compute the cell at current pos, advance pos
+  function doStep(){
+    if(pos >= OUT * OUT){ playing = false; updateBtns(); return; }
+    var i = Math.floor(pos / OUT), j = pos % OUT;
+    var r = convAt(i, j);
+    OUTMAP[i][j] = r.sum;
+    FILLED[i][j] = true;
+    lastProducts = r.prods;
+    lastSum = r.sum;
+    lastCell = { i: i, j: j };
+    pos++;
+    if(pos >= OUT * OUT){ playing = false; updateBtns(); }
+  }
+
+  function fullReset(){
+    playing = false;
+    pos = 0;
+    lastProducts = null; lastCell = null; lastSum = 0;
+    resetMap();
+    updateBtns();
+  }
+
+  function selectPreset(idx){
+    presetIdx = idx;
+    computeRange();
+    fullReset();
+    // active preset = solid mlviz-btn; others = ghost (both theme-aware via CSS vars)
+    for(var b = 0; b < presetBtns.length; b++){
+      presetBtns[b].className = 'mlviz-btn' + (b === idx ? '' : ' ghost');
+    }
+  }
+
+  // ---- controls ----
+  // Kernel-preset chooser. Reuse the built-in .mlviz-btn classes so the buttons
+  // recolour correctly on light/dark theme; the active one is solid, rest ghost.
+  var presetBtns = [];
+  var presetRow = V.el('div', { class: 'mlviz-presetrow',
+    style: 'display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center;width:100%;' });
+  PRESETS.forEach(function(pre, idx){
+    var b = V.el('button', {
+      class: 'mlviz-btn' + (idx === presetIdx ? '' : ' ghost'),
+      type: 'button',
+      html: pre.name,
+      onclick: function(){ selectPreset(idx); }
+    });
+    presetBtns.push(b);
+    presetRow.appendChild(b);
+  });
+  P.controls.appendChild(presetRow);
+
+  var playBtn = V.button('Play', function(){
+    if(pos >= OUT * OUT) fullReset();
+    playing = !playing;
+    updateBtns();
+  });
+  var stepBtn = V.button('Step', function(){ playing = false; doStep(); updateBtns(); }, { ghost: true });
+  var resetBtn = V.button('Reset', function(){ fullReset(); }, { ghost: true });
+  P.controls.appendChild(playBtn);
+  P.controls.appendChild(stepBtn);
+  P.controls.appendChild(resetBtn);
+
+  var speed = V.slider({
+    label: 'speed', min: 1, max: 10, step: 1, value: 5,
+    format: function(v){ return v + '×'; },
+    onInput: function(v){ stepFrames = Math.round(42 - v * 3.6); } // 1→~38 frames, 10→~6 frames
+  });
+  stepFrames = Math.round(42 - 5 * 3.6);
+  P.controls.appendChild(speed.wrap);
+
+  function updateBtns(){
+    playBtn.textContent = playing ? 'Pause' : (pos >= OUT * OUT ? 'Replay' : 'Play');
+  }
+  updateBtns();
+
+  // ---- layout geometry ----
+  // Left: 9x9 image. Right: 7x7 feature map. Below image: kernel + products readout.
+  function layout(){
+    var topPad = 24, leftPad = 8;
+    // image grid (left)
+    var imgCell = 21;
+    var imgX = leftPad, imgY = topPad;
+    var imgW = N * imgCell;
+    // feature map grid (right)
+    var mapCell = 21;
+    var mapW = OUT * mapCell;
+    var mapX = C.w - mapW - 12;
+    var mapY = topPad;
+    return { imgX: imgX, imgY: imgY, imgCell: imgCell, imgW: imgW,
+             mapX: mapX, mapY: mapY, mapCell: mapCell, mapW: mapW, topPad: topPad };
+  }
+
+  function grayCss(t){ var g = Math.round(t * 255); return 'rgb(' + g + ',' + g + ',' + g + ')'; }
+
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+    var L = layout();
+    ctx.textBaseline = 'alphabetic';
+
+    // ---------- titles ----------
+    ctx.font = '600 12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = p.ink;
+    ctx.fillText('Image  (9×9)', L.imgX, L.imgY - 9);
+    ctx.fillText('Feature map  (7×7)', L.mapX, L.mapY - 9);
+
+    // current output cell to draw a window for: the one we are ABOUT to compute,
+    // or the last computed if finished.
+    var curI, curJ, isPreview;
+    if(pos < OUT * OUT){ curI = Math.floor(pos / OUT); curJ = pos % OUT; isPreview = true; }
+    else if(lastCell){ curI = lastCell.i; curJ = lastCell.j; isPreview = false; }
+    else { curI = 0; curJ = 0; isPreview = true; }
+
+    // ---------- image grid ----------
+    for(var r = 0; r < N; r++){
+      for(var c = 0; c < N; c++){
+        var x = L.imgX + c * L.imgCell, y = L.imgY + r * L.imgCell;
+        ctx.fillStyle = grayCss(IMG[r][c]);
+        ctx.fillRect(x, y, L.imgCell, L.imgCell);
+      }
+    }
+    // thin grid lines over the image
+    ctx.strokeStyle = p.dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var gi = 0; gi <= N; gi++){
+      ctx.moveTo(L.imgX + gi * L.imgCell, L.imgY); ctx.lineTo(L.imgX + gi * L.imgCell, L.imgY + L.imgW);
+      ctx.moveTo(L.imgX, L.imgY + gi * L.imgCell); ctx.lineTo(L.imgX + L.imgW, L.imgY + gi * L.imgCell);
+    }
+    ctx.stroke();
+    // outer border
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.4;
+    ctx.strokeRect(L.imgX, L.imgY, L.imgW, L.imgW);
+
+    // highlight the current 3x3 window on the image
+    var wx = L.imgX + curJ * L.imgCell, wy = L.imgY + curI * L.imgCell;
+    var wSize = F * L.imgCell;
+    // dim everything else slightly to make the window pop
+    ctx.save();
+    ctx.fillStyle = p.dark ? 'rgba(10,12,16,0.42)' : 'rgba(250,250,248,0.40)';
+    ctx.beginPath();
+    ctx.rect(L.imgX, L.imgY, L.imgW, L.imgW);
+    ctx.rect(wx, wy, wSize, wSize); // inner reverse for even-odd
+    ctx.fill('evenodd');
+    ctx.restore();
+    // window border
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.4;
+    ctx.strokeRect(wx + 0.5, wy + 0.5, wSize - 1, wSize - 1);
+    // grid inside window
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    for(var gw = 1; gw < F; gw++){
+      ctx.moveTo(wx + gw * L.imgCell, wy); ctx.lineTo(wx + gw * L.imgCell, wy + wSize);
+      ctx.moveTo(wx, wy + gw * L.imgCell); ctx.lineTo(wx + wSize, wy + gw * L.imgCell);
+    }
+    ctx.stroke(); ctx.globalAlpha = 1;
+
+    // ---------- feature map grid ----------
+    for(var oi = 0; oi < OUT; oi++){
+      for(var oj = 0; oj < OUT; oj++){
+        var ox = L.mapX + oj * L.mapCell, oy = L.mapY + oi * L.mapCell;
+        if(FILLED[oi][oj]){
+          ctx.fillStyle = grayCss(norm(OUTMAP[oi][oj]));
+        } else {
+          ctx.fillStyle = p.panel;
+        }
+        ctx.fillRect(ox, oy, L.mapCell, L.mapCell);
+      }
+    }
+    // grid lines over feature map
+    ctx.strokeStyle = p.dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1; ctx.beginPath();
+    for(var mg = 0; mg <= OUT; mg++){
+      ctx.moveTo(L.mapX + mg * L.mapCell, L.mapY); ctx.lineTo(L.mapX + mg * L.mapCell, L.mapY + OUT * L.mapCell);
+      ctx.moveTo(L.mapX, L.mapY + mg * L.mapCell); ctx.lineTo(L.mapX + OUT * L.mapCell, L.mapY + mg * L.mapCell);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.4;
+    ctx.strokeRect(L.mapX, L.mapY, L.mapW, L.mapW);
+
+    // highlight the target output cell with the same accent
+    var tx = L.mapX + curJ * L.mapCell, ty = L.mapY + curI * L.mapCell;
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.4;
+    ctx.strokeRect(tx + 0.5, ty + 0.5, L.mapCell - 1, L.mapCell - 1);
+
+    // connector arrow from window centre to the target cell
+    ctx.strokeStyle = p.accent2 || p.teal; ctx.lineWidth = 1.6;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(wx + wSize, wy + wSize / 2);
+    ctx.lineTo(tx, ty + L.mapCell / 2);
+    ctx.stroke();
+    // arrowhead
+    var ahx = tx, ahy = ty + L.mapCell / 2;
+    var ang = Math.atan2((ty + L.mapCell / 2) - (wy + wSize / 2), tx - (wx + wSize));
+    ctx.beginPath();
+    ctx.moveTo(ahx, ahy);
+    ctx.lineTo(ahx - 7 * Math.cos(ang - 0.4), ahy - 7 * Math.sin(ang - 0.4));
+    ctx.lineTo(ahx - 7 * Math.cos(ang + 0.4), ahy - 7 * Math.sin(ang + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = p.accent2 || p.teal; ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // ---------- kernel display (bottom-left, under the image) ----------
+    var K = PRESETS[presetIdx].k;
+    var kCell = 27;
+    var kX = L.imgX + 4, kY = L.imgY + L.imgW + 24;
+    ctx.font = '600 12px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.ink; ctx.textAlign = 'left';
+    ctx.fillText('Kernel (3×3) — ' + PRESETS[presetIdx].name, kX, kY - 8);
+    for(var ka = 0; ka < F; ka++){
+      for(var kb = 0; kb < F; kb++){
+        var kx = kX + kb * kCell, ky = kY + ka * kCell;
+        ctx.fillStyle = p.dark ? '#1b212b' : '#f3f1ee';
+        ctx.fillRect(kx, ky, kCell, kCell);
+        ctx.strokeStyle = p.faint; ctx.lineWidth = 1;
+        ctx.strokeRect(kx + 0.5, ky + 0.5, kCell - 1, kCell - 1);
+        ctx.fillStyle = p.ink;
+        ctx.font = '11px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(fmtNum(K[ka][kb]), kx + kCell / 2, ky + kCell / 2 + 0.5);
+      }
+    }
+    ctx.textBaseline = 'alphabetic';
+    // kernel description
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft; ctx.textAlign = 'left';
+    ctx.fillText(PRESETS[presetIdx].desc, kX + F * kCell + 12, kY + 14);
+
+    // ---------- products readout (right of kernel) ----------
+    var pX = kX + F * kCell + 12;
+    var pY = kY + 34;
+    ctx.font = '600 11px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.ink;
+    var label = (lastCell)
+      ? 'Σ products at output (' + lastCell.i + ',' + lastCell.j + ') :'
+      : 'Press Step or Play to compute the first cell.';
+    ctx.fillText(label, pX, pY);
+
+    if(lastProducts){
+      // show the 9 products compactly as patch ⊙ kernel = sum
+      ctx.font = '11px Inter, system-ui, sans-serif';
+      var terms = [];
+      for(var a = 0; a < F; a++){
+        for(var b = 0; b < F; b++){
+          var iv = IMG[lastCell.i + a][lastCell.j + b];
+          var kv = K[a][b];
+          if(Math.abs(kv) < 1e-9) continue; // skip zero-weight terms for readability
+          terms.push(iv.toFixed(2) + '·' + fmtNum(kv));
+        }
+      }
+      // wrap terms into lines
+      var line = '', lines = [], maxChars = 30;
+      for(var ti = 0; ti < terms.length; ti++){
+        var add = (line ? line + ' + ' : '') + terms[ti];
+        if(add.length > maxChars && line){ lines.push(line); line = terms[ti]; }
+        else line = add;
+      }
+      if(line) lines.push(line);
+      ctx.fillStyle = p.soft;
+      for(var li = 0; li < lines.length && li < 3; li++){
+        ctx.fillText(lines[li] + (li < lines.length - 1 ? ' +' : ''), pX, pY + 18 + li * 15);
+      }
+      // the sum, emphasised
+      ctx.font = '700 13px Inter, system-ui, sans-serif';
+      ctx.fillStyle = p.accent;
+      ctx.fillText('= ' + lastSum.toFixed(2), pX, pY + 18 + Math.min(lines.length, 3) * 15 + 4);
+    }
+
+    // ---------- progress / status ----------
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft; ctx.textAlign = 'right';
+    var done = Math.min(pos, OUT * OUT);
+    ctx.fillText(done + ' / ' + (OUT * OUT) + ' cells', C.w - 10, L.mapY + OUT * L.mapCell + 16);
+    if(pos >= OUT * OUT){
+      ctx.fillStyle = p.good;
+      ctx.font = '600 11px Inter, system-ui, sans-serif';
+      ctx.fillText('✓ feature map complete', C.w - 10, L.mapY + OUT * L.mapCell + 32);
+    }
+  }
+
+  // format kernel numbers nicely (1/9 -> .11, integers stay integers)
+  function fmtNum(v){
+    if(Math.abs(v) < 1e-9) return '0';
+    if(Math.abs(v - Math.round(v)) < 1e-9) return '' + Math.round(v);
+    return v.toFixed(2).replace(/^(-?)0\./, '$1.');
+  }
+
+  // ---- animation loop ----
+  V.loop(function(){
+    if(playing){
+      frameCnt++;
+      if(frameCnt >= stepFrames){ frameCnt = 0; doStep(); updateBtns(); }
+    }
+    draw();
+  }, node);
+
+  // initial paint + active preset styling handled via CSS data-active; ensure draw runs
+  selectPreset(presetIdx);
+});
+
+</script>
+
+<script>
+/* widget file: derivative-slope.js */
+/* widget: derivative-slope
+   Derivative = slope of the tangent = limit of the secant slope.
+   Curve f(x)=x^2 (toggle to sin x). A draggable point at x0, a second point at
+   x0+h, and the secant line through them. A slider for h; as h -> 0 the secant
+   visibly approaches the tangent. Readouts show the secant slope and the true
+   derivative f'(x0). An "animate h → 0" button smoothly shrinks h. */
+MLViz.register('derivative-slope', function(node, V){
+  var P = V.panel(node, {
+    title: 'Derivative = slope of the tangent',
+    caption: 'The secant slope is (f(x₀+h) − f(x₀)) / h — rise over run between two points. ' +
+             'Drag the blue point to move x₀; shrink h with the slider (or hit “animate h → 0”) ' +
+             'and watch the secant (orange) swing onto the tangent (green). The true derivative is f′(x₀).'
+  });
+
+  var C = V.makeCanvas(P.body, 560, 320), ctx = C.ctx;
+
+  var readline = V.el('div', { class: 'mlviz-readline' });
+  P.body.appendChild(readline);
+  var legend = V.el('div', { class: 'mlviz-legend' });
+  P.body.appendChild(legend);
+
+  // ---- state -----------------------------------------------------------------
+  var state = {
+    mode: 'sq',     // 'sq' = x^2, 'sin' = sin x
+    x0: 1.2,
+    h: 1.5,
+    animating: false
+  };
+
+  // function + analytic derivative
+  function f(x){ return state.mode === 'sq' ? x*x : Math.sin(x); }
+  function df(x){ return state.mode === 'sq' ? 2*x : Math.cos(x); }
+  function fname(){ return state.mode === 'sq' ? 'f(x) = x²' : 'f(x) = sin(x)'; }
+  function dfname(){ return state.mode === 'sq' ? "f′(x) = 2x" : "f′(x) = cos(x)"; }
+
+  // ---- world window ----------------------------------------------------------
+  var xMin = -3, xMax = 3;
+  function yRange(){ return state.mode === 'sq' ? { lo:-1.2, hi:9.5 } : { lo:-1.6, hi:1.6 }; }
+
+  // margins for axis labels
+  var ml = 38, mr = 14, mt = 14, mb = 28;
+  function plotW(){ return C.w - ml - mr; }
+  function plotH(){ return C.h - mt - mb; }
+  function sx(x){ return ml + (x - xMin) / (xMax - xMin) * plotW(); }
+  function sy(y){ var r = yRange(); return mt + (r.hi - y) / (r.hi - r.lo) * plotH(); }
+  // inverse: canvas px -> world x (for dragging)
+  function inv_x(px){ return xMin + (px - ml) / plotW() * (xMax - xMin); }
+
+  // ---- controls --------------------------------------------------------------
+  var hSlider = V.slider({
+    label: 'step h', min: 0.05, max: 2.0, step: 0.01, value: state.h,
+    format: function(v){ return v.toFixed(2); },
+    onInput: function(v){ state.h = v; state.animating = false; }
+  });
+  P.controls.appendChild(hSlider.wrap);
+
+  P.controls.appendChild(V.button('animate h → 0', function(){
+    state.animating = true;
+  }));
+
+  P.controls.appendChild(V.button('reset h', function(){
+    state.animating = false; state.h = 1.5; hSlider.set(1.5);
+  }, {ghost:true}));
+
+  var fnBtn = V.button('switch to sin(x)', function(){
+    state.mode = (state.mode === 'sq') ? 'sin' : 'sq';
+    fnBtn.textContent = (state.mode === 'sq') ? 'switch to sin(x)' : 'switch to x²';
+    // keep x0 in a sensible spot for each function
+    state.x0 = (state.mode === 'sq') ? 1.2 : 0.8;
+    updateLegend();
+  }, {ghost:true});
+  P.controls.appendChild(fnBtn);
+
+  // ---- dragging the x0 point -------------------------------------------------
+  var dragging = false;
+  function pointerStart(ev){
+    var pos = C.canvas.evtPos(ev);
+    var px = sx(state.x0), py = sy(f(state.x0));
+    var d = Math.hypot(pos.x - px, pos.y - py);
+    if(d < 26){ dragging = true; ev.preventDefault(); }
+  }
+  function pointerMove(ev){
+    if(!dragging) return;
+    var pos = C.canvas.evtPos(ev);
+    var wx = V.clamp(inv_x(pos.x), xMin + 0.05, xMax - 0.05);
+    // keep x0 + h inside the window so the secant stays visible
+    state.x0 = V.clamp(wx, xMin + 0.05, xMax - state.h - 0.05);
+    if(state.x0 < xMin + 0.05) state.x0 = xMin + 0.05;
+    ev.preventDefault();
+  }
+  function pointerEnd(){ dragging = false; }
+
+  C.canvas.addEventListener('mousedown', pointerStart);
+  C.canvas.addEventListener('mousemove', pointerMove);
+  window.addEventListener('mouseup', pointerEnd);
+  C.canvas.addEventListener('touchstart', pointerStart, {passive:false});
+  C.canvas.addEventListener('touchmove', pointerMove, {passive:false});
+  window.addEventListener('touchend', pointerEnd);
+
+  // ---- draw ------------------------------------------------------------------
+  function draw(){
+    var p = V.palette();
+    var r = yRange();
+    ctx.clearRect(0, 0, C.w, C.h);
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(0, 0, C.w, C.h);
+
+    // gridlines (integer x, and a few y)
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(var gx = Math.ceil(xMin); gx <= Math.floor(xMax); gx++){
+      ctx.beginPath(); ctx.moveTo(sx(gx), mt); ctx.lineTo(sx(gx), mt + plotH()); ctx.stroke();
+    }
+    var yticks = state.mode === 'sq' ? [0,2,4,6,8] : [-1.5,-1,-0.5,0,0.5,1,1.5];
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(var ti = 0; ti < yticks.length; ti++){
+      var yv = yticks[ti];
+      if(yv < r.lo || yv > r.hi) continue;
+      ctx.strokeStyle = p.grid;
+      ctx.beginPath(); ctx.moveTo(ml, sy(yv)); ctx.lineTo(ml + plotW(), sy(yv)); ctx.stroke();
+      ctx.fillStyle = p.soft;
+      ctx.fillText((Math.round(yv*10)/10).toString(), ml - 6, sy(yv));
+    }
+
+    // axes (x=0 and y=0)
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.3;
+    if(0 >= r.lo && 0 <= r.hi){ ctx.beginPath(); ctx.moveTo(ml, sy(0)); ctx.lineTo(ml + plotW(), sy(0)); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(sx(0), mt); ctx.lineTo(sx(0), mt + plotH()); ctx.stroke();
+
+    // x tick labels
+    ctx.fillStyle = p.soft; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(var lx = Math.ceil(xMin); lx <= Math.floor(xMax); lx++){
+      if(lx === 0) continue;
+      ctx.fillText(lx.toString(), sx(lx), mt + plotH() + 5);
+    }
+    ctx.fillText('x', ml + plotW() - 4, sy(0) + 5);
+
+    // the curve f(x)
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    var first = true;
+    for(var px = ml; px <= ml + plotW(); px += 1){
+      var xw = xMin + (px - ml) / plotW() * (xMax - xMin);
+      var yw = f(xw);
+      var yp = sy(yw);
+      if(first){ ctx.moveTo(px, yp); first = false; } else { ctx.lineTo(px, yp); }
+    }
+    ctx.stroke();
+
+    var x0 = state.x0, x1 = state.x0 + state.h;
+    var y0 = f(x0), y1 = f(x1);
+    var slopeSecant = (y1 - y0) / state.h;
+    var slopeTrue = df(x0);
+
+    // tangent line (green) through (x0,y0) with slope slopeTrue — drawn first, behind secant
+    ctx.strokeStyle = p.good; ctx.lineWidth = 2;
+    ctx.setLineDash([6,4]);
+    drawLineThrough(x0, y0, slopeTrue, p);
+    ctx.setLineDash([]);
+
+    // secant line (orange) through the two points, extended across the plot
+    ctx.strokeStyle = p.warn; ctx.lineWidth = 2;
+    drawLineThrough(x0, y0, slopeSecant, p);
+
+    // vertical "run" + horizontal helpers to show rise/run between the points
+    ctx.strokeStyle = p.faint; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(sx(x0), sy(y0)); ctx.lineTo(sx(x1), sy(y0)); ctx.stroke(); // run
+    ctx.beginPath(); ctx.moveTo(sx(x1), sy(y0)); ctx.lineTo(sx(x1), sy(y1)); ctx.stroke(); // rise
+    ctx.setLineDash([]);
+
+    // the two points
+    // second point (x0+h)
+    ctx.fillStyle = p.warn;
+    dot(sx(x1), sy(y1), 5);
+    // first point (x0) — draggable, blue, larger with halo
+    ctx.fillStyle = p.dark ? 'rgba(96,165,250,0.25)' : 'rgba(37,99,235,0.18)';
+    dot(sx(x0), sy(y0), dragging ? 13 : 10);
+    ctx.fillStyle = p.blue;
+    dot(sx(x0), sy(y0), 6);
+    ctx.strokeStyle = p.bg; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(sx(x0), sy(y0), 6, 0, Math.PI*2); ctx.stroke();
+
+    // labels near points
+    ctx.font = '600 11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = p.blue; ctx.fillText('x₀', sx(x0) + 9, sy(y0) - 6);
+    ctx.fillStyle = p.warn; ctx.fillText('x₀+h', sx(x1) + 8, sy(y1) - 6);
+
+    // function name in corner
+    ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillStyle = p.accent; ctx.fillText(fname(), ml + 6, mt + 4);
+  }
+
+  function drawLineThrough(x0, y0, slope, p){
+    // draw the infinite line y = y0 + slope*(x - x0) clipped to the plot box
+    var r = yRange();
+    var xa = xMin, xb = xMax;
+    var ya = y0 + slope * (xa - x0);
+    var yb = y0 + slope * (xb - x0);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(ml, mt, plotW(), plotH());
+    ctx.clip();
+    ctx.beginPath();
+    ctx.moveTo(sx(xa), sy(ya));
+    ctx.lineTo(sx(xb), sy(yb));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function dot(x, y, r){ ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); }
+
+  // ---- readouts --------------------------------------------------------------
+  function updateReadline(){
+    var x0 = state.x0;
+    var slopeSecant = (f(x0 + state.h) - f(x0)) / state.h;
+    var slopeTrue = df(x0);
+    var err = Math.abs(slopeSecant - slopeTrue);
+    readline.innerHTML =
+      'x₀ = <b>' + x0.toFixed(2) + '</b>' +
+      '&nbsp;&nbsp;•&nbsp;&nbsp;h = <b>' + state.h.toFixed(2) + '</b>' +
+      '&nbsp;&nbsp;•&nbsp;&nbsp;secant slope = <b>' + slopeSecant.toFixed(3) + '</b>' +
+      '&nbsp;&nbsp;•&nbsp;&nbsp;true f′(x₀) = <b>' + slopeTrue.toFixed(3) + '</b>' +
+      '&nbsp;&nbsp;•&nbsp;&nbsp;gap = <b>' + err.toFixed(3) + '</b>';
+  }
+
+  function updateLegend(){
+    var p = V.palette();
+    legend.innerHTML =
+      '<span><i style="background:' + p.accent + '"></i>' + fname() + '</span>' +
+      '<span><i style="background:' + p.warn + '"></i>secant line</span>' +
+      '<span><i style="background:' + p.good + '"></i>tangent (' + dfname() + ')</span>' +
+      '<span><i style="background:' + p.blue + '"></i>drag x₀</span>';
+  }
+
+  // ---- animation loop --------------------------------------------------------
+  function tick(){
+    if(state.animating){
+      // exponential shrink toward the slider minimum (0.05)
+      state.h += (0.05 - state.h) * 0.06;
+      if(state.h <= 0.06){ state.h = 0.05; state.animating = false; }
+      hSlider.set(state.h);
+      // keep x0 inside the window as h changes
+      state.x0 = V.clamp(state.x0, xMin + 0.05, xMax - state.h - 0.05);
+    }
+    draw();
+    updateReadline();
+  }
+
+  updateLegend();
+  updateReadline();
+  V.loop(tick, node);
+  V.onTheme(function(){ updateLegend(); updateReadline(); });
+});
+
+</script>
+
+<script>
+/* widget file: gradient-descent.js */
+/* gradient-descent — the flagship cost-bowl descent widget.
+   Minimizes J(w) = (w-3)^2, J'(w) = 2(w-3), minimum at w=3.
+   Update rule: w := w - alpha * J'(w).  Shows convergence, crawling, and divergence. */
+MLViz.register('gradient-descent', function(node, V){
+  var P = V.panel(node, {
+    title: 'Gradient descent on a cost bowl',
+    caption: 'The bowl is the cost J(w) = (w − 3)². The ball sits at the current w. Each Step does w := w − α·J′(w) with J′(w) = 2(w − 3), sliding the ball downhill. Try α ≈ 0.1–0.3 (smooth convergence to w = 3), tiny α (it crawls), or α ≥ 1.0 (it overshoots and diverges).'
+  });
+
+  var C = V.makeCanvas(P.body, 560, 300), ctx = C.ctx;
+
+  // --- domain / cost ----------------------------------------------------
+  var W_MIN = -2, W_MAX = 8;            // w axis range shown
+  var TARGET = 3;                       // location of the minimum
+  function J(w){ return (w - TARGET) * (w - TARGET); }     // cost
+  function dJ(w){ return 2 * (w - TARGET); }               // slope J'(w)
+  var J_MAX = Math.max(J(W_MIN), J(W_MAX));                // for vertical scale (=25)
+  var START_W = 0;
+
+  // --- state ------------------------------------------------------------
+  var state = {
+    w: START_W,          // current parameter (logical, post-step)
+    prevW: START_W,      // where the ball animates FROM
+    lr: 0.1,             // learning rate alpha
+    step: 0,             // iteration count
+    path: [START_W],     // visited w values (trajectory)
+    anim: 0,             // 0..1 animation progress for the current slide
+    animating: false,
+    running: false,      // auto-run toggle
+    diverged: false,
+    autoTimer: 0         // ms accumulator to pace auto-steps
+  };
+
+  // --- plot geometry ----------------------------------------------------
+  var PAD_L = 46, PAD_R = 16, PAD_T = 22, PAD_B = 40;
+  function plotW(){ return C.w - PAD_L - PAD_R; }
+  function plotH(){ return C.h - PAD_T - PAD_B; }
+  function sx(w){ return PAD_L + (w - W_MIN) / (W_MAX - W_MIN) * plotW(); }
+  function sy(j){ return PAD_T + (1 - V.clamp(j, 0, J_MAX) / J_MAX) * plotH(); } // clamp so off-bowl points pin to top
+
+  // --- one gradient-descent update -------------------------------------
+  function doStep(){
+    if(state.diverged || state.animating) return;
+    var g = dJ(state.w);
+    var next = state.w - state.lr * g;   // the GD update
+    state.prevW = state.w;
+    state.w = next;
+    state.step += 1;
+    state.path.push(next);
+    if(state.path.length > 60) state.path.shift();
+    // divergence guard: cost is exploding well beyond the visible bowl
+    if(!isFinite(next) || Math.abs(next - TARGET) > 1e4 || J(next) > 1e7){
+      state.diverged = true;
+      state.running = false;
+      runBtn.textContent = 'Run';
+    }
+    state.anim = 0;
+    state.animating = true;
+  }
+
+  // --- drawing ----------------------------------------------------------
+  function drawAxes(p){
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    ctx.fillStyle = p.soft;
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    // vertical gridlines + w ticks
+    for(var w = W_MIN; w <= W_MAX; w += 1){
+      var x = sx(w);
+      ctx.globalAlpha = (w === TARGET) ? 0 : 1;
+      ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + plotH()); ctx.stroke();
+      ctx.globalAlpha = 1;
+      if(w % 1 === 0){ ctx.fillText(w, x, PAD_T + plotH() + 6); }
+    }
+    // horizontal gridlines + J ticks
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(var j = 0; j <= J_MAX; j += 5){
+      var y = sy(j);
+      ctx.strokeStyle = p.grid;
+      ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + plotW(), y); ctx.stroke();
+      ctx.fillStyle = p.soft;
+      ctx.fillText(j, PAD_L - 6, y);
+    }
+    // axes box edges
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(PAD_L, PAD_T); ctx.lineTo(PAD_L, PAD_T + plotH()); ctx.lineTo(PAD_L + plotW(), PAD_T + plotH());
+    ctx.stroke();
+    // axis labels
+    ctx.fillStyle = p.ink;
+    ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('parameter w', PAD_L + plotW() / 2, PAD_T + plotH() + 22);
+    ctx.save();
+    ctx.translate(13, PAD_T + plotH() / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('cost J(w)', 0, 0);
+    ctx.restore();
+  }
+
+  function drawBowl(p){
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    var first = true;
+    for(var px = 0; px <= plotW(); px += 2){
+      var w = W_MIN + (px / plotW()) * (W_MAX - W_MIN);
+      var x = PAD_L + px, y = sy(J(w));
+      if(first){ ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y); }
+    ctx.stroke();
+    // minimum marker at w=3
+    var mx = sx(TARGET), my = sy(0);
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = p.good; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(mx, PAD_T); ctx.lineTo(mx, my); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = p.good;
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('minimum  w = 3', mx, PAD_T + 12);
+  }
+
+  function drawTrajectory(p){
+    // visited points along the bowl, faded older -> brighter newer
+    var pts = state.path;
+    for(var i = 0; i < pts.length; i++){
+      var w = pts[i];
+      var wc = V.clamp(w, W_MIN, W_MAX);
+      var x = sx(wc), y = sy(J(w));
+      var t = pts.length > 1 ? i / (pts.length - 1) : 1;
+      // connecting segment to previous
+      if(i > 0){
+        var pw = V.clamp(pts[i - 1], W_MIN, W_MAX);
+        ctx.strokeStyle = p.warn;
+        ctx.globalAlpha = 0.25 + 0.45 * t;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(sx(pw), sy(J(pts[i - 1])));
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.35 + 0.55 * t;
+      ctx.fillStyle = p.warn;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBall(p){
+    // interpolate the ball position during the slide animation
+    var wDisp = state.animating ? V.lerp(state.prevW, state.w, ease(state.anim)) : state.w;
+    var wc = V.clamp(wDisp, W_MIN, W_MAX);
+    var x = sx(wc), y = sy(J(wDisp));
+    var offEdge = (wDisp < W_MIN || wDisp > W_MAX);
+
+    // slope tangent line at the ball (teaching: the gradient we follow)
+    if(!offEdge && !state.diverged){
+      var g = dJ(wDisp);
+      // tangent in screen space: dy/dx of J w.r.t. screen
+      var dwScreen = plotW() / (W_MAX - W_MIN);          // px per unit w
+      var djScreen = -plotH() / J_MAX;                   // px per unit J (y inverted)
+      var dirx = dwScreen, diry = g * djScreen;
+      var len = Math.sqrt(dirx * dirx + diry * diry) || 1;
+      dirx /= len; diry /= len;
+      var L = 34;
+      ctx.strokeStyle = p.bad; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - dirx * L, y - diry * L);
+      ctx.lineTo(x + dirx * L, y + diry * L);
+      ctx.stroke();
+    }
+
+    // the ball
+    ctx.fillStyle = state.diverged ? p.bad : p.pink;
+    ctx.strokeStyle = p.bg; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+    if(offEdge){
+      // arrow hint that the ball flew off the chart
+      ctx.fillStyle = p.bad;
+      ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+      ctx.textBaseline = 'middle';
+      if(wDisp > W_MAX){ ctx.textAlign = 'right'; ctx.fillText('→ off chart', PAD_L + plotW() - 4, PAD_T + 14); }
+      else { ctx.textAlign = 'left'; ctx.fillText('off chart ←', PAD_L + 4, PAD_T + 14); }
+    }
+  }
+
+  function drawReadout(p){
+    var w = state.w, cost = J(w), grad = dJ(w);
+    ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    var lines = [
+      ['step ', String(state.step), p.soft, p.ink],
+      ['w = ', fmt(w), p.soft, p.ink],
+      ['J(w) = ', fmt(cost), p.soft, p.ink],
+      ['J′(w) = ', fmt(grad), p.soft, (Math.abs(grad) < 1e-3 ? p.good : p.bad)]
+    ];
+    var bx = PAD_L + 8, by = PAD_T + 6, lh = 15;
+    // backing for legibility
+    ctx.fillStyle = p.dark ? 'rgba(22,27,34,0.72)' : 'rgba(255,255,255,0.78)';
+    ctx.fillRect(bx - 5, by - 4, 132, lh * lines.length + 8);
+    for(var i = 0; i < lines.length; i++){
+      var ly = by + i * lh;
+      ctx.fillStyle = lines[i][2]; ctx.fillText(lines[i][0], bx, ly);
+      var lw = ctx.measureText(lines[i][0]).width;
+      ctx.fillStyle = lines[i][3]; ctx.fillText(lines[i][1], bx + lw, ly);
+    }
+    if(state.diverged){
+      ctx.fillStyle = p.bad;
+      ctx.font = 'bold 14px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('diverging!  α is too large', PAD_L + plotW() / 2, PAD_T + plotH() / 2);
+    } else if(Math.abs(grad) < 1e-3 && state.step > 0){
+      ctx.fillStyle = p.good;
+      ctx.font = 'bold 13px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('converged ✓  slope ≈ 0', PAD_L + plotW() / 2, PAD_T + 16);
+    }
+  }
+
+  function fmt(v){
+    if(!isFinite(v)) return '∞';
+    var a = Math.abs(v);
+    if(a >= 1e4) return v.toExponential(1);
+    return v.toFixed(a < 100 ? 3 : 1);
+  }
+  function ease(t){ return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; } // smooth in-out
+
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+    drawAxes(p);
+    drawBowl(p);
+    drawTrajectory(p);
+    drawBall(p);
+    drawReadout(p);
+  }
+
+  // --- animation loop (handles the slide + auto-run pacing) -------------
+  var lastT = 0;
+  var anim = V.loop(function(t){
+    var dt = lastT ? Math.min(64, t - lastT) : 16; lastT = t;
+    // advance slide animation
+    if(state.animating){
+      state.anim += dt / 360;            // ~0.36s per slide
+      if(state.anim >= 1){ state.anim = 1; state.animating = false; }
+    }
+    // auto-run: take a step when the previous slide has (mostly) settled
+    if(state.running && !state.animating && !state.diverged){
+      state.autoTimer += dt;
+      if(state.autoTimer > 90){ state.autoTimer = 0; doStep(); }
+      // stop auto-run once essentially converged
+      if(Math.abs(dJ(state.w)) < 1e-3){ state.running = false; runBtn.textContent = 'Run'; }
+    }
+    draw();
+  }, node);
+
+  // --- controls ---------------------------------------------------------
+  var lrSlider = V.slider({
+    label: 'learning rate α', min: 0.01, max: 1.2, step: 0.01, value: state.lr,
+    format: function(v){ return v.toFixed(2); },
+    onInput: function(v){ state.lr = v; }
+  });
+  P.controls.appendChild(lrSlider.wrap);
+
+  var stepBtn = V.button('Step', function(){
+    if(state.diverged) return;
+    state.running = false; runBtn.textContent = 'Run';
+    doStep();
+  });
+  P.controls.appendChild(stepBtn);
+
+  var runBtn = V.button('Run', function(){
+    if(state.diverged){ reset(); }
+    state.running = !state.running;
+    state.autoTimer = 0;
+    runBtn.textContent = state.running ? 'Pause' : 'Run';
+  });
+  P.controls.appendChild(runBtn);
+
+  function reset(){
+    state.w = START_W; state.prevW = START_W; state.step = 0;
+    state.path = [START_W]; state.anim = 0; state.animating = false;
+    state.running = false; state.diverged = false; state.autoTimer = 0;
+    runBtn.textContent = 'Run';
+  }
+  P.controls.appendChild(V.button('Reset', reset, { ghost: true }));
+
+  draw();
+  // V.loop already redraws every frame, so it picks up theme changes automatically.
+});
+
+</script>
+
+<script>
+/* widget file: kmeans.js */
+/* k-means clustering — assign points to nearest centroid, then move each centroid
+   to the mean of its members; repeat until nothing changes. Two-phase Step makes the
+   assign/update dance explicit; Run auto-iterates with gliding-centroid animation. */
+MLViz.register('kmeans', function(node, V){
+  var P = V.panel(node, {
+    title: 'k-means: the assign-then-update dance',
+    caption: 'Step alternates two phases: ASSIGN colours every point by its nearest centroid (✕), then UPDATE glides each centroid to the mean of its members. Run repeats until a round changes nothing — that is convergence. Change k or reseed the centroids to see how the start matters.'
+  });
+  var C = V.makeCanvas(P.body, 560, 330), ctx = C.ctx;
+
+  // ---- deterministic RNG (mulberry32) ----
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // gaussian via Box-Muller from a seeded uniform source
+  function gauss(rng){
+    var u = 0, v = 0;
+    while(u === 0) u = rng();
+    while(v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // ---- plot geometry (data space is 0..10 in both axes) ----
+  var PAD = { l: 38, r: 14, t: 26, b: 30 };
+  function px(x){ return PAD.l + (x / 10) * (C.w - PAD.l - PAD.r); }
+  function py(y){ return (C.h - PAD.b) - (y / 10) * (C.h - PAD.t - PAD.b); }
+
+  // ---- build ~60 seeded points in 3 loose blobs ----
+  var POINTS = [];
+  (function buildPoints(){
+    var rng = mulberry32(20240617);
+    var blobs = [
+      { cx: 2.6, cy: 7.2, n: 20, s: 0.85 },
+      { cx: 7.4, cy: 7.4, n: 20, s: 0.95 },
+      { cx: 5.0, cy: 2.6, n: 20, s: 0.95 }
+    ];
+    blobs.forEach(function(b){
+      for(var i = 0; i < b.n; i++){
+        var x = V.clamp(b.cx + gauss(rng) * b.s, 0.3, 9.7);
+        var y = V.clamp(b.cy + gauss(rng) * b.s, 0.3, 9.7);
+        POINTS.push({ x: x, y: y, c: -1 });
+      }
+    });
+  })();
+
+  // ---- state ----
+  var state = {
+    k: 3,
+    iter: 0,
+    phase: 'assign',     // next action a Step click will perform
+    assigned: false,     // have points ever been coloured for current centroids?
+    converged: false,
+    running: false,
+    seed: 7
+  };
+  // centroids: {x,y} = drawn (animated) position; tx,ty = target position
+  var cents = [];
+  var anim = { active: false, t: 0, dur: 26 }; // glide progress in frames
+
+  function colourFor(p, j){
+    return p.series[j % p.series.length];
+  }
+
+  // place k centroids at distinct seeded data points (k-means style init)
+  function seedCentroids(){
+    var rng = mulberry32(state.seed);
+    var idx = [];
+    var pool = POINTS.map(function(_, i){ return i; });
+    for(var j = 0; j < state.k; j++){
+      var pick = Math.floor(rng() * pool.length);
+      idx.push(pool[pick]);
+      pool.splice(pick, 1);
+    }
+    cents = idx.map(function(i){
+      return { x: POINTS[i].x, y: POINTS[i].y, tx: POINTS[i].x, ty: POINTS[i].y };
+    });
+  }
+
+  function reset(newSeed){
+    if(newSeed) state.seed = (state.seed * 1103515245 + 12345) & 0x7fffffff;
+    state.iter = 0;
+    state.phase = 'assign';
+    state.assigned = false;
+    state.converged = false;
+    stopRun();
+    seedCentroids();
+    POINTS.forEach(function(p){ p.c = -1; });
+    anim.active = false;
+    draw();
+  }
+
+  // ASSIGN: each point -> nearest centroid (squared Euclidean). Returns true if any changed.
+  function assign(){
+    var changed = false;
+    for(var i = 0; i < POINTS.length; i++){
+      var p = POINTS[i], best = -1, bd = Infinity;
+      for(var j = 0; j < cents.length; j++){
+        var dx = p.x - cents[j].tx, dy = p.y - cents[j].ty;
+        var d = dx * dx + dy * dy;
+        if(d < bd){ bd = d; best = j; }
+      }
+      if(p.c !== best){ changed = true; p.c = best; }
+    }
+    state.assigned = true;
+    return changed;
+  }
+
+  // UPDATE: set each centroid TARGET to the mean of its members (empty -> stays put).
+  function updateTargets(){
+    for(var j = 0; j < cents.length; j++){
+      var sx = 0, sy = 0, n = 0;
+      for(var i = 0; i < POINTS.length; i++){
+        if(POINTS[i].c === j){ sx += POINTS[i].x; sy += POINTS[i].y; n++; }
+      }
+      if(n > 0){ cents[j].tx = sx / n; cents[j].ty = sy / n; }
+    }
+  }
+
+  // inertia = within-cluster sum of squared distances to own (target) centroid
+  function inertia(){
+    var J = 0;
+    for(var i = 0; i < POINTS.length; i++){
+      var p = POINTS[i];
+      if(p.c < 0) continue;
+      var dx = p.x - cents[p.c].tx, dy = p.y - cents[p.c].ty;
+      J += dx * dx + dy * dy;
+    }
+    return J;
+  }
+
+  function startGlide(){
+    anim.active = true;
+    anim.t = 0;
+  }
+
+  // ---- one logical Step (two-phase) ----
+  function step(){
+    if(state.converged) return;
+    if(anim.active) return; // wait for a glide to finish
+    if(state.phase === 'assign'){
+      var changed = assign();
+      // An assign right after a completed update that changes nothing => converged.
+      if(!changed && state.iter > 0){
+        state.converged = true;
+        draw();
+        return;
+      }
+      state.phase = 'update';
+    } else { // 'update'
+      updateTargets();
+      state.iter++;
+      startGlide();          // animate centroids to their new means
+      // after this glide, the next click re-assigns
+      state.phase = 'assign';
+    }
+    draw();
+  }
+
+  // ---- Run: drive Steps automatically, detecting convergence ----
+  function runTick(){
+    if(!state.running) return;
+    if(anim.active){ return; } // let glide play out; loop() keeps calling draw
+    if(state.converged){ stopRun(); return; }
+    if(state.phase === 'assign'){
+      var changed = assign();
+      state.phase = 'update';
+      // if an assign right after an update changed nothing AND it's not the very first
+      // assignment, we've converged.
+      if(!changed && state.iter > 0){
+        state.converged = true;
+        stopRun();
+        draw();
+        return;
+      }
+      draw();
+    } else {
+      updateTargets();
+      state.iter++;
+      startGlide();
+      state.phase = 'assign';
+      draw();
+    }
+  }
+
+  var ticker = null;
+  function startRun(){
+    if(state.converged) reset(false);
+    state.running = true;
+    runBtn.textContent = 'Pause';
+    if(!ticker){
+      ticker = setInterval(runTick, 360); // pace the assign/update beats
+    }
+  }
+  function stopRun(){
+    state.running = false;
+    if(runBtn) runBtn.textContent = 'Run';
+    if(ticker){ clearInterval(ticker); ticker = null; }
+  }
+  function toggleRun(){ if(state.running) stopRun(); else startRun(); }
+
+  // ---- controls ----
+  var kSlider = V.slider({
+    label: 'clusters k', min: 2, max: 5, step: 1, value: state.k,
+    format: function(v){ return '' + v; },
+    onInput: function(v){ state.k = v; reset(false); }
+  });
+  P.controls.appendChild(kSlider.wrap);
+
+  var stepBtn = V.button('Step', function(){ stopRun(); step(); });
+  var runBtn  = V.button('Run', toggleRun);
+  P.controls.appendChild(stepBtn);
+  P.controls.appendChild(runBtn);
+  P.controls.appendChild(V.button('Reset / new centroids', function(){ reset(true); }, { ghost: true }));
+
+  // ---- drawing ----
+  function drawAxes(p){
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(var g = 0; g <= 10; g += 2){
+      ctx.moveTo(px(g), py(0)); ctx.lineTo(px(g), py(10));
+      ctx.moveTo(px(0), py(g)); ctx.lineTo(px(10), py(g));
+    }
+    ctx.stroke();
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(0)); ctx.lineTo(px(10), py(0));
+    ctx.moveTo(px(0), py(0)); ctx.lineTo(px(0), py(10));
+    ctx.stroke();
+    ctx.fillStyle = p.soft;
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('feature 1', (px(0) + px(10)) / 2, C.h - PAD.b + 11);
+    ctx.save();
+    ctx.translate(11, (py(0) + py(10)) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('feature 2', 0, 0);
+    ctx.restore();
+  }
+
+  function drawCross(cx, cy, col, p){
+    var r = 9;
+    // halo so the marker reads on any cluster colour
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = p.bg; ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
+    ctx.moveTo(cx - r, cy + r); ctx.lineTo(cx + r, cy - r);
+    ctx.stroke();
+    ctx.strokeStyle = col; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
+    ctx.moveTo(cx - r, cy + r); ctx.lineTo(cx + r, cy - r);
+    ctx.stroke();
+    // ring
+    ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+  }
+
+  // draw() just requests a repaint; the loop performs the actual paint() so we
+  // never run two renders in the same frame and stay idle-cheap.
+  var dirty = true;
+  function draw(){ dirty = true; }
+
+  function paint(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    // background panel for the plot area
+    ctx.fillStyle = p.panel;
+    ctx.fillRect(px(0), py(10), px(10) - px(0), py(0) - py(10));
+
+    drawAxes(p);
+
+    // draw points
+    for(var i = 0; i < POINTS.length; i++){
+      var pt = POINTS[i];
+      var X = px(pt.x), Y = py(pt.y);
+      if(pt.c < 0){
+        ctx.fillStyle = p.soft;
+        ctx.globalAlpha = 0.85;
+      } else {
+        ctx.fillStyle = colourFor(p, pt.c);
+        ctx.globalAlpha = 1;
+      }
+      ctx.beginPath();
+      ctx.arc(X, Y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // draw faint lines from each point to its centroid (the "assignment")
+    if(state.assigned){
+      ctx.lineWidth = 1;
+      for(var m = 0; m < POINTS.length; m++){
+        var q = POINTS[m];
+        if(q.c < 0) continue;
+        var cc = cents[q.c];
+        ctx.strokeStyle = colourFor(p, q.c);
+        ctx.globalAlpha = 0.18;
+        ctx.beginPath();
+        ctx.moveTo(px(q.x), py(q.y));
+        ctx.lineTo(px(cc.x), py(cc.y));
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // draw centroids at their current (animated) positions
+    for(var n = 0; n < cents.length; n++){
+      var ce = cents[n];
+      drawCross(px(ce.x), py(ce.y), colourFor(p, n), p);
+    }
+
+    // status banner
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.ink;
+    ctx.fillText('iteration: ' + state.iter, PAD.l + 2, 16);
+
+    var nextLabel;
+    if(state.converged) nextLabel = '';
+    else nextLabel = (state.phase === 'assign')
+      ? 'next Step: ASSIGN (colour by nearest ✕)'
+      : 'next Step: UPDATE (✕ glides to cluster mean)';
+    ctx.fillStyle = p.soft;
+    ctx.textAlign = 'right';
+    ctx.fillText(nextLabel, C.w - PAD.r, 16);
+
+    // inertia readout (only meaningful once assigned)
+    if(state.assigned){
+      ctx.textAlign = 'left';
+      ctx.fillStyle = p.soft;
+      ctx.fillText('inertia J ≈ ' + inertia().toFixed(1), PAD.l + 2, 30 + 0);
+    }
+
+    // converged badge
+    if(state.converged){
+      ctx.textAlign = 'right';
+      ctx.font = '700 12px Inter, system-ui, sans-serif';
+      ctx.fillStyle = p.good;
+      ctx.fillText('✓ converged — no point changed cluster', C.w - PAD.r, 30);
+    }
+  }
+
+  // continuous loop: drives the centroid glide smoothly. Idle frames cost almost
+  // nothing because we only repaint when something is actually moving or marked dirty.
+  V.loop(function(){
+    if(anim.active){
+      // capture start positions on first frame of a glide
+      if(anim.t === 0){
+        for(var j = 0; j < cents.length; j++){ cents[j].sx = cents[j].x; cents[j].sy = cents[j].y; }
+      }
+      anim.t++;
+      var tt = V.clamp(anim.t / anim.dur, 0, 1);
+      var ease = tt < 0.5 ? 2 * tt * tt : 1 - Math.pow(-2 * tt + 2, 2) / 2;
+      for(var k = 0; k < cents.length; k++){
+        var c = cents[k];
+        c.x = V.lerp(c.sx, c.tx, ease);
+        c.y = V.lerp(c.sy, c.ty, ease);
+      }
+      if(tt >= 1){
+        anim.active = false;
+        for(var q = 0; q < cents.length; q++){ cents[q].x = cents[q].tx; cents[q].y = cents[q].ty; }
+      }
+      dirty = true;
+    }
+    if(dirty){ paint(); dirty = false; }
+  }, node);
+
+  // init
+  seedCentroids();
+  draw();
+  V.onTheme(draw);
+});
+
+</script>
+
+<script>
+/* widget file: knn.js */
+MLViz.register('knn', function(node, V){
+  var P = V.panel(node, {
+    title: 'k-Nearest Neighbors — vote of the k closest',
+    caption: 'Drag the white "?" query point. Its k nearest training points are ringed and linked; their majority class wins (shown by the query\'s colour and the tally below). The shaded background is the decision region — every spot is coloured by what kNN would predict there. Small k = jagged/noisy regions; large k = smoother.'
+  });
+
+  var C = V.makeCanvas(P.body, 560, 340), ctx = C.ctx;
+
+  // ---- plot geometry (data space is 0..10 in both axes) ----
+  var PAD = { l: 38, r: 14, t: 14, b: 30 };
+  var PW = C.w - PAD.l - PAD.r;
+  var PH = C.h - PAD.t - PAD.b;
+  function sx(x){ return PAD.l + (x / 10) * PW; }       // data -> screen x
+  function sy(y){ return PAD.t + (1 - y / 10) * PH; }   // data -> screen y (flip)
+
+  // ---- deterministic seeded RNG (mulberry32) ----
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---- build ~24 seeded training points in 3 classes (clusters + a little noise) ----
+  // class index 0,1,2 -> colours chosen fresh in draw() from palette.
+  var CLASSES = 3;
+  var train = [];
+  (function makeData(){
+    var rng = mulberry32(20260618);
+    var centers = [ {x:3.0, y:3.2}, {x:7.0, y:3.0}, {x:5.2, y:7.4} ];
+    var perClass = 8; // 3 * 8 = 24
+    function gauss(){ // Box-Muller from seeded uniforms
+      var u = Math.max(1e-6, rng()), v = rng();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    for(var c = 0; c < CLASSES; c++){
+      for(var i = 0; i < perClass; i++){
+        var x = centers[c].x + gauss() * 1.15;
+        var y = centers[c].y + gauss() * 1.15;
+        x = V.clamp(x, 0.4, 9.6);
+        y = V.clamp(y, 0.4, 9.6);
+        train.push({ x: x, y: y, c: c });
+      }
+    }
+  })();
+
+  var query = { x: 5.0, y: 5.0 };
+  var k = 5;
+
+  // ---- decision-region grid (depends only on training points + k) ----
+  var GRID = 44;                // 44x44 cells
+  var regionGrid = null;        // Int8Array of predicted class per cell
+  var regionDirty = true;
+
+  function classifyAt(px, py, kk){
+    // distances to all training points
+    var n = train.length;
+    var idx = new Array(n);
+    var d2 = new Array(n);
+    for(var i = 0; i < n; i++){
+      var dx = train[i].x - px, dy = train[i].y - py;
+      d2[i] = dx * dx + dy * dy;
+      idx[i] = i;
+    }
+    // partial sort: pick kk smallest (selection — n is tiny so this is cheap)
+    var votes = new Array(CLASSES);
+    for(var c = 0; c < CLASSES; c++) votes[c] = 0;
+    var used = kk < n ? kk : n;
+    var nearest = [];
+    for(var s = 0; s < used; s++){
+      var best = s;
+      for(var j = s + 1; j < n; j++){ if(d2[idx[j]] < d2[idx[best]]) best = j; }
+      var tmp = idx[s]; idx[s] = idx[best]; idx[best] = tmp;
+      votes[train[idx[s]].c]++;
+      nearest.push(idx[s]);
+    }
+    // winner = highest vote; tie-break -> smaller class index that hit the count first
+    var win = 0;
+    for(var c2 = 1; c2 < CLASSES; c2++){ if(votes[c2] > votes[win]) win = c2; }
+    return { win: win, votes: votes, nearest: nearest };
+  }
+
+  function rebuildRegions(){
+    regionGrid = new Int8Array(GRID * GRID);
+    for(var gy = 0; gy < GRID; gy++){
+      for(var gx = 0; gx < GRID; gx++){
+        var px = (gx + 0.5) / GRID * 10;
+        var py = (gy + 0.5) / GRID * 10;
+        regionGrid[gy * GRID + gx] = classifyAt(px, py, k).win;
+      }
+    }
+    regionDirty = false;
+  }
+
+  // ---- controls ----
+  var kSlider = V.slider({
+    label: 'neighbors k', min: 1, max: 15, step: 1, value: k,
+    format: function(v){ return String(v); },
+    onInput: function(v){ k = v; regionDirty = true; draw(); }
+  });
+  P.controls.appendChild(kSlider.wrap);
+  P.controls.appendChild(V.button('Reset query', function(){
+    query.x = 5.0; query.y = 5.0; draw();
+  }, { ghost: true }));
+
+  // ---- helpers for class colours (fresh palette each draw) ----
+  function classColors(p){ return [ p.blue, p.good, p.warn ]; }
+
+  // ---- drawing ----
+  function draw(){
+    var p = V.palette();
+    var cols = classColors(p);
+    if(regionDirty || !regionGrid) rebuildRegions();
+
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    // panel background for plot
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(0, 0, C.w, C.h);
+
+    // decision regions (faint fill per cell)
+    var cw = PW / GRID, ch = PH / GRID;
+    for(var gy = 0; gy < GRID; gy++){
+      for(var gx = 0; gx < GRID; gx++){
+        var cls = regionGrid[gy * GRID + gx];
+        ctx.fillStyle = cols[cls];
+        ctx.globalAlpha = p.dark ? 0.16 : 0.13;
+        // screen: gx increases right; gy=0 is bottom of data, so flip
+        var X = PAD.l + gx * cw;
+        var Y = PAD.t + (GRID - 1 - gy) * ch;
+        ctx.fillRect(X, Y, cw + 0.6, ch + 0.6);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // plot frame + axis labels
+    ctx.strokeStyle = p.axis;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(PAD.l, PAD.t, PW, PH);
+    ctx.fillStyle = p.soft;
+    ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('feature x₁', PAD.l + PW / 2, C.h - 8);
+    ctx.save();
+    ctx.translate(12, PAD.t + PH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('feature x₂', 0, 0);
+    ctx.restore();
+
+    // classify the query NOW (live on drag)
+    var res = classifyAt(query.x, query.y, k);
+    var nearestSet = {};
+    res.nearest.forEach(function(i){ nearestSet[i] = true; });
+
+    var qx = sx(query.x), qy = sy(query.y);
+
+    // lines from query to its k neighbors
+    ctx.lineWidth = 1.4;
+    res.nearest.forEach(function(i){
+      var t = train[i];
+      ctx.strokeStyle = cols[t.c];
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(qx, qy);
+      ctx.lineTo(sx(t.x), sy(t.y));
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+
+    // training points
+    for(var i = 0; i < train.length; i++){
+      var t = train[i];
+      var X = sx(t.x), Y = sy(t.y);
+      // neighbor ring
+      if(nearestSet[i]){
+        ctx.beginPath();
+        ctx.arc(X, Y, 9.5, 0, Math.PI * 2);
+        ctx.strokeStyle = p.ink;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(X, Y, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = cols[t.c];
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = p.bg;
+      ctx.stroke();
+    }
+
+    // query point — coloured by winning class, white outline + "?"
+    ctx.beginPath();
+    ctx.arc(qx, qy, 9, 0, Math.PI * 2);
+    ctx.fillStyle = cols[res.win];
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = p.dark ? '#ffffff' : '#1f2328';
+    ctx.stroke();
+    ctx.fillStyle = p.dark ? '#0b0e13' : '#ffffff';
+    ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', qx, qy + 0.5);
+    ctx.textBaseline = 'alphabetic';
+
+    // ---- legend + vote tally (top-left, inside plot) ----
+    var names = ['A', 'B', 'C'];
+    var lx = PAD.l + 8, ly = PAD.t + 8, lh = 17;
+    ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    // backing
+    ctx.globalAlpha = p.dark ? 0.82 : 0.86;
+    ctx.fillStyle = p.panel;
+    ctx.fillRect(lx - 6, ly - 4, 132, lh * CLASSES + 8);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = p.faint;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(lx - 6, ly - 4, 132, lh * CLASSES + 8);
+    for(var c = 0; c < CLASSES; c++){
+      var yy = ly + c * lh + 8;
+      ctx.beginPath();
+      ctx.arc(lx + 4, yy - 4, 5, 0, Math.PI * 2);
+      ctx.fillStyle = cols[c];
+      ctx.fill();
+      var isWin = (c === res.win);
+      ctx.fillStyle = p.ink;
+      ctx.font = (isWin ? 'bold ' : '') + '12px Inter, system-ui, sans-serif';
+      ctx.fillText('class ' + names[c] + ':  ' + res.votes[c] + ' vote' + (res.votes[c] === 1 ? '' : 's') + (isWin ? '  ✓' : ''), lx + 14, yy);
+    }
+  }
+
+  // ---- dragging the query ----
+  var dragging = false;
+  function pickQuery(pos){
+    // start drag if near query, else jump query to click
+    var qx = sx(query.x), qy = sy(query.y);
+    var dist = Math.hypot(pos.x - qx, pos.y - qy);
+    return dist <= 18;
+  }
+  function setQueryFromPos(pos){
+    var dx = (pos.x - PAD.l) / PW * 10;
+    var dy = (1 - (pos.y - PAD.t) / PH) * 10;
+    query.x = V.clamp(dx, 0, 10);
+    query.y = V.clamp(dy, 0, 10);
+  }
+  C.canvas.style.touchAction = 'none';
+  C.canvas.style.cursor = 'pointer';
+
+  function down(ev){
+    var pos = C.canvas.evtPos(ev);
+    dragging = true;
+    if(!pickQuery(pos)) setQueryFromPos(pos); // jump to click point
+    draw();
+    ev.preventDefault();
+  }
+  function move(ev){
+    if(!dragging) return;
+    setQueryFromPos(C.canvas.evtPos(ev));
+    draw();
+    ev.preventDefault();
+  }
+  function up(){ dragging = false; }
+
+  C.canvas.addEventListener('mousedown', down);
+  C.canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  C.canvas.addEventListener('touchstart', down, { passive: false });
+  C.canvas.addEventListener('touchmove', move, { passive: false });
+  window.addEventListener('touchend', up);
+
+  draw();
+  V.onTheme(draw);
+});
+
+</script>
+
+<script>
+/* widget file: linear-transform.js */
+/* widget: linear-transform
+   "A matrix is a transformation of space."
+   Shows a coordinate grid + basis vectors î, ĵ being moved by a 2x2 matrix.
+   Animates a smooth lerp from the current transform to the new one whenever the
+   matrix changes (sliders or preset buttons). Shades the unit square's image and
+   reports the determinant = a*d - b*c = signed area of that image. */
+MLViz.register('linear-transform', function(node, V){
+  var P = V.panel(node, {
+    title: 'A matrix transforms space',
+    caption: 'A 2×2 matrix sends î=(1,0) to column 1 and ĵ=(0,1) to column 2; the whole grid rides along. ' +
+             'Drag the sliders or hit a preset — the grid animates to the new transform. ' +
+             'The shaded patch is the image of the unit square; its area is |det|. ' +
+             'det &lt; 0 means space got flipped (orientation reversed).'
+  });
+
+  var C = V.makeCanvas(P.body, 560, 340), ctx = C.ctx;
+
+  // readout line (matrix + determinant)
+  var readline = V.el('div', { class: 'mlviz-readline' });
+  P.body.appendChild(readline);
+
+  // legend
+  var legend = V.el('div', { class: 'mlviz-legend' });
+  P.body.appendChild(legend);
+
+  // ---- geometry: world units -> canvas pixels --------------------------------
+  var cx = C.w / 2, cy = C.h / 2;   // origin at canvas centre
+  var unit = 46;                    // pixels per world unit
+  function toPx(wx, wy){ return { x: cx + wx * unit, y: cy - wy * unit }; }
+
+  // ---- state -----------------------------------------------------------------
+  // cur = matrix currently displayed; tgt = matrix we are animating toward.
+  // Stored column-major as basis images: i=(ix,iy)=image of (1,0), j=(jx,jy)=image of (0,1).
+  // For matrix [[a,b],[c,d]]: a=ix, b=jx, c=iy, d=jy.
+  var cur = { ix:1, iy:0, jx:0, jy:1 };
+  var tgt = { ix:1, iy:0, jx:0, jy:1 };
+  var from = { ix:1, iy:0, jx:0, jy:1 };
+  var anim = { active:false, t:0, dur:0.5 };
+  var last = 0;
+
+  // example vector (in ORIGINAL space) — rides along with the transform
+  var exV = { x:1, y:1 };
+
+  // ---- sliders ---------------------------------------------------------------
+  function f2(v){ return (v>=0?' ':'') + v.toFixed(2); }
+  var sa = V.slider({ label:'a (î x)', min:-2, max:2, step:0.05, value:1, format:f2, onInput:function(v){ setTarget(v, null, null, null); } });
+  var sb = V.slider({ label:'b (ĵ x)', min:-2, max:2, step:0.05, value:0, format:f2, onInput:function(v){ setTarget(null, v, null, null); } });
+  var scc= V.slider({ label:'c (î y)', min:-2, max:2, step:0.05, value:0, format:f2, onInput:function(v){ setTarget(null, null, v, null); } });
+  var sd = V.slider({ label:'d (ĵ y)', min:-2, max:2, step:0.05, value:1, format:f2, onInput:function(v){ setTarget(null, null, null, v); } });
+  P.controls.appendChild(sa.wrap);
+  P.controls.appendChild(sb.wrap);
+  P.controls.appendChild(scc.wrap);
+  P.controls.appendChild(sd.wrap);
+
+  // current matrix entries (target values, which sliders reflect)
+  function curA(){ return tgt.ix; }
+  function curB(){ return tgt.jx; }
+  function curC(){ return tgt.iy; }
+  function curD(){ return tgt.jy; }
+
+  // begin animating toward a new matrix; null args keep the existing target value
+  function setTarget(a, b, c, d){
+    var na = (a==null) ? tgt.ix : a;
+    var nb = (b==null) ? tgt.jx : b;
+    var nc = (c==null) ? tgt.iy : c;
+    var nd = (d==null) ? tgt.jy : d;
+    // start the lerp from wherever we currently are on screen
+    from.ix = cur.ix; from.iy = cur.iy; from.jx = cur.jx; from.jy = cur.jy;
+    tgt.ix = na; tgt.jx = nb; tgt.iy = nc; tgt.jy = nd;
+    anim.active = true; anim.t = 0;
+  }
+
+  // preset applies all four AND syncs the sliders
+  function applyPreset(a, b, c, d){
+    sa.set(a); sb.set(b); scc.set(c); sd.set(d);
+    setTarget(a, b, c, d);
+  }
+
+  P.controls.appendChild(V.button('Identity', function(){ applyPreset(1,0,0,1); }, {ghost:true}));
+  P.controls.appendChild(V.button('Rotate 90°', function(){ applyPreset(0,-1,1,0); }, {ghost:true}));
+  P.controls.appendChild(V.button('Shear', function(){ applyPreset(1,1,0,1); }, {ghost:true}));
+  P.controls.appendChild(V.button('Scale 1.5×', function(){ applyPreset(1.5,0,0,1.5); }, {ghost:true}));
+  P.controls.appendChild(V.button('Reflect', function(){ applyPreset(-1,0,0,1); }, {ghost:true}));
+
+  // ---- math helpers ----------------------------------------------------------
+  // apply the CURRENT (interpolated) transform to a world point (wx,wy)
+  function apply(wx, wy){
+    return { x: cur.ix * wx + cur.jx * wy, y: cur.iy * wx + cur.jy * wy };
+  }
+
+  function easeInOut(t){ return t<0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2; }
+
+  // ---- arrow drawing ---------------------------------------------------------
+  function arrow(p0, p1, color, width){
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+    var ang = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+    var hl = 11;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p1.x - hl*Math.cos(ang - 0.4), p1.y - hl*Math.sin(ang - 0.4));
+    ctx.lineTo(p1.x - hl*Math.cos(ang + 0.4), p1.y - hl*Math.sin(ang + 0.4));
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ---- draw ------------------------------------------------------------------
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    // background
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(0, 0, C.w, C.h);
+
+    var range = 5; // draw grid lines from -range..range in world units
+
+    // faint reference grid (untransformed) so movement is visible against it
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    for(var g = -range; g <= range; g++){
+      var pv0 = toPx(g, -range), pv1 = toPx(g, range);
+      ctx.beginPath(); ctx.moveTo(pv0.x, pv0.y); ctx.lineTo(pv1.x, pv1.y); ctx.stroke();
+      var ph0 = toPx(-range, g), ph1 = toPx(range, g);
+      ctx.beginPath(); ctx.moveTo(ph0.x, ph0.y); ctx.lineTo(ph1.x, ph1.y); ctx.stroke();
+    }
+
+    // transformed grid (the moving rubber sheet) — accent-tinted lines
+    ctx.strokeStyle = p.dark ? 'rgba(129,140,248,0.45)' : 'rgba(79,70,229,0.40)';
+    ctx.lineWidth = 1;
+    for(var k = -range; k <= range; k++){
+      // vertical line of constant world-x = k
+      var a0 = apply(k, -range), a1 = apply(k, range);
+      var pa0 = toPx(a0.x, a0.y), pa1 = toPx(a1.x, a1.y);
+      ctx.beginPath(); ctx.moveTo(pa0.x, pa0.y); ctx.lineTo(pa1.x, pa1.y); ctx.stroke();
+      // horizontal line of constant world-y = k
+      var b0 = apply(-range, k), b1 = apply(range, k);
+      var pb0 = toPx(b0.x, b0.y), pb1 = toPx(b1.x, b1.y);
+      ctx.beginPath(); ctx.moveTo(pb0.x, pb0.y); ctx.lineTo(pb1.x, pb1.y); ctx.stroke();
+    }
+
+    // image of the unit square: corners (0,0)(1,0)(1,1)(0,1) under cur
+    var s00 = apply(0,0), s10 = apply(1,0), s11 = apply(1,1), s01 = apply(0,1);
+    var q00 = toPx(s00.x, s00.y), q10 = toPx(s10.x, s10.y), q11 = toPx(s11.x, s11.y), q01 = toPx(s01.x, s01.y);
+    var det = cur.ix * cur.jy - cur.jx * cur.iy;
+    // shade: green-ish if det>0 (orientation kept), red-ish if det<0 (flipped)
+    var fill = det >= 0
+      ? (p.dark ? 'rgba(52,211,153,0.22)' : 'rgba(16,185,129,0.20)')
+      : (p.dark ? 'rgba(248,113,113,0.24)' : 'rgba(225,29,72,0.20)');
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(q00.x, q00.y); ctx.lineTo(q10.x, q10.y); ctx.lineTo(q11.x, q11.y); ctx.lineTo(q01.x, q01.y);
+    ctx.closePath(); ctx.fill();
+
+    // axes through origin (drawn on top of grid, under vectors)
+    var ox = toPx(0,0);
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(toPx(-range,0).x, ox.y); ctx.lineTo(toPx(range,0).x, ox.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox.x, toPx(0,-range).y); ctx.lineTo(ox.x, toPx(0,range).y); ctx.stroke();
+
+    // example vector (image of exV)
+    var ev = apply(exV.x, exV.y);
+    arrow(ox, toPx(ev.x, ev.y), p.warn, 2.2);
+
+    // basis vectors î (image of (1,0)) and ĵ (image of (0,1))
+    var iImg = apply(1,0), jImg = apply(0,1);
+    arrow(ox, toPx(iImg.x, iImg.y), p.blue, 3.2);
+    arrow(ox, toPx(jImg.x, jImg.y), p.good, 3.2);
+
+    // labels for the basis vectors
+    ctx.font = '600 13px Inter, sans-serif';
+    var ip = toPx(iImg.x, iImg.y), jp = toPx(jImg.x, jImg.y);
+    ctx.fillStyle = p.blue; ctx.fillText('î', ip.x + 6, ip.y - 4);
+    ctx.fillStyle = p.good; ctx.fillText('ĵ', jp.x + 6, jp.y - 4);
+    ctx.fillStyle = p.warn;
+    var evp = toPx(ev.x, ev.y);
+    ctx.font = '500 11px Inter, sans-serif';
+    ctx.fillText('v', evp.x + 6, evp.y - 4);
+  }
+
+  // ---- readouts (matrix text + determinant) ----------------------------------
+  function updateReadline(){
+    var p = V.palette();
+    var a = curA(), b = curB(), c = curC(), d = curD();
+    var det = a * d - b * c;
+    var sign = det > 0.0001 ? '' : (det < -0.0001 ? 'flips space (det &lt; 0)' : 'collapses to a line (det = 0)');
+    readline.innerHTML =
+      'M = [ <b>' + a.toFixed(2) + '</b>&nbsp;&nbsp;<b>' + b.toFixed(2) + '</b> ; ' +
+      '<b>' + c.toFixed(2) + '</b>&nbsp;&nbsp;<b>' + d.toFixed(2) + '</b> ]' +
+      '&nbsp;&nbsp;•&nbsp;&nbsp;det = a·d − b·c = <b>' + det.toFixed(2) + '</b>' +
+      '&nbsp;&nbsp;•&nbsp;&nbsp;|det| = area of image = <b>' + Math.abs(det).toFixed(2) + '</b>' +
+      (sign ? '&nbsp;&nbsp;(' + sign + ')' : '');
+  }
+
+  function updateLegend(){
+    var p = V.palette();
+    legend.innerHTML =
+      '<span><i style="background:' + p.blue + '"></i>î = column 1</span>' +
+      '<span><i style="background:' + p.good + '"></i>ĵ = column 2</span>' +
+      '<span><i style="background:' + p.warn + '"></i>example vector v</span>' +
+      '<span><i style="background:' + (p.dark?'rgba(52,211,153,0.5)':'rgba(16,185,129,0.5)') + '"></i>image of unit square</span>';
+  }
+
+  // ---- animation loop --------------------------------------------------------
+  function tick(t){
+    var now = t / 1000;
+    var dt = last ? (now - last) : 0;
+    last = now;
+    if(anim.active){
+      anim.t += dt / anim.dur;
+      if(anim.t >= 1){ anim.t = 1; anim.active = false; }
+      var e = easeInOut(V.clamp(anim.t, 0, 1));
+      cur.ix = V.lerp(from.ix, tgt.ix, e);
+      cur.iy = V.lerp(from.iy, tgt.iy, e);
+      cur.jx = V.lerp(from.jx, tgt.jx, e);
+      cur.jy = V.lerp(from.jy, tgt.jy, e);
+    }
+    draw();
+    updateReadline();
+  }
+
+  updateLegend();
+  updateReadline();
+  V.loop(tick, node);
+  V.onTheme(function(){ updateLegend(); updateReadline(); });
+});
+
+</script>
+
+<script>
+/* widget file: linreg-fit.js */
+/* linreg-fit — Linear regression: drag the slope/intercept knobs to make the
+   line hug the data; residuals + live MSE update; "Best fit" animates the line
+   to the closed-form least-squares optimum so the MSE bottoms out. */
+MLViz.register('linreg-fit', function(node, V){
+  var P = V.panel(node, {
+    title: 'Fit the line: residuals & MSE',
+    caption: 'Each green dot is a data point. Adjust slope w and intercept b to draw a line through them. ' +
+             'The red bars are residuals (vertical gaps the model is trying to shrink); their shaded squares are the squared errors that MSE averages. ' +
+             'Hit "Best fit" to animate the line to the exact least-squares optimum and watch the MSE bottom out.'
+  });
+  var C = V.makeCanvas(P.body, 560, 320), ctx = C.ctx;
+
+  // --- deterministic data: ~9 points roughly along y = 0.62 x + 1.4 + noise ---
+  // mulberry32 seeded PRNG so layout is identical on every load.
+  function mulberry32(a){ return function(){ a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var rnd = mulberry32(20260619);
+  var DATA = [];
+  (function(){
+    var trueW = 0.62, trueB = 1.4;
+    for(var i = 0; i < 9; i++){
+      var x = 1 + i * 1.0;                      // x = 1..9
+      var noise = (rnd() - 0.5) * 3.0;          // symmetric noise in data units
+      var y = trueW * x + trueB + noise;
+      DATA.push({ x: x, y: y });
+    }
+  })();
+
+  // --- closed-form least-squares optimum (computed once) ---
+  function leastSquares(pts){
+    var n = pts.length, sx = 0, sy = 0;
+    for(var i = 0; i < n; i++){ sx += pts[i].x; sy += pts[i].y; }
+    var mx = sx / n, my = sy / n, num = 0, den = 0;
+    for(i = 0; i < n; i++){
+      var dx = pts[i].x - mx;
+      num += dx * (pts[i].y - my);
+      den += dx * dx;
+    }
+    var w = den === 0 ? 0 : num / den;
+    var b = my - w * mx;
+    return { w: w, b: b };
+  }
+  var OPT = leastSquares(DATA);
+
+  function mse(w, b){
+    var s = 0;
+    for(var i = 0; i < DATA.length; i++){
+      var r = (w * DATA[i].x + b) - DATA[i].y;
+      s += r * r;
+    }
+    return s / DATA.length;
+  }
+  var MSE_OPT = mse(OPT.w, OPT.b);
+
+  // --- view / state ---
+  var state = { w: 0.0, b: 5.0, anim: null };
+
+  // data ranges -> pixel mapping (fixed so the line/squares never jump)
+  var pad = { l: 46, r: 16, t: 18, b: 40 };
+  var X_MIN = 0, X_MAX = 10;
+  var Y_MIN = 0, Y_MAX = 11;
+  function px(x){ return pad.l + (x - X_MIN) / (X_MAX - X_MIN) * (C.w - pad.l - pad.r); }
+  function py(y){ return (C.h - pad.b) - (y - Y_MIN) / (Y_MAX - Y_MIN) * (C.h - pad.t - pad.b); }
+  // pixels-per-unit on the Y axis: use this for BOTH sides of the error square so
+  // its footprint is a true geometric square (side = |residual| in the same scale).
+  var PPU_Y = (C.h - pad.t - pad.b) / (Y_MAX - Y_MIN);
+
+  // --- controls ---
+  var sw = V.slider({ label: 'slope w', min: -2, max: 3, step: 0.01, value: state.w,
+    format: function(v){ return v.toFixed(2); },
+    onInput: function(v){ stopAnim(); state.w = v; readout(); draw(); } });
+  var sb = V.slider({ label: 'intercept b', min: -2, max: 10, step: 0.01, value: state.b,
+    format: function(v){ return v.toFixed(2); },
+    onInput: function(v){ stopAnim(); state.b = v; readout(); draw(); } });
+  P.controls.appendChild(sw.wrap);
+  P.controls.appendChild(sb.wrap);
+
+  var bestBtn = V.button('Best fit', bestFit);
+  var resetBtn = V.button('Reset', reset, { ghost: true });
+  P.controls.appendChild(bestBtn);
+  P.controls.appendChild(resetBtn);
+
+  // live MSE readout line under the canvas
+  var read = V.el('div', { class: 'mlviz-readline' });
+  P.body.appendChild(read);
+  function readout(){
+    var p = V.palette();
+    var m = mse(state.w, state.b);
+    var atOpt = Math.abs(m - MSE_OPT) < 1e-4;
+    read.innerHTML =
+      'ŷ = <b>' + state.w.toFixed(2) + '</b> x + <b>' + state.b.toFixed(2) + '</b>' +
+      ' &nbsp;·&nbsp; MSE = <b style="color:' + (atOpt ? p.good : p.bad) + '">' + m.toFixed(3) + '</b>' +
+      ' &nbsp;·&nbsp; best possible = <b style="color:' + p.good + '">' + MSE_OPT.toFixed(3) + '</b>';
+  }
+
+  function stopAnim(){ if(state.anim){ state.anim.stop(); state.anim = null; bestBtn.disabled = false; } }
+
+  function bestFit(){
+    stopAnim();
+    bestBtn.disabled = true;
+    var w0 = state.w, b0 = state.b, t0 = null, dur = 900;
+    state.anim = V.loop(function(t){
+      if(t0 === null) t0 = t;
+      var k = V.clamp((t - t0) / dur, 0, 1);
+      var e = 1 - Math.pow(1 - k, 3);           // ease-out cubic
+      state.w = V.lerp(w0, OPT.w, e);
+      state.b = V.lerp(b0, OPT.b, e);
+      sw.set(state.w); sb.set(state.b);
+      readout(); draw();
+      if(k >= 1){ state.w = OPT.w; state.b = OPT.b; sw.set(state.w); sb.set(state.b);
+        readout(); draw(); stopAnim(); }
+    }, node);
+  }
+
+  function reset(){
+    stopAnim();
+    state.w = 0.0; state.b = 5.0;
+    sw.set(state.w); sb.set(state.b);
+    readout(); draw();
+  }
+
+  // --- drawing ---
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    var x0 = px(X_MIN), x1 = px(X_MAX), y0 = py(Y_MIN), y1 = py(Y_MAX);
+
+    // grid
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1; ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(var gx = 0; gx <= X_MAX; gx += 2){
+      var xx = px(gx);
+      ctx.beginPath(); ctx.moveTo(xx, y1); ctx.lineTo(xx, y0); ctx.stroke();
+      ctx.fillStyle = p.faint; ctx.fillText('' + gx, xx, y0 + 6);
+    }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(var gy = 0; gy <= Y_MAX - 1; gy += 2){
+      var yy = py(gy);
+      ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1, yy); ctx.stroke();
+      ctx.fillStyle = p.faint; ctx.fillText('' + gy, x0 - 6, yy);
+    }
+
+    // axes
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.stroke(); // x-axis
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); ctx.stroke(); // y-axis
+
+    // axis labels
+    ctx.fillStyle = p.soft; ctx.font = '12px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('feature x', (x0 + x1) / 2, C.h - 4);
+    ctx.save();
+    ctx.translate(12, (y0 + y1) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'top';
+    ctx.fillText('target y', 0, 0);
+    ctx.restore();
+
+    var w = state.w, b = state.b;
+
+    // squared-error squares + residual bars (draw first so dots sit on top)
+    for(var i = 0; i < DATA.length; i++){
+      var d = DATA[i];
+      var dpx = px(d.x), dpy = py(d.y);
+      var pred = w * d.x + b;
+      var ppy = py(pred);
+      var res = pred - d.y;                      // residual in data units (signed)
+      // square footprint: side = |residual| measured on the Y scale, used for BOTH
+      // axes so the drawn square genuinely represents the squared error.
+      var sidePxY = Math.abs(ppy - dpy);
+      var sidePxX = Math.abs(res) * PPU_Y;
+      // place square to the right of the residual line, spanning the residual vertically
+      var topPy = Math.min(dpy, ppy);
+      ctx.fillStyle = p.bad;
+      ctx.globalAlpha = 0.13;
+      ctx.fillRect(dpx, topPy, sidePxX, sidePxY);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = p.bad; ctx.lineWidth = 1; ctx.globalAlpha = 0.35;
+      ctx.strokeRect(dpx, topPy, sidePxX, sidePxY);
+      ctx.globalAlpha = 1;
+
+      // residual bar (point -> line)
+      ctx.strokeStyle = p.bad; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(dpx, dpy); ctx.lineTo(dpx, ppy); ctx.stroke();
+    }
+
+    // the fitted line, clipped to the plot box
+    var lyA = w * X_MIN + b, lyB = w * X_MAX + b;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x0, y1, x1 - x0, y0 - y1); ctx.clip();
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.moveTo(px(X_MIN), py(lyA)); ctx.lineTo(px(X_MAX), py(lyB)); ctx.stroke();
+    ctx.restore();
+
+    // data points
+    for(i = 0; i < DATA.length; i++){
+      ctx.fillStyle = p.good;
+      ctx.strokeStyle = p.panel; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(px(DATA[i].x), py(DATA[i].y), 4.5, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    }
+
+    // legend
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    var lx = x0 + 8, ly = y1 + 12;
+    ctx.fillStyle = p.good; ctx.beginPath(); ctx.arc(lx + 4, ly, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = p.soft; ctx.fillText('data', lx + 14, ly);
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.moveTo(lx + 56, ly); ctx.lineTo(lx + 76, ly); ctx.stroke();
+    ctx.fillStyle = p.soft; ctx.fillText('your line', lx + 82, ly);
+    ctx.strokeStyle = p.bad; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(lx + 138, ly - 5); ctx.lineTo(lx + 138, ly + 5); ctx.stroke();
+    ctx.fillStyle = p.soft; ctx.fillText('residual', lx + 146, ly);
+  }
+
+  readout();
+  draw();
+  V.onTheme(function(){ readout(); draw(); });
+});
+
+</script>
+
+<script>
+/* widget file: neural-net.js */
+/* widget: neural-net — a small MLP forward pass with an animated signal pulse.
+   3 input -> 4 hidden (ReLU) -> 4 hidden (ReLU) -> 2 output (sigmoid).
+   Edge colour = weight sign (blue +, red -), thickness = |weight|.
+   Neuron brightness = its activation. A pulse travels left->right on Run. */
+MLViz.register('neural-net', function(node, V){
+  var P = V.panel(node, {
+    title: 'A neural network is layers of neurons',
+    caption: 'Each neuron = (weighted sum of its inputs) + bias, then an activation (ReLU in hidden layers, sigmoid at the output). Drag the three input sliders or press Run forward pass to watch the signal flow left to right. Blue edges = positive weights, red = negative; thicker = larger |weight|. A neuron glows brighter the more strongly it activates.'
+  });
+  var C = V.makeCanvas(P.body, 560, 340), ctx = C.ctx;
+
+  // ---- deterministic seeded weights (mulberry32) ----
+  function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var rnd = mulberry32(20240610);
+  function randn(){ // Box-Muller from seeded uniform
+    var u = 0, v = 0; while(u === 0) u = rnd(); while(v === 0) v = rnd();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // layer sizes: 3 -> 4 -> 4 -> 2
+  var sizes = [3, 4, 4, 2];
+  // weight matrices W[l][i][j] = weight from neuron i of layer l to neuron j of layer l+1
+  var W = [], B = [];
+  (function init(){
+    for(var l = 0; l < sizes.length - 1; l++){
+      var rows = [];
+      // Xavier-ish scale so ReLU activations stay in a readable range
+      var scale = Math.sqrt(2 / sizes[l]);
+      for(var i = 0; i < sizes[l]; i++){
+        var col = [];
+        for(var j = 0; j < sizes[l + 1]; j++) col.push(randn() * scale);
+        rows.push(col);
+      }
+      W.push(rows);
+      var bs = [];
+      for(var k = 0; k < sizes[l + 1]; k++) bs.push(randn() * 0.3);
+      B.push(bs);
+    }
+  })();
+
+  function relu(z){ return z > 0 ? z : 0; }
+  function sigmoid(z){ return 1 / (1 + Math.exp(-z)); }
+
+  var inputs = [0.6, 0.2, 0.9];
+  var acts = [];   // acts[l] = array of activations for layer l (layer 0 = inputs)
+
+  // full forward pass; returns per-layer activations
+  function forward(){
+    acts = [inputs.slice()];
+    for(var l = 0; l < sizes.length - 1; l++){
+      var prev = acts[l], out = [];
+      for(var j = 0; j < sizes[l + 1]; j++){
+        var z = B[l][j];
+        for(var i = 0; i < sizes[l]; i++) z += prev[i] * W[l][i][j];
+        // hidden layers use ReLU; the final layer uses sigmoid
+        out.push(l === sizes.length - 2 ? sigmoid(z) : relu(z));
+      }
+      acts.push(out);
+    }
+    return acts;
+  }
+  forward();
+
+  // ---- geometry: x positions per layer, y positions per neuron ----
+  var padL = 56, padR = 96, padT = 46, padB = 30;
+  function layerX(l){ return padL + (C.w - padL - padR) * (l / (sizes.length - 1)); }
+  function neuronY(l, i){
+    var n = sizes[l];
+    var top = padT, bot = C.h - padB;
+    if(n === 1) return (top + bot) / 2;
+    return top + (bot - top) * (i / (n - 1));
+  }
+  var R = 17; // neuron radius
+
+  // normalisation for brightness: track a soft max per draw
+  function actNorm(l){
+    if(l === 0) return 1;                       // inputs already in [0,1]
+    if(l === sizes.length - 1) return 1;        // sigmoid outputs in [0,1]
+    var m = 0.001, a = acts[l];                 // ReLU layers: scale by current max
+    for(var i = 0; i < a.length; i++) if(a[i] > m) m = a[i];
+    return m;
+  }
+
+  // ---- animation state: a wavefront sweeps across edges ----
+  var anim = { active: false, t: 0, dur: 1500, last: 0 };
+  function runPulse(){ anim.active = true; anim.t = 0; anim.last = 0; }
+
+  // returns 0..1 reveal fraction for the edges entering layer (l+1)
+  function edgeReveal(l, frac){
+    // each layer transition gets its own slice of the timeline
+    var segs = sizes.length - 1;
+    var lo = l / segs, hi = (l + 1) / segs;
+    return V.clamp((frac - lo) / (hi - lo), 0, 1);
+  }
+  // neuron "lit" fraction (lights as its incoming edges complete)
+  function neuronLit(l, frac){
+    if(l === 0) return 1;
+    return edgeReveal(l - 1, frac);
+  }
+
+  function hexA(hex, a){
+    // hex like #rrggbb -> rgba string
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  function mix(c1, c2, t){ // mix two #rrggbb
+    function p(h,i){ return parseInt(h.slice(i,i+2),16); }
+    var r = Math.round(V.lerp(p(c1,1), p(c2,1), t));
+    var g = Math.round(V.lerp(p(c1,3), p(c2,3), t));
+    var b = Math.round(V.lerp(p(c1,5), p(c2,5), t));
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  // largest |weight| for thickness scaling
+  var wMax = 0.001;
+  for(var l0 = 0; l0 < W.length; l0++) for(var i0 = 0; i0 < W[l0].length; i0++)
+    for(var j0 = 0; j0 < W[l0][i0].length; j0++) wMax = Math.max(wMax, Math.abs(W[l0][i0][j0]));
+
+  function draw(ts){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    // advance animation by real elapsed time (frame-rate independent)
+    var frac = 1;
+    if(anim.active){
+      var dt = (anim.last && ts) ? Math.min(64, ts - anim.last) : 16.7;
+      anim.last = ts || 0;
+      anim.t += dt;
+      frac = anim.t / anim.dur;
+      if(frac >= 1){ frac = 1; anim.active = false; }
+    }
+
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+
+    // layer titles
+    var titles = ['inputs (3)', 'hidden · ReLU (4)', 'hidden · ReLU (4)', 'outputs · σ (2)'];
+    ctx.fillStyle = p.soft;
+    for(var l = 0; l < sizes.length; l++){
+      ctx.fillText(titles[l], layerX(l), 18);
+    }
+
+    // ---- edges ----
+    for(var L = 0; L < sizes.length - 1; L++){
+      var reveal = edgeReveal(L, frac);
+      for(var i = 0; i < sizes[L]; i++){
+        for(var j = 0; j < sizes[L + 1]; j++){
+          var w = W[L][i][j];
+          var x1 = layerX(L) + R, y1 = neuronY(L, i);
+          var x2 = layerX(L + 1) - R, y2 = neuronY(L + 1, j);
+          var t = Math.min(1, Math.abs(w) / wMax);
+          var col = w >= 0 ? p.blue : p.bad;
+          // base faint edge
+          ctx.strokeStyle = hexA(col, 0.12 + 0.32 * t);
+          ctx.lineWidth = 0.6 + 2.6 * t;
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+          // animated bright segment travelling along the edge
+          if(reveal > 0 && reveal < 1){
+            var head = reveal;
+            var tail = Math.max(0, reveal - 0.28);
+            ctx.strokeStyle = hexA(col, 0.85);
+            ctx.lineWidth = 1.2 + 3.2 * t;
+            ctx.beginPath();
+            ctx.moveTo(V.lerp(x1, x2, tail), V.lerp(y1, y2, tail));
+            ctx.lineTo(V.lerp(x1, x2, head), V.lerp(y1, y2, head));
+            ctx.stroke();
+          } else if(reveal >= 1){
+            // fully delivered: a steady, slightly stronger line
+            ctx.strokeStyle = hexA(col, 0.28 + 0.4 * t);
+            ctx.lineWidth = 0.8 + 2.8 * t;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+          }
+        }
+      }
+    }
+
+    // ---- neurons ----
+    for(var l2 = 0; l2 < sizes.length; l2++){
+      var norm = actNorm(l2);
+      var lit = neuronLit(l2, frac);
+      for(var k = 0; k < sizes[l2]; k++){
+        var x = layerX(l2), y = neuronY(l2, k);
+        var a = acts[l2][k];
+        var bright = V.clamp(a / norm, 0, 1) * lit;
+        // fill: blend panel -> accent by brightness
+        var base = p.dark ? '#1b212b' : '#fbfaf8';
+        var hot = l2 === sizes.length - 1 ? p.good : (l2 === 0 ? p.teal : p.accent);
+        ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2);
+        ctx.fillStyle = mix(base, hot, bright);
+        ctx.fill();
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = lit > 0.5 ? hot : p.faint;
+        ctx.stroke();
+
+        // activation number inside / beside
+        ctx.fillStyle = bright > 0.55 ? '#ffffff' : p.ink;
+        ctx.font = '10px Inter, system-ui, sans-serif';
+        ctx.fillText(a.toFixed(2), x, y + 3.5);
+      }
+    }
+
+    // ---- input labels on the left ----
+    ctx.fillStyle = p.soft;
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    for(var ii = 0; ii < sizes[0]; ii++){
+      ctx.fillText('x' + (ii + 1), layerX(0) - R - 6, neuronY(0, ii) + 4);
+    }
+
+    // ---- output readout on the right ----
+    ctx.textAlign = 'left';
+    var outL = sizes.length - 1;
+    for(var o = 0; o < sizes[outL]; o++){
+      var oy = neuronY(outL, o);
+      ctx.fillStyle = p.good;
+      ctx.font = '12px Inter, system-ui, sans-serif';
+      ctx.fillText('ŷ' + (o + 1) + ' = ' + acts[outL][o].toFixed(3),
+                   layerX(outL) + R + 8, oy + 4);
+    }
+  }
+
+  // sliders for the three inputs
+  for(var s = 0; s < 3; s++){
+    (function(idx){
+      var sl = V.slider({
+        label: 'input x' + (idx + 1), min: 0, max: 1, step: 0.01, value: inputs[idx],
+        format: function(v){ return v.toFixed(2); },
+        onInput: function(v){ inputs[idx] = v; forward(); runPulse(); }
+      });
+      P.controls.appendChild(sl.wrap);
+    })(s);
+  }
+  P.controls.appendChild(V.button('Run forward pass', function(){ forward(); runPulse(); }));
+
+  forward();
+  V.loop(draw, node);   // continuous loop drives the pulse and recolours on theme
+});
+
+</script>
+
+<script>
+/* widget file: overfitting.js */
+/* Underfitting vs overfitting via polynomial degree.
+   Fits a degree-d polynomial to seeded noisy points by least squares
+   (Vandermonde -> normal equations -> Gaussian elimination w/ partial
+   pivoting + tiny ridge). Shows train vs held-out test error, the fitted
+   curve, the true function, and an inset error-vs-degree plot. */
+MLViz.register('overfitting', function(node, V){
+  var P = V.panel(node, {
+    title: 'Underfitting vs overfitting',
+    caption: 'Drag the degree slider. Degree 1 is too stiff (both errors high). High degree threads every training point (train error → 0) but wiggles wildly between them, so the held-out test error climbs. The sweet spot is in the middle. Green dots = training data, hollow dots = held-out test data.'
+  });
+
+  var W = 560, H = 340;
+  var C = V.makeCanvas(P.body, W, H), ctx = C.ctx;
+
+  var MAXDEG = 9;
+  var DOMAIN = [-1, 1];          // keep x in [-1,1] for numerical stability
+  var YRANGE = [-1.7, 1.7];      // plotting y-range
+
+  var state = { degree: 3, train: [], test: [], coeffsByDeg: [], errByDeg: [] };
+
+  /* ---------- deterministic RNG (mulberry32) ---------- */
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ---------- the true underlying function (gentle, smooth) ---------- */
+  function trueF(x){ return Math.sin(2.3 * x) * 0.85; }
+
+  /* standard-normal sample via Box-Muller from a uniform RNG */
+  function gauss(rng){
+    var u1 = Math.max(1e-9, rng()), u2 = rng();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  /* ---------- generate data (14 train + 14 test, same function) ---------- */
+  function genData(seed){
+    var rng = mulberry32(seed);
+    var nTrain = 14, nTest = 14, noise = 0.22;
+    var train = [], test = [];
+    var i, x;
+    for(i = 0; i < nTrain; i++){
+      // spread x across [-1,1] with a little jitter, deterministic given seed
+      x = V.lerp(DOMAIN[0] + 0.04, DOMAIN[1] - 0.04, i / (nTrain - 1));
+      x += (rng() - 0.5) * 0.06;
+      x = V.clamp(x, DOMAIN[0], DOMAIN[1]);
+      train.push({ x: x, y: trueF(x) + gauss(rng) * noise });
+    }
+    for(i = 0; i < nTest; i++){
+      x = DOMAIN[0] + 0.02 + rng() * (DOMAIN[1] - DOMAIN[0] - 0.04);
+      test.push({ x: x, y: trueF(x) + gauss(rng) * noise });
+    }
+    state.train = train;
+    state.test = test;
+  }
+
+  /* ---------- linear algebra: solve (A x = b) by Gaussian elimination
+                with partial pivoting. A is n×n (mutated), b length n. ---------- */
+  function solve(A, b){
+    var n = b.length, i, j, k;
+    for(k = 0; k < n; k++){
+      // partial pivot: largest |A[i][k]| in column k at/below row k
+      var piv = k, big = Math.abs(A[k][k]);
+      for(i = k + 1; i < n; i++){
+        var v = Math.abs(A[i][k]);
+        if(v > big){ big = v; piv = i; }
+      }
+      if(piv !== k){ var tr = A[piv]; A[piv] = A[k]; A[k] = tr; var tb = b[piv]; b[piv] = b[k]; b[k] = tb; }
+      var akk = A[k][k];
+      if(Math.abs(akk) < 1e-12) akk = (akk < 0 ? -1e-12 : 1e-12); // guard singular
+      for(i = k + 1; i < n; i++){
+        var f = A[i][k] / akk;
+        if(f === 0) continue;
+        for(j = k; j < n; j++) A[i][j] -= f * A[k][j];
+        b[i] -= f * b[k];
+      }
+    }
+    // back-substitution
+    var x = new Array(n);
+    for(i = n - 1; i >= 0; i--){
+      var s = b[i];
+      for(j = i + 1; j < n; j++) s -= A[i][j] * x[j];
+      var d = A[i][i];
+      if(Math.abs(d) < 1e-12) d = (d < 0 ? -1e-12 : 1e-12);
+      x[i] = s / d;
+    }
+    return x;
+  }
+
+  /* ---------- least-squares polynomial fit of degree d via normal equations.
+                Builds Vandermonde implicitly: AᵀA (m×m, m=d+1) and Aᵀy,
+                adds ridge 1e-6 on the diagonal. Returns coeff array
+                [c0, c1, ..., cd] for c0 + c1 x + ... + cd x^d. ---------- */
+  function fitPoly(points, d){
+    var m = d + 1, n = points.length, i, j, p;
+    // powers cache: powsum[k] = Σ x^k for k in 0..2d ; ysum[k] = Σ y x^k for k in 0..d
+    var powsum = new Array(2 * d + 1);
+    for(i = 0; i <= 2 * d; i++) powsum[i] = 0;
+    var ysum = new Array(d + 1);
+    for(i = 0; i <= d; i++) ysum[i] = 0;
+    for(p = 0; p < n; p++){
+      var x = points[p].x, y = points[p].y, xp = 1;
+      for(i = 0; i <= 2 * d; i++){
+        powsum[i] += xp;
+        if(i <= d) ysum[i] += y * xp;
+        xp *= x;
+      }
+    }
+    // AᵀA[i][j] = Σ x^(i+j) ; b[i] = Σ y x^i
+    var A = [], b = [];
+    for(i = 0; i < m; i++){
+      A[i] = new Array(m);
+      for(j = 0; j < m; j++) A[i][j] = powsum[i + j];
+      A[i][i] += 1e-6;            // tiny ridge term for stability
+      b[i] = ysum[i];
+    }
+    return solve(A, b);
+  }
+
+  function evalPoly(coeffs, x){
+    // Horner's method
+    var v = 0;
+    for(var i = coeffs.length - 1; i >= 0; i--) v = v * x + coeffs[i];
+    return v;
+  }
+
+  function rmse(points, coeffs){
+    var s = 0;
+    for(var i = 0; i < points.length; i++){
+      var e = points[i].y - evalPoly(coeffs, points[i].x);
+      s += e * e;
+    }
+    return Math.sqrt(s / points.length);
+  }
+
+  /* precompute coefficients + train/test error for every degree 1..MAXDEG */
+  function computeAll(){
+    state.coeffsByDeg = [null]; // index 0 unused (degrees start at 1)
+    state.errByDeg = [null];
+    for(var d = 1; d <= MAXDEG; d++){
+      var c = fitPoly(state.train, d);
+      state.coeffsByDeg[d] = c;
+      state.errByDeg[d] = { train: rmse(state.train, c), test: rmse(state.test, c) };
+    }
+  }
+
+  /* ---------- plot mapping ---------- */
+  var pad = { l: 42, r: 16, t: 14, b: 30 };
+  function px(x){ return pad.l + (x - DOMAIN[0]) / (DOMAIN[1] - DOMAIN[0]) * (W - pad.l - pad.r); }
+  function py(y){ return pad.t + (YRANGE[1] - y) / (YRANGE[1] - YRANGE[0]) * (H - pad.t - pad.b - 96); }
+  var plotBottom; // computed in draw
+
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, W, H);
+
+    var plotH = H - pad.t - pad.b - 96;     // leave room for inset + readouts
+    plotBottom = pad.t + plotH;
+
+    // panel background for main plot
+    ctx.fillStyle = p.panel;
+    ctx.fillRect(pad.l, pad.t, W - pad.l - pad.r, plotH);
+
+    // gridlines + axes
+    ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    var gx;
+    for(gx = -1; gx <= 1.0001; gx += 0.5){ ctx.moveTo(px(gx), pad.t); ctx.lineTo(px(gx), plotBottom); }
+    var gy;
+    for(gy = -1.5; gy <= 1.5001; gy += 0.75){ ctx.moveTo(pad.l, py(gy)); ctx.lineTo(W - pad.r, py(gy)); }
+    ctx.stroke();
+
+    // zero axis
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, py(0)); ctx.lineTo(W - pad.r, py(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px(0), pad.t); ctx.lineTo(px(0), plotBottom); ctx.stroke();
+
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('x', W - pad.r - 6, py(0) + 4);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('y', pad.l - 8, py(1.5));
+
+    var d = state.degree;
+    var coeffs = state.coeffsByDeg[d];
+
+    // true function (dashed)
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = p.soft; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    var first = true, sx, ty;
+    for(sx = DOMAIN[0]; sx <= DOMAIN[1] + 1e-6; sx += 0.01){
+      ty = trueF(sx);
+      if(first){ ctx.moveTo(px(sx), py(ty)); first = false; } else ctx.lineTo(px(sx), py(ty));
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // fitted polynomial (clip to plot box so blow-ups don't escape)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(pad.l, pad.t, W - pad.l - pad.r, plotH);
+    ctx.clip();
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    first = true;
+    for(sx = DOMAIN[0]; sx <= DOMAIN[1] + 1e-6; sx += 0.004){
+      var fy = evalPoly(coeffs, sx);
+      var Y = py(fy);
+      // guard against NaN/Infinity
+      if(!isFinite(Y)){ first = true; continue; }
+      if(first){ ctx.moveTo(px(sx), Y); first = false; } else ctx.lineTo(px(sx), Y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // training points (filled green)
+    var i, pt;
+    ctx.fillStyle = p.good;
+    for(i = 0; i < state.train.length; i++){
+      pt = state.train[i];
+      ctx.beginPath(); ctx.arc(px(pt.x), py(V.clamp(pt.y, YRANGE[0], YRANGE[1])), 3.6, 0, 2 * Math.PI); ctx.fill();
+    }
+    // test points (hollow blue rings)
+    ctx.strokeStyle = p.blue; ctx.lineWidth = 1.8;
+    for(i = 0; i < state.test.length; i++){
+      pt = state.test[i];
+      ctx.beginPath(); ctx.arc(px(pt.x), py(V.clamp(pt.y, YRANGE[0], YRANGE[1])), 3.4, 0, 2 * Math.PI); ctx.stroke();
+    }
+
+    // ---------- readouts: train / test RMSE + diagnosis ----------
+    var err = state.errByDeg[d];
+    var rowY = plotBottom + 12;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = '12px Inter, system-ui, sans-serif';
+
+    ctx.fillStyle = p.good;
+    ctx.fillText('train RMSE: ' + err.train.toFixed(3), pad.l, rowY);
+    ctx.fillStyle = p.blue;
+    ctx.fillText('test RMSE: ' + err.test.toFixed(3), pad.l + 168, rowY);
+
+    // diagnosis tag
+    var gap = err.test - err.train;
+    var tag, tagCol;
+    if(d <= 1 && err.train > 0.32){ tag = 'underfit'; tagCol = p.warn; }
+    else if(gap > 0.18 || err.test > 0.42){ tag = 'overfit'; tagCol = p.bad; }
+    else { tag = 'good fit'; tagCol = p.good; }
+    ctx.font = '600 12px Inter, system-ui, sans-serif';
+    ctx.fillStyle = tagCol;
+    ctx.textAlign = 'right';
+    ctx.fillText('degree ' + d + ' → ' + tag, W - pad.r, rowY);
+
+    // ---------- inset: error vs degree ----------
+    var iX = pad.l, iY = plotBottom + 28, iW = W - pad.l - pad.r, iH = 56;
+    ctx.fillStyle = p.bg;
+    ctx.fillRect(iX, iY, iW, iH);
+    ctx.strokeStyle = p.faint; ctx.lineWidth = 1;
+    ctx.strokeRect(iX, iY, iW, iH);
+
+    // max error for scaling (cap so a huge overfit spike doesn't crush the rest)
+    var maxE = 0.001;
+    for(i = 1; i <= MAXDEG; i++){
+      maxE = Math.max(maxE, state.errByDeg[i].train, state.errByDeg[i].test);
+    }
+    maxE = Math.min(maxE, 1.2); // cap visual range
+    function ixp(deg){ return iX + 8 + (deg - 1) / (MAXDEG - 1) * (iW - 16); }
+    function iyp(e){ return iY + iH - 6 - V.clamp(e / maxE, 0, 1) * (iH - 12); }
+
+    // train curve (green) + test curve (blue)
+    function plotCurve(key, col){
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      for(i = 1; i <= MAXDEG; i++){
+        var e = state.errByDeg[i][key];
+        var X = ixp(i), Y = iyp(e);
+        if(i === 1) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      }
+      ctx.stroke();
+      // dots
+      ctx.fillStyle = col;
+      for(i = 1; i <= MAXDEG; i++){
+        ctx.beginPath(); ctx.arc(ixp(i), iyp(state.errByDeg[i][key]), 2, 0, 2 * Math.PI); ctx.fill();
+      }
+    }
+    plotCurve('train', p.good);
+    plotCurve('test', p.blue);
+
+    // marker for current degree
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 1.4;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(ixp(d), iY + 4); ctx.lineTo(ixp(d), iY + iH - 4); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = p.soft; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('error vs degree', iX + 6, iY + 3);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('1', iX + 6, iY + iH - 1);
+    ctx.textAlign = 'right';
+    ctx.fillText(MAXDEG + ' (degree)', iX + iW - 4, iY + iH - 1);
+
+    // small legend (true fn) top-left of main plot
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    var lx = pad.l + 8, ly = pad.t + 12;
+    ctx.save();
+    ctx.setLineDash([4, 3]); ctx.strokeStyle = p.soft; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 18, ly); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = p.soft; ctx.fillText('true function', lx + 23, ly);
+    ctx.strokeStyle = p.accent; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(lx, ly + 14); ctx.lineTo(lx + 18, ly + 14); ctx.stroke();
+    ctx.fillStyle = p.soft; ctx.fillText('degree-' + d + ' fit', lx + 23, ly + 14);
+  }
+
+  /* ---------- controls ---------- */
+  var degSlider = V.slider({
+    label: 'polynomial degree d', min: 1, max: MAXDEG, step: 1, value: state.degree,
+    format: function(v){ return '' + v; },
+    onInput: function(v){ state.degree = v | 0; draw(); }
+  });
+  P.controls.appendChild(degSlider.wrap);
+
+  var seedCounter = 12345;
+  P.controls.appendChild(V.button('Resample data', function(){
+    seedCounter = (Math.random() * 1e9) | 0;   // new noise (Math.random OK for a button)
+    genData(seedCounter);
+    computeAll();
+    draw();
+  }, { ghost: true }));
+
+  P.controls.appendChild(V.button('Reset', function(){
+    seedCounter = 12345;
+    state.degree = 3;
+    degSlider.set(3);
+    genData(seedCounter);
+    computeAll();
+    draw();
+  }, { ghost: true }));
+
+  /* ---------- init ---------- */
+  genData(seedCounter);
+  computeAll();
+  draw();
+  V.onTheme(draw);
+});
+
+</script>
+
+<script>
+/* widget file: sigmoid.js */
+MLViz.register('sigmoid', function(node, V){
+  var P = V.panel(node, {
+    title: 'Sigmoid: score → probability',
+    caption: 'σ(w·x + b) squashes a score into a probability in [0,1]. Drag w (steepness) and b (shift). The dashed line is p = 0.5; the orange marker is the decision boundary where w·x + b = 0. Points are coloured by their predicted class. Drag the dot on the curve to read (z, σ(z)).'
+  });
+
+  var C = V.makeCanvas(P.body, 560, 320), ctx = C.ctx;
+
+  // ---- model state ----
+  var state = { w: 1.0, b: 0.0, dragZ: 1.5 };
+
+  // ---- deterministic 1-D data: two classes spread along x ----
+  // mulberry32 seeded PRNG for stable layout
+  function mulberry32(a){ return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };}
+  var rnd = mulberry32(20260618);
+  var pts = [];
+  // class 0 cluster on the left (true label 0), class 1 cluster on the right (true label 1)
+  for (var i = 0; i < 6; i++) pts.push({ x: -4.2 + rnd() * 3.2, label: 0 });
+  for (var j = 0; j < 6; j++) pts.push({ x: 1.0  + rnd() * 3.2, label: 1 });
+
+  // ---- math ----
+  function sigmoid(z){ return 1 / (1 + Math.exp(-z)); }
+
+  // ---- plot domain ----
+  var ZMIN = -8, ZMAX = 8;          // x-axis is the input x; z = w*x + b
+  var pad = { l: 46, r: 16, t: 18, b: 40 };
+
+  // ---- sliders ----
+  var sw = V.slider({ label: 'weight w (steepness)', min: -3, max: 3, step: 0.05, value: state.w,
+    format: function(v){ return v.toFixed(2); }, onInput: function(v){ state.w = v; draw(); } });
+  var sb = V.slider({ label: 'bias b (shift)', min: -8, max: 8, step: 0.1, value: state.b,
+    format: function(v){ return v.toFixed(1); }, onInput: function(v){ state.b = v; draw(); } });
+  P.controls.appendChild(sw.wrap);
+  P.controls.appendChild(sb.wrap);
+  P.controls.appendChild(V.button('Reset', function(){
+    state.w = 1.0; state.b = 0.0; state.dragZ = 1.5;
+    sw.set(1.0); sb.set(0.0); draw();
+  }, { ghost: true }));
+
+  // ---- coordinate transforms ----
+  function px(x){ // input x -> pixel
+    return pad.l + (x - ZMIN) / (ZMAX - ZMIN) * (C.w - pad.l - pad.r);
+  }
+  function py(p){ // probability [0,1] -> pixel
+    return pad.t + (1 - p) * (C.h - pad.t - pad.b);
+  }
+  function xFromPx(xp){
+    return ZMIN + (xp - pad.l) / (C.w - pad.l - pad.r) * (ZMAX - ZMIN);
+  }
+
+  function draw(){
+    var pal = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    var w = state.w, b = state.b;
+    var x0 = px(ZMIN), x1 = px(ZMAX);
+    var yTop = py(1), yBot = py(0), yMid = py(0.5);
+
+    // axes box gridlines for p = 0, 0.5, 1
+    ctx.strokeStyle = pal.grid; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x0, yTop); ctx.lineTo(x1, yTop); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x0, yBot); ctx.lineTo(x1, yBot); ctx.stroke();
+
+    // dashed p = 0.5 line
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = pal.soft; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x0, yMid); ctx.lineTo(x1, yMid); ctx.stroke();
+    ctx.restore();
+
+    // axes
+    ctx.strokeStyle = pal.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x0, yBot); ctx.lineTo(x1, yBot); ctx.stroke(); // x-axis at p=0
+    ctx.beginPath(); ctx.moveTo(x0, yTop); ctx.lineTo(x0, yBot); ctx.stroke(); // y-axis
+
+    // y-axis labels
+    ctx.fillStyle = pal.soft;
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('1.0', x0 - 6, yTop);
+    ctx.fillText('0.5', x0 - 6, yMid);
+    ctx.fillText('0.0', x0 - 6, yBot);
+    // y title
+    ctx.save();
+    ctx.translate(14, (yTop + yBot) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = pal.ink;
+    ctx.fillText('probability  σ(w·x + b)', 0, 0);
+    ctx.restore();
+
+    // x-axis ticks/labels
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = pal.soft;
+    for (var t = ZMIN; t <= ZMAX; t += 2){
+      var xp = px(t);
+      ctx.strokeStyle = pal.grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xp, yBot); ctx.lineTo(xp, yBot + 4); ctx.stroke();
+      ctx.fillText(String(t), xp, yBot + 7);
+    }
+    ctx.fillStyle = pal.ink;
+    ctx.fillText('input  x', (x0 + x1) / 2, yBot + 22);
+
+    // ---- the sigmoid curve σ(w*x + b) ----
+    ctx.strokeStyle = pal.accent; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    var first = true;
+    for (var sx = 0; sx <= 1; sx += 0.004){
+      var xv = ZMIN + sx * (ZMAX - ZMIN);
+      var p = sigmoid(w * xv + b);
+      var XX = px(xv), YY = py(p);
+      if (first){ ctx.moveTo(XX, YY); first = false; } else ctx.lineTo(XX, YY);
+    }
+    ctx.stroke();
+
+    // ---- decision boundary: where w*x + b = 0  =>  x = -b/w ----
+    var hasBoundary = Math.abs(w) > 1e-9;
+    var xb = hasBoundary ? (-b / w) : null;
+    if (hasBoundary && xb >= ZMIN && xb <= ZMAX){
+      var bx = px(xb);
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = pal.warn; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(bx, yTop); ctx.lineTo(bx, yBot); ctx.stroke();
+      ctx.restore();
+      // marker where boundary meets p=0.5 (label lives in the top-right readout bar)
+      ctx.fillStyle = pal.warn;
+      ctx.beginPath(); ctx.arc(bx, yMid, 4.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // ---- data points along the x-axis, coloured by PREDICTED class ----
+    // predicted class 1 if σ(w*x+b) >= 0.5 (i.e. w*x+b >= 0)
+    var rowY = yBot + 0;            // sit on the axis baseline area
+    for (var k = 0; k < pts.length; k++){
+      var pt = pts[k];
+      var z = w * pt.x + b;
+      var prob = sigmoid(z);
+      var predicted1 = prob >= 0.5;
+      var cx = px(pt.x);
+      // colour by predicted class
+      var col = predicted1 ? pal.teal : pal.pink;
+      // place marker just below the axis; outline shows TRUE label
+      var cyp = yBot + 16;
+      ctx.beginPath();
+      ctx.arc(cx, cyp, 6, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+      // true-label ring: solid if prediction matches truth, dashed if misclassified
+      var correct = (predicted1 ? 1 : 0) === pt.label;
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = correct ? pal.panel : pal.bad;
+      if (!correct){ ctx.save(); ctx.setLineDash([2, 2]); }
+      ctx.stroke();
+      if (!correct) ctx.restore();
+
+      // tick connecting point to its probability on the curve
+      ctx.save();
+      ctx.setLineDash([2, 3]);
+      ctx.strokeStyle = pal.faint; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx, py(prob)); ctx.lineTo(cx, cyp - 6); ctx.stroke();
+      ctx.restore();
+      // small dot on the curve at this point's probability
+      ctx.beginPath(); ctx.arc(cx, py(prob), 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+    }
+
+    // ---- draggable readout dot on the curve ----
+    var dz = state.dragZ;                 // this is an x value being dragged
+    dz = V.clamp(dz, ZMIN, ZMAX);
+    var dp = sigmoid(w * dz + b);
+    var ddx = px(dz), ddy = py(dp);
+    ctx.beginPath(); ctx.arc(ddx, ddy, 6.5, 0, Math.PI * 2);
+    ctx.fillStyle = pal.accent2; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = pal.panel; ctx.stroke();
+    // readout label for dragged point
+    ctx.font = '12px Inter, sans-serif';
+    var zVal = w * dz + b;
+    var lbl = 'x=' + dz.toFixed(2) + '  z=' + zVal.toFixed(2) + '  σ=' + dp.toFixed(3);
+    ctx.textAlign = ddx > C.w - 150 ? 'right' : 'left';
+    ctx.textBaseline = 'bottom';
+    var lx = ddx > C.w - 150 ? ddx - 9 : ddx + 9;
+    ctx.fillStyle = pal.ink;
+    ctx.fillText(lbl, lx, ddy - 8);
+
+    // ---- legend (top-left inside plot) ----
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    var lgx = x0 + 10, lgy = yTop + 12;
+    ctx.beginPath(); ctx.arc(lgx, lgy, 5, 0, Math.PI * 2); ctx.fillStyle = pal.teal; ctx.fill();
+    ctx.fillStyle = pal.soft; ctx.fillText('predicted class 1 (p ≥ 0.5)', lgx + 11, lgy);
+    lgy += 16;
+    ctx.beginPath(); ctx.arc(lgx, lgy, 5, 0, Math.PI * 2); ctx.fillStyle = pal.pink; ctx.fill();
+    ctx.fillStyle = pal.soft; ctx.fillText('predicted class 0 (p < 0.5)', lgx + 11, lgy);
+    lgy += 16;
+    ctx.save(); ctx.setLineDash([2, 2]); ctx.strokeStyle = pal.bad; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.arc(lgx, lgy, 5, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = pal.soft; ctx.fillText('dashed ring = misclassified', lgx + 11, lgy);
+
+    // ---- readouts bar (top-right) ----
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillStyle = pal.ink;
+    var bstr = hasBoundary ? (-b / w).toFixed(2) : 'none (w=0)';
+    ctx.fillText('w = ' + w.toFixed(2) + '    b = ' + b.toFixed(1), C.w - pad.r, pad.t);
+    ctx.fillStyle = pal.warn;
+    ctx.fillText('boundary x = ' + bstr, C.w - pad.r, pad.t + 16);
+  }
+
+  // ---- dragging the curve dot ----
+  var dragging = false;
+  function nearDot(pos){
+    var dz = V.clamp(state.dragZ, ZMIN, ZMAX);
+    var dp = sigmoid(state.w * dz + state.b);
+    var dx = pos.x - px(dz), dy = pos.y - py(dp);
+    return (dx * dx + dy * dy) <= 200;
+  }
+  function setFromPos(pos){
+    var xv = xFromPx(pos.x);
+    state.dragZ = V.clamp(xv, ZMIN, ZMAX);
+    draw();
+  }
+  C.canvas.addEventListener('mousedown', function(e){
+    var pos = C.canvas.evtPos(e);
+    if (nearDot(pos)){ dragging = true; setFromPos(pos); }
+  });
+  C.canvas.addEventListener('mousemove', function(e){
+    if (dragging){ setFromPos(C.canvas.evtPos(e)); }
+  });
+  window.addEventListener('mouseup', function(){ dragging = false; });
+  C.canvas.addEventListener('touchstart', function(e){
+    var pos = C.canvas.evtPos(e);
+    if (nearDot(pos)){ dragging = true; setFromPos(pos); e.preventDefault(); }
+  }, { passive: false });
+  C.canvas.addEventListener('touchmove', function(e){
+    if (dragging){ setFromPos(C.canvas.evtPos(e)); e.preventDefault(); }
+  }, { passive: false });
+  window.addEventListener('touchend', function(){ dragging = false; });
+
+  draw();
+  V.onTheme(draw);
+});
+
+</script>
+
+<script>
+/* widget file: softmax-temperature.js */
+/* widget: softmax-temperature — an LLM's next-token distribution over a tiny
+   vocabulary with fixed logits, and how the temperature T reshapes it.
+   p_i = exp(z_i/T) / Σ_j exp(z_j/T). Low T -> peaky/greedy; high T -> flat/random.
+   A "Sample" button draws a token according to the current probabilities and
+   highlights the chosen bar. Teaching point: LLM output is a probability
+   distribution over the vocabulary, and temperature is the randomness knob. */
+MLViz.register('softmax-temperature', function(node, V){
+  var P = V.panel(node, {
+    title: 'Temperature: the randomness knob',
+    caption: 'Prompt: “The cat sat on the ___”. The model assigns a fixed score (logit) to each candidate next word; softmax turns those scores into probabilities pᵢ = exp(zᵢ/T) / Σ exp(zⱼ/T). Drag temperature T: low T makes the distribution peaky (greedy — almost always the top word), high T flattens it (more random and creative). Hit Sample to roll a weighted die and pick a token.'
+  });
+  var C = V.makeCanvas(P.body, 560, 330), ctx = C.ctx;
+
+  // ---- fixed vocabulary with fixed logits (deterministic) ----
+  var vocab = [
+    { w: 'mat',   z: 3.1 },
+    { w: 'floor', z: 2.4 },
+    { w: 'sofa',  z: 1.9 },
+    { w: 'rug',   z: 1.2 },
+    { w: 'roof',  z: 0.8 },
+    { w: 'table', z: 0.1 },
+    { w: 'idea',  z: -0.5 }
+  ];
+  var n = vocab.length;
+
+  var state = { T: 1.0, chosen: -1 };
+
+  // ---- deterministic RNG (mulberry32) seeded for reproducible-but-varied draws ----
+  var seed = 0x9e3779b9 >>> 0;
+  function rand(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  // ---- softmax with temperature (numerically stable: subtract max) ----
+  function softmax(T){
+    var i, mx = -Infinity;
+    var scaled = new Array(n);
+    for(i = 0; i < n; i++){ scaled[i] = vocab[i].z / T; if(scaled[i] > mx) mx = scaled[i]; }
+    var sum = 0, ex = new Array(n);
+    for(i = 0; i < n; i++){ ex[i] = Math.exp(scaled[i] - mx); sum += ex[i]; }
+    var p = new Array(n);
+    for(i = 0; i < n; i++) p[i] = ex[i] / sum;
+    return p;
+  }
+
+  function sample(){
+    var p = softmax(state.T);
+    var r = rand(), acc = 0, pick = n - 1;
+    for(var i = 0; i < n; i++){ acc += p[i]; if(r <= acc){ pick = i; break; } }
+    state.chosen = pick;
+  }
+
+  // ---- layout ----
+  var m = { l: 64, r: 16, t: 18, b: 46 };
+
+  function draw(){
+    var p = V.palette();
+    ctx.clearRect(0, 0, C.w, C.h);
+
+    var probs = softmax(state.T);
+    var plotW = C.w - m.l - m.r;
+    var plotH = C.h - m.t - m.b;
+    var baseY = m.t + plotH;          // y of the probability=0 baseline
+    var maxP = 1.0;                   // fixed y-scale 0..1 so changes are legible
+    var slot = plotW / n;
+    var bw = slot * 0.62;
+
+    // ---- y grid + axis (probability 0..1) ----
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    var gridvals = [0, 0.25, 0.5, 0.75, 1.0];
+    for(var g = 0; g < gridvals.length; g++){
+      var gv = gridvals[g];
+      var gy = baseY - gv / maxP * plotH;
+      ctx.strokeStyle = p.grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(m.l, gy); ctx.lineTo(m.l + plotW, gy); ctx.stroke();
+      ctx.fillStyle = p.soft;
+      ctx.fillText(gv.toFixed(2), m.l - 7, gy);
+    }
+    // y-axis title
+    ctx.save();
+    ctx.translate(16, m.t + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = p.soft; ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.fillText('probability  pᵢ', 0, 0);
+    ctx.restore();
+
+    // ---- baseline axis ----
+    ctx.strokeStyle = p.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(m.l, baseY); ctx.lineTo(m.l + plotW, baseY); ctx.stroke();
+
+    // ---- bars ----
+    var topIdx = 0;
+    for(var i = 1; i < n; i++) if(probs[i] > probs[topIdx]) topIdx = i;
+
+    for(i = 0; i < n; i++){
+      var cx = m.l + slot * (i + 0.5);
+      var bx = cx - bw / 2;
+      var h = probs[i] / maxP * plotH;
+      var by = baseY - h;
+
+      var isChosen = (i === state.chosen);
+      var fill;
+      if(isChosen)      fill = p.pink;
+      else if(i === topIdx) fill = p.accent;
+      else              fill = p.blue;
+
+      // bar
+      ctx.fillStyle = fill;
+      ctx.globalAlpha = isChosen ? 1 : 0.92;
+      roundRectTop(bx, by, bw, h, 4);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // chosen highlight outline + glow ring on top
+      if(isChosen){
+        ctx.strokeStyle = p.pink; ctx.lineWidth = 2;
+        roundRectTop(bx, by, bw, h, 4);
+        ctx.stroke();
+      }
+
+      // probability number above the bar
+      ctx.fillStyle = p.ink;
+      ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText((probs[i] * 100).toFixed(1) + '%', cx, Math.min(by - 4, baseY - 4));
+
+      // word label under the bar
+      ctx.fillStyle = isChosen ? p.pink : p.ink;
+      ctx.font = (isChosen ? 'bold ' : '') + '12px Inter, system-ui, sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText('“' + vocab[i].w + '”', cx, baseY + 6);
+
+      // logit value (faint) beneath the word
+      ctx.fillStyle = p.soft;
+      ctx.font = '9px Inter, system-ui, sans-serif';
+      ctx.fillText('z=' + vocab[i].z.toFixed(1), cx, baseY + 22);
+    }
+
+    // ---- legend / status (top-right) ----
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    var lx = m.l + 6, ly = m.t + 8;
+    swatch(lx, ly, p.accent); ctx.fillStyle = p.ink; ctx.fillText('top (greedy pick)', lx + 16, ly);
+    if(state.chosen >= 0){
+      swatch(lx, ly + 16, p.pink); ctx.fillStyle = p.ink;
+      ctx.fillText('sampled: “' + vocab[state.chosen].w + '”', lx + 16, ly + 16);
+    }
+
+    function swatch(x, y, col){
+      ctx.fillStyle = col; ctx.fillRect(x, y - 5, 11, 10);
+    }
+  }
+
+  function roundRectTop(x, y, w, h, r){
+    r = Math.min(r, w / 2, h);
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h);
+    ctx.closePath();
+  }
+
+  // ---- controls ----
+  var Tslider = V.slider({
+    label: 'temperature T', min: 0.2, max: 2.0, step: 0.05, value: state.T,
+    format: function(v){ return v.toFixed(2) + (v < 0.55 ? '  (greedy)' : v > 1.5 ? '  (creative)' : ''); },
+    onInput: function(v){ state.T = v; draw(); }
+  });
+  P.controls.appendChild(Tslider.wrap);
+
+  P.controls.appendChild(V.button('Sample', function(){ sample(); draw(); }));
+  P.controls.appendChild(V.button('Clear', function(){ state.chosen = -1; draw(); }, { ghost: true }));
+
+  draw();
+  V.onTheme(draw);
+});
+
+</script>
+
+
 <script>
 (function(){
   "use strict";
@@ -5780,6 +9657,7 @@ for text, score in retrieve(question):
     if(l) l.disabled = dark;
     if(d) d.disabled = !dark;
     if(themeBtn) themeBtn.textContent = dark ? '☀️' : '🌙';
+    try{ window.dispatchEvent(new Event('mlviz:theme')); }catch(e){}
   }
   var savedTheme;
   try{ savedTheme = localStorage.getItem('mlc-theme'); }catch(e){}
@@ -6010,6 +9888,9 @@ for text, score in retrieve(question):
 
   // initial active state
   onScroll();
+
+  /* ---------- INTERACTIVE WIDGETS ---------- */
+  if(window.MLViz && MLViz.mountAll) MLViz.mountAll();
 })();
 </script>
 </body>

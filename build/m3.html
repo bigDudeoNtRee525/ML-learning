@@ -76,6 +76,9 @@
   </ul>
   <p>You may see \( \tfrac{1}{2m} \) instead of \( \tfrac{1}{m} \) elsewhere; the extra \( \tfrac12 \) just makes a derivative cleaner in Module 4 and doesn't change which \( (w,b) \) is best. We'll use \( \tfrac1m \) here.</p>
 
+  <p><strong>Play with it:</strong> drag the slope and intercept knobs to draw your own line through the dots. Watch the red residuals (and their squared-error squares) grow and shrink, and the MSE update live. Then press <em>Best fit</em> to see the line snap to the least-squares optimum and the MSE bottom out.</p>
+  <div class="mlviz" data-widget="linreg-fit"></div>
+
   <h4>From one feature to many</h4>
   <p>Real problems have several features (temperature, day-of-week, whether it rained). Give each feature its own weight and add them up:</p>
   \[ \hat{y} = w_1 x_1 + w_2 x_2 + \dots + w_n x_n + b \]

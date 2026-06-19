@@ -44,6 +44,9 @@
   </svg>
   <p class="caption">With k=3, the new point's three nearest neighbors are two green (class B) and one purple (class A). Majority vote: class B.</p>
 
+  <p><strong>Play with it:</strong> drag the white "?" point around the plane and watch its nearest neighbors (the ringed points) and its predicted class change live. Slide k from 1 up to 15 and notice how the shaded decision regions go from jagged and noisy to smooth.</p>
+  <div class="mlviz" data-widget="knn"></div>
+
   <h4>Decision trees: "a flowchart it builds for itself"</h4>
   <p>A decision tree is a series of yes/no questions arranged like a flowchart, ending in a prediction. "Is age below 30? If yes, is debt above $5,000? If yes, predict 'high risk'." The clever part is that the tree <em>learns which questions to ask, and in what order</em>, from the data. At each step it searches every feature for the single split that best separates the classes, then repeats on each branch. It's how a doctor diagnoses (asking the most informative question first) turned into an algorithm.</p>
 

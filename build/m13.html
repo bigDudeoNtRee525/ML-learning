@@ -137,6 +137,9 @@
   </svg>
   <p class="caption">Self-attention from the word "it." Thicker line = more attention. The model has learned to point "it" mostly at "trophy" (0.62), with some at "suitcase" (0.28) and almost none at the function word "the." These weights are the softmaxed scores, and they sum to 1.</p>
 
+  <p><strong>Play with it:</strong> pick a query token (click a word, a heatmap row, or use ◀ ▶). Watch the arcs, the bars, and the highlighted heatmap row update — every query's row of weights is a softmax of query·key similarities and sums to 1. Notice how content words ("cat", "sat", "mat") attend to each other, while the function words ("the", "on") cluster apart.</p>
+  <div class="mlviz" data-widget="attention"></div>
+
   <div class="callout worked"><h3>Worked example — by hand</h3>
     <p><strong>Part A: cosine similarity.</strong> Compare \( \mathbf{a} = [1, 0] \) and \( \mathbf{b} = [0.7, 0.7] \). Dot product: \( (1)(0.7) + (0)(0.7) = 0.7 \). Lengths: \( \lVert \mathbf{a} \rVert = \sqrt{1^2 + 0^2} = 1 \); \( \lVert \mathbf{b} \rVert = \sqrt{0.7^2 + 0.7^2} = \sqrt{0.49 + 0.49} = \sqrt{0.98} \approx 0.99 \). Cosine similarity \( = \frac{0.7}{1 \times 0.99} \approx 0.707 \). That's the cosine of 45°, which is exactly right: \( [0.7, 0.7] \) points up-and-right at 45°, while \( [1, 0] \) points straight right, so the angle between them is 45° and \( \cos 45^\circ \approx 0.707 \). The vectors are <em>somewhat</em> similar — pointing partly the same way.</p>
 

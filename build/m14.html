@@ -122,6 +122,9 @@
   <p>So the model says the next token is most likely <code>"cat"</code> (66%), then <code>"sat"</code> (24%), then <code>"mat"</code> (10%) — and \( 0.659 + 0.242 + 0.099 = 1.000 \), exactly as probabilities must. A model set to "greedy" decoding always picks the top token (<code>"cat"</code>). One set to <em>sample</em> rolls a weighted die: 66% of the time it draws "cat," but sometimes it picks "sat" or even "mat," which is why the same prompt can give different answers. A <strong>temperature</strong> knob rescales the logits before softmax — dividing by a temperature below 1 sharpens the distribution toward the top choice (more deterministic), above 1 flattens it (more random and creative). At temperature 0.5 these same logits become roughly \( [0.864,\ 0.117,\ 0.019] \) — far more confident in "cat"; at temperature 2.0 they flatten to about \( [0.502,\ 0.304,\ 0.194] \).</p>
   </div>
 
+  <p><strong>Play with it:</strong> drag the temperature T and watch the next-token distribution sharpen toward one word (low T, greedy) or flatten into many plausible words (high T, creative). Hit <em>Sample</em> to roll a weighted die and pick the actual next token — exactly what an LLM does at every step.</p>
+  <div class="mlviz" data-widget="softmax-temperature"></div>
+
   <h3>In code: from scratch</h3>
   <p>Let's make the worked example runnable. We implement softmax in NumPy (with the standard numerical-stability trick of subtracting the max logit, which never changes the result but prevents overflow), reproduce the hand calculation, then show greedy vs. sampled next-token selection over our tiny vocabulary.</p>
   <codeblock>import numpy as np

@@ -49,6 +49,9 @@
   </svg>
   <p class="caption">Each colour is a cluster; the orange star is its centroid — the average location of its members.</p>
 
+  <p><strong>Play with it:</strong> press <em>Step</em> to watch one phase at a time — first points recolour to their nearest centroid (✕), then each centroid glides to the mean of its members. <em>Run</em> repeats until a round changes nothing (convergence). Try different <em>k</em>, and hit <em>Reset / new centroids</em> a few times to see how the starting positions can lead to better or worse clusterings.</p>
+  <div class="mlviz" data-widget="kmeans"></div>
+
   <h4>Anomaly detection: learn "normal", flag the rest</h4>
   <p>Sometimes you don't want groups — you want the one weird row. Anomaly detection builds a picture of what "normal" looks like (most of your data) and then flags points that don't fit. The crucial reason this is often unsupervised: with fraud, machine faults, or network intrusions, you have mountains of normal examples and almost no examples of the rare bad thing — and tomorrow's fraud won't look like yesterday's. A supervised classifier (Module 5) needs many labelled examples of <em>both</em> classes; anomaly detection only needs to know what normal looks like, so it can catch <em>new</em> kinds of weirdness it has never seen.</p>
 

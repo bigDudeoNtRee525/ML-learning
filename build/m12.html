@@ -49,6 +49,9 @@
   </svg>
   <p class="caption">A small filter is placed on the top-left of the input, scored, then slid step by step across the whole grid. Each score lands in one cell of the output feature map.</p>
 
+  <p><strong>Play with it:</strong> watch a real convolution happen below. The 3×3 filter slides across a 9×9 grayscale image; at each spot it multiplies the 9 overlapping pairs and sums them into one cell of the 7×7 feature map. Press Play, or Step one position at a time, and switch the kernel preset — notice how the <em>vertical-edge</em> and <em>horizontal-edge</em> filters light up exactly where brightness changes, while <em>box blur</em> smooths and <em>identity</em> just copies the centre pixel.</p>
+  <div class="mlviz" data-widget="convolution"></div>
+
   <h3>Making it precise</h3>
   <p>Let the input be a small grid of numbers (pixel brightnesses) called \( X \), and the filter be a smaller grid of numbers \( K \) (these numbers are the <em>weights</em> the network will learn). Place the filter on top of a patch of the input, multiply each filter number by the input number underneath it, and add all those products up into a single number. That number is one cell of the output feature map. Then move the filter and repeat.</p>
 

@@ -13,6 +13,168 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
+<!-- =========================================================
+     MLViz — tiny vanilla-JS framework for the interactive
+     concept animations. No external libraries. Theme-aware.
+     ========================================================= -->
+<script>
+window.MLViz = (function(){
+  "use strict";
+  var registry = {};
+
+  function register(name, init){ registry[name] = init; }
+
+  // Theme-aware colour palette — call fresh each frame so widgets recolour on theme switch.
+  function palette(){
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      dark: dark,
+      bg:     dark ? '#161b22' : '#ffffff',
+      panel:  dark ? '#1b212b' : '#fbfaf8',
+      ink:    dark ? '#e7ebf0' : '#1f2328',
+      soft:   dark ? '#9aa4b2' : '#586069',
+      faint:  dark ? '#3a434f' : '#cfc9be',
+      grid:   dark ? '#283039' : '#ece7dd',
+      axis:   dark ? '#6e7884' : '#9a9388',
+      accent: dark ? '#818cf8' : '#4f46e5',
+      accent2:dark ? '#c4b5fd' : '#7c3aed',
+      good:   dark ? '#34d399' : '#10b981',
+      warn:   dark ? '#fbbf24' : '#d97706',
+      bad:    dark ? '#f87171' : '#e11d48',
+      blue:   dark ? '#60a5fa' : '#2563eb',
+      teal:   dark ? '#2dd4bf' : '#0d9488',
+      pink:   dark ? '#f472b6' : '#db2777',
+      series: dark ? ['#818cf8','#34d399','#fbbf24','#f87171','#60a5fa','#c4b5fd','#2dd4bf']
+                   : ['#4f46e5','#10b981','#d97706','#e11d48','#2563eb','#7c3aed','#0d9488']
+    };
+  }
+
+  // Hi-DPI canvas; you draw in CSS pixels (w x h).
+  function makeCanvas(parent, w, h){
+    var c = document.createElement('canvas');
+    var dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    c.style.width = '100%';
+    c.style.maxWidth = w + 'px';
+    c.style.aspectRatio = w + ' / ' + h;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    var ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    parent.appendChild(c);
+    // map a mouse/touch event to canvas CSS-pixel coords
+    c.evtPos = function(ev){
+      var r = c.getBoundingClientRect();
+      var src = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+      return { x: (src.clientX - r.left) * (w / r.width), y: (src.clientY - r.top) * (h / r.height) };
+    };
+    return { canvas: c, ctx: ctx, w: w, h: h };
+  }
+
+  function el(tag, attrs, kids){
+    var e = document.createElement(tag);
+    if(attrs) for(var k in attrs){
+      if(k === 'class') e.className = attrs[k];
+      else if(k === 'html') e.innerHTML = attrs[k];
+      else if(k === 'style') e.setAttribute('style', attrs[k]);
+      else if(k.slice(0,2) === 'on' && typeof attrs[k] === 'function') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    if(kids != null){
+      if(typeof kids === 'string' || typeof kids === 'number') e.textContent = '' + kids;
+      else if(Array.isArray(kids)) kids.forEach(function(c){ if(c != null) e.appendChild(typeof c==='string'?document.createTextNode(c):c); });
+      else e.appendChild(kids);
+    }
+    return e;
+  }
+
+  function button(label, onClick, opts){
+    var b = el('button', { class: 'mlviz-btn' + (opts && opts.ghost ? ' ghost' : ''), type: 'button' }, label);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function slider(o){
+    var read = el('span', { class: 'mlviz-readout' });
+    var lab  = el('span', { class: 'mlviz-slabel' }, o.label || '');
+    var head = el('span', { class: 'mlviz-shead' }, [lab, read]);
+    var inp  = el('input', { type: 'range', min: o.min, max: o.max, step: (o.step != null ? o.step : 1), value: o.value });
+    function fmt(v){ return o.format ? o.format(v) : ('' + v); }
+    read.textContent = fmt(+o.value);
+    inp.addEventListener('input', function(){ var v = +inp.value; read.textContent = fmt(v); if(o.onInput) o.onInput(v); });
+    var wrap = el('label', { class: 'mlviz-slider' }, [head, inp]);
+    return { wrap: wrap, input: inp, get: function(){ return +inp.value; },
+             set: function(v){ inp.value = v; read.textContent = fmt(+v); } };
+  }
+
+  // Standard card: title, body (canvas/readouts), controls, caption.
+  function panel(node, opts){
+    opts = opts || {};
+    node.classList.add('mlviz');
+    var card = el('div', { class: 'mlviz-card' });
+    if(opts.title) card.appendChild(el('div', { class: 'mlviz-title' }, opts.title));
+    var body = el('div', { class: 'mlviz-body' });
+    var controls = el('div', { class: 'mlviz-controls' });
+    card.appendChild(body);
+    card.appendChild(controls);
+    var cap = null;
+    if(opts.caption){ cap = el('figcaption', { class: 'mlviz-caption', html: opts.caption }); card.appendChild(cap); }
+    node.appendChild(card);
+    return { root: card, body: body, controls: controls, caption: cap };
+  }
+
+  // requestAnimationFrame loop that skips drawing while scrolled off-screen.
+  function loop(draw, node){
+    var running = true, raf = 0;
+    function frame(t){
+      if(!running) return;
+      var ok = true;
+      if(node){ var r = node.getBoundingClientRect(); ok = (r.bottom > -80 && r.top < (window.innerHeight + 80)); }
+      if(ok){ try{ draw(t || 0); }catch(e){ running = false; console.error('[MLViz] draw error', e); return; } }
+      raf = requestAnimationFrame(frame);
+    }
+    raf = requestAnimationFrame(frame);
+    return { stop: function(){ running = false; if(raf) cancelAnimationFrame(raf); },
+             start: function(){ if(!running){ running = true; raf = requestAnimationFrame(frame); } } };
+  }
+
+  function onTheme(cb){ window.addEventListener('mlviz:theme', cb); }
+  function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t){ return a + (b - a) * t; }
+
+  var API = { register: register, palette: palette, makeCanvas: makeCanvas, el: el,
+              button: button, slider: slider, panel: panel, loop: loop,
+              onTheme: onTheme, clamp: clamp, lerp: lerp };
+
+  // Lazy-mount each [data-widget] when it first scrolls near the viewport.
+  API.mountAll = function(){
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('[data-widget]'));
+    function mount(node){
+      if(node.__mounted) return;
+      var fn = registry[node.dataset.widget];
+      if(!fn){ return; }
+      node.__mounted = true;
+      try{ fn(node, API); }
+      catch(err){ console.error('[MLViz] widget failed:', node.dataset.widget, err);
+        node.innerHTML = '<p class="mlviz-caption">(this interactive demo could not load)</p>'; }
+    }
+    // Debug/verification: ?mlviz=eager mounts every widget immediately, ignoring the viewport.
+    if((location.search || '').indexOf('mlviz=eager') !== -1){ nodes.forEach(mount); return; }
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); mount(e.target); } });
+      }, { rootMargin: '200px 0px' });
+      nodes.forEach(function(n){ io.observe(n); });
+    } else {
+      nodes.forEach(mount);
+    }
+  };
+
+  return API;
+})();
+</script>
+
+<!--WIDGET-SCRIPTS-->
+
 <script>
 (function(){
   "use strict";
@@ -29,6 +191,7 @@
     if(l) l.disabled = dark;
     if(d) d.disabled = !dark;
     if(themeBtn) themeBtn.textContent = dark ? '☀️' : '🌙';
+    try{ window.dispatchEvent(new Event('mlviz:theme')); }catch(e){}
   }
   var savedTheme;
   try{ savedTheme = localStorage.getItem('mlc-theme'); }catch(e){}
@@ -259,6 +422,9 @@
 
   // initial active state
   onScroll();
+
+  /* ---------- INTERACTIVE WIDGETS ---------- */
+  if(window.MLViz && MLViz.mountAll) MLViz.mountAll();
 })();
 </script>
 </body>
